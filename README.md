@@ -1,87 +1,122 @@
-# Tenk
+# Tenk — 10,000 Hours Tracker
 
-Track the hours you put into a skill on the way to 10,000.
+> **Track the hours you put into a skill on the way to 10,000.**
 
-Add a skill, time your practice or log it afterwards, and watch a grid of
-10,000 squares fill in one hour at a time. Tenk also keeps a daily streak, a
-26-week activity calendar, milestones along the way and a projected finish date
-based on your recent pace.
+[![Deploy](https://github.com/himel7009/tenk-hours/actions/workflows/deploy.yml/badge.svg)](https://github.com/himel7009/tenk-hours/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://himel7009.github.io/tenk-hours/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Everything is stored in your browser. There is no account and no server.
+**[✨ View Live Demo ✨](https://himel7009.github.io/tenk-hours/)**
 
-## Getting started
+Tenk is a clean, distraction-free web app and PWA for mastering any craft. Add a skill, time your practice sessions or log them manually, and watch a grid of 10,000 squares fill in hour by hour. Tenk also tracks daily streaks, a 26-week activity heatmap, milestone achievements, and projected finish dates based on your recent pace.
 
-Requires Node 22 or newer.
+Everything is stored locally in your browser — zero accounts, zero tracking, zero cloud dependencies.
+
+---
+
+## 📸 Demo & Screenshots
+
+### 1. Dashboard & Skills Overview
+Track today's practice at a glance, maintain your active streak, and monitor your full skill portfolio.
+
+![Tenk Dashboard](docs/screenshots/dashboard.png)
+
+### 2. Deep-Dive Skill Tracker
+Visualise your 10,000-hour journey with an interactive practice timer, milestone ladder, 26-week activity heatmap, pace calculation, and session history.
+
+![Skill Detail View](docs/screenshots/skill-detail.png)
+
+### 3. Responsive & Mobile-Ready (PWA)
+Optimised for mobile, tablet, and desktop screens with dark and light theme support.
+
+<p align="center">
+  <img src="docs/screenshots/mobile-view.png" alt="Tenk Mobile View" width="360" />
+</p>
+
+---
+
+## ⚡ Features
+
+- **⏱ Flexible Time Tracking**: Built-in stopwatch timer with auto-save, plus manual logging for past practice.
+- **⬛ 10,000-Hour Visual Grid**: Every single hour completed is reflected visually on your skill field.
+- **🔥 Daily Streaks & Pace**: Real-time streak counter and 30-day average pace tracking.
+- **🎯 Milestone Progress**: Step-by-step milestones (1h, 10h, 50h, 100h, 250h, 500h, 1,000h, 2,500h, 5,000h, 7,500h, 10,000h).
+- **📅 26-Week Heatmap**: GitHub-style activity calendar for each skill.
+- **🔮 Finish Date Projections**: Automatically estimates when you'll reach your target based on recent consistency.
+- **🔒 100% Private & Offline**: Stored entirely in `localStorage`. Includes one-click JSON backup export and restore.
+- **📱 Installable PWA**: Works offline and can be added directly to your phone or desktop home screen.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 22 or newer
+- npm
+
+### Local Development
 
 ```sh
+# Clone the repository
+git clone https://github.com/himel7009/tenk-hours.git
+cd tenk-hours
+
+# Install dependencies
 npm install
+
+# Start development server
 npm run dev
 ```
 
+### Available Scripts
+
 | Command           | What it does                       |
 | ----------------- | ---------------------------------- |
-| `npm run dev`     | Start the dev server               |
-| `npm test`        | Run the unit tests                 |
-| `npm run lint`    | Lint with ESLint                   |
-| `npm run format`  | Format with Prettier               |
+| `npm run dev`     | Start the Vite dev server          |
+| `npm test`        | Run unit tests with Vitest         |
+| `npm run lint`    | Lint code with ESLint              |
+| `npm run format`  | Format codebase with Prettier      |
 | `npm run build`   | Type-check and build to `dist/`    |
 | `npm run preview` | Serve the production build locally |
 
-## Project layout
+---
+
+## 🏗 Project Architecture
 
 ```
 src/
-  app/        Shell, routes and theme wiring
+  app/        App shell, router, and theme wiring
   components/ Shared UI primitives (Button, Dialog, Field, Toast)
-  data/       Backup export and import, with validation
-  domain/     Pure logic: dates, streaks, stats, milestones, formatting
-  features/   One folder per feature: skills, sessions, timer, progress, settings
-  store/      Zustand stores; trackerStore is persisted to localStorage
-  styles/     Design tokens and global styles
+  data/       Backup export/import schema validation
+  domain/     Pure business logic: dates, streaks, stats, milestones, formatting
+  features/   Feature modules: skills, sessions, timer, progress, settings
+  store/      Zustand stores (trackerStore persisted in localStorage)
+  styles/     CSS design tokens and global styles
 ```
 
-The rule that keeps this easy to change: `domain/` knows nothing about React or
-storage, and components never compute streaks or totals themselves. New
-measures (weekly goals, per-skill reminders) belong in `domain/` with tests,
-then get surfaced through a hook in `features/progress/`.
+- **Domain-First Design**: The `domain/` directory contains pure TypeScript logic with comprehensive unit tests and zero UI dependencies.
+- **Hash Routing**: Uses `HashRouter` to allow deep linking on GitHub Pages without server redirects.
 
-### Data model
+---
 
-A **skill** has a name, colour and target hours. A **session** is a number of
-minutes on a local calendar day, created by the timer or entered by hand, and
-can be edited or deleted afterwards. Streaks, totals and projections are always
-derived from sessions and never stored.
+## 🌐 Deployment to GitHub Pages
 
-The persisted state is versioned (`STORAGE_VERSION` in `store/trackerStore.ts`).
-When its shape changes, bump the version and add a `migrate` step so existing
-users keep their data.
+The workflow in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) automatically runs linting, tests, builds, and deploys on every push to `main`.
 
-### Adding sync later
+Live deployment URL: **[https://himel7009.github.io/tenk-hours/](https://himel7009.github.io/tenk-hours/)**
 
-All reads and writes go through `trackerStore`. To add accounts and cloud sync,
-swap the `persist` storage for one backed by an API and keep the action
-signatures; nothing in `features/` needs to change.
+---
 
-## Deploying to GitHub Pages
+## 📱 Mobile & PWA Installation
 
-The workflow in `.github/workflows/deploy.yml` lints, tests, builds and deploys
-on every push to `main`.
+Tenk is a Progressive Web App (PWA):
+- **On Android**: Open the live site in Chrome and tap **Add to Home screen**.
+- **On iOS**: Open in Safari, tap the share icon, and select **Add to Home Screen**.
+- **On Desktop**: Click the install icon in your browser address bar.
 
-1. Create a repository on GitHub and push this project to its `main` branch.
-2. In the repository, open **Settings → Pages** and set **Source** to
-   **GitHub Actions**.
-3. Push again, or re-run the workflow from the **Actions** tab. The site is
-   published at `https://<username>.github.io/<repository>/`.
+---
 
-The build uses relative asset paths and hash routing, so it works under any
-repository name without configuration.
+## 📄 License
 
-## Android
-
-Tenk is an installable PWA: open the deployed site in Chrome on Android and
-choose **Add to Home screen**. For a Play Store build, the same code can be
-wrapped with [Capacitor](https://capacitorjs.com/).
-
-## License
-
-MIT
+This project is licensed under the [MIT License](LICENSE).

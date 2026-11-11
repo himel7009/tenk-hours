@@ -1,0 +1,30 @@
+.heatmap {
+  display: block;
+  width: 100%;
+  max-width: 44rem;
+}
+
+.month {
+  fill: var(--ink-soft);
+  font-size: 9px;
+}
+
+.day {
+  fill: var(--skill, var(--streak));
+}
+
+.day[data-level='0'] {
+  fill: var(--cell-empty);
+}
+
+.day[data-level='1'] {
+  fill-opacity: 0.3;
+}
+
+.day[data-level='2'] {
+  fill-opacity: 0.5;
+}
+
+.day[data-level='3'] {
+  fill-opacity: 0.75;
+}

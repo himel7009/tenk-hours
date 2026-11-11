@@ -1,0 +1,106 @@
+:root {
+  color-scheme: light;
+
+  --bg: #e9edf2;
+  --surface: #f7f9fb;
+  --ink: #16203a;
+  --ink-soft: #56607a;
+  --line: #ccd3de;
+  --cell-empty: #d5dbe5;
+  --streak: #c97a00;
+  --danger: #c0362c;
+  --on-ink: #f7f9fb;
+
+  --cobalt: #2f5fe6;
+  --persimmon: #e2591f;
+  --moss: #3f8a45;
+  --plum: #9440ad;
+  --teal: #0f8a8a;
+  --rose: #d63a70;
+
+  --font-display: 'Bricolage Grotesque Variable', 'Instrument Sans Variable', system-ui, sans-serif;
+  --font-body: 'Instrument Sans Variable', system-ui, sans-serif;
+
+  /* Type scale: 1.25 ratio from a 16px base. */
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.563rem;
+  --text-2xl: 2.441rem;
+  --text-3xl: 3.815rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+
+  --radius-control: 8px;
+  --radius-panel: 14px;
+  --page-width: 68rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #0f1628;
+    --surface: #172039;
+    --ink: #e8ecf5;
+    --ink-soft: #9aa5bf;
+    --line: #2b3654;
+    --cell-empty: #232d49;
+    --streak: #f5b031;
+    --danger: #ff7a6e;
+    --on-ink: #0f1628;
+
+    --cobalt: #6f93ff;
+    --persimmon: #ff8448;
+    --moss: #6cc072;
+    --plum: #c77de0;
+    --teal: #3cc4c4;
+    --rose: #ff6f9f;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0f1628;
+  --surface: #172039;
+  --ink: #e8ecf5;
+  --ink-soft: #9aa5bf;
+  --line: #2b3654;
+  --cell-empty: #232d49;
+  --streak: #f5b031;
+  --danger: #ff7a6e;
+  --on-ink: #0f1628;
+
+  --cobalt: #6f93ff;
+  --persimmon: #ff8448;
+  --moss: #6cc072;
+  --plum: #c77de0;
+  --teal: #3cc4c4;
+  --rose: #ff6f9f;
+}
+
+[data-color='cobalt'] {
+  --skill: var(--cobalt);
+}
+[data-color='persimmon'] {
+  --skill: var(--persimmon);
+}
+[data-color='moss'] {
+  --skill: var(--moss);
+}
+[data-color='plum'] {
+  --skill: var(--plum);
+}
+[data-color='teal'] {
+  --skill: var(--teal);
+}
+[data-color='rose'] {
+  --skill: var(--rose);
+}

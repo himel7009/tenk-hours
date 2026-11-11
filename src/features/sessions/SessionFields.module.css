@@ -1,0 +1,19 @@
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.6fr;
+  gap: var(--space-3);
+}
+
+.note {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 26rem) {
+  .fields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fields > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+}

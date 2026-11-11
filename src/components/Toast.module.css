@@ -1,0 +1,25 @@
+.region {
+  position: fixed;
+  inset: auto 0 var(--space-5) 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 var(--space-4);
+  pointer-events: none;
+}
+
+.toast {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-control);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  animation: rise 160ms ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}

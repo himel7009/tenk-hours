@@ -1,0 +1,25 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--streak);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.badge svg {
+  fill: currentColor;
+}
+
+/* Alive but not yet extended today. */
+.badge[data-pending='true'] {
+  color: var(--ink-soft);
+}
+
+.none {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}

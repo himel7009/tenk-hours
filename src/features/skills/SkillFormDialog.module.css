@@ -1,0 +1,56 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.colors {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.colors legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.swatch {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  background: var(--skill);
+  cursor: pointer;
+}
+
+.swatch:has(input:checked) {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--skill);
+}
+
+.swatch:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 5px;
+}
+
+.error {
+  color: var(--danger);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.spacer {
+  flex: 1;
+}

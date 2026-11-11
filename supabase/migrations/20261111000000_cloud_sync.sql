@@ -62,7 +62,9 @@ alter table public.skills enable row level security;
 alter table public.sessions enable row level security;
 
 -- Signed-out visitors get nothing; signed-in users get their own rows only.
-revoke all on public.skills, public.sessions from anon;
+-- Supabase grants ALL (including DELETE) to authenticated by default on new
+-- tables in public, so revoke from authenticated too before granting back.
+revoke all on public.skills, public.sessions from public, anon, authenticated;
 grant select, insert, update on public.skills, public.sessions to authenticated;
 
 create policy "Users read their own skills" on public.skills

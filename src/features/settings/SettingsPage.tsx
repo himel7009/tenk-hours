@@ -3,8 +3,11 @@ import { Button } from '../../components/Button';
 import { BackupError, createBackup, parseBackup } from '../../data/backup';
 import { todayKey } from '../../domain/dates';
 import type { Theme } from '../../domain/types';
+import { isCloudEnabled } from '../../sync/supabaseClient';
+import { useAccountStore } from '../../store/accountStore';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { AccountSection } from '../account/AccountSection';
 import styles from './SettingsPage.module.css';
 
 const THEMES: { value: Theme; label: string }[] = [
@@ -18,6 +21,7 @@ export function SettingsPage() {
   const setTheme = useTrackerStore((state) => state.setTheme);
   const replaceData = useTrackerStore((state) => state.replaceData);
   const toast = useToastStore((state) => state.show);
+  const signedIn = useAccountStore((state) => state.user !== null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -43,7 +47,7 @@ export function SettingsPage() {
     try {
       const data = parseBackup(await file.text());
       const confirmed = window.confirm(
-        `Replace everything in Tenk with this backup (${data.skills.length} skills, ${data.sessions.length} sessions)?`,
+        `Replace everything in Tenk${signedIn ? ', on all your devices,' : ''} with this backup (${data.skills.length} skills, ${data.sessions.length} sessions)?`,
       );
       if (!confirmed) return;
       replaceData(data);
@@ -76,11 +80,19 @@ export function SettingsPage() {
         </div>
       </section>
 
+      {isCloudEnabled && (
+        <section className={styles.section}>
+          <h2>Account</h2>
+          <AccountSection />
+        </section>
+      )}
+
       <section className={styles.section}>
         <h2>Your data</h2>
         <p className={styles.help}>
-          Tenk keeps your skills and sessions in this browser only. Download a backup to move them
-          to another device or to keep a copy safe.
+          {signedIn
+            ? 'Your skills and sessions are saved to your account. A backup file is an extra copy you keep yourself.'
+            : 'Tenk keeps your skills and sessions in this browser only. Download a backup to move them to another device or to keep a copy safe.'}
         </p>
         <div className={styles.actions}>
           <Button onClick={handleExport}>Download backup</Button>

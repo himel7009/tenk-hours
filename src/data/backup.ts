@@ -48,7 +48,7 @@ export function parseBackup(json: string): Pick<Backup, 'skills' | 'sessions'> {
 function parseSkill(value: unknown): Skill {
   if (
     !isRecord(value) ||
-    typeof value.id !== 'string' ||
+    !isUuid(value.id) ||
     typeof value.name !== 'string' ||
     !isPositive(value.targetHours)
   ) {
@@ -66,8 +66,8 @@ function parseSkill(value: unknown): Skill {
 function parseSession(value: unknown): Session {
   if (
     !isRecord(value) ||
-    typeof value.id !== 'string' ||
-    typeof value.skillId !== 'string' ||
+    !isUuid(value.id) ||
+    !isUuid(value.skillId) ||
     !isDayKey(value.day) ||
     !isPositive(value.minutes)
   ) {
@@ -86,6 +86,11 @@ function parseSession(value: unknown): Session {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+// Ids double as primary keys in the cloud database, which only takes UUIDs.
+const isUuid = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 const isPositive = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0;

@@ -10,7 +10,7 @@
 
 Tenk is a clean, distraction-free web app and PWA for mastering any craft. Add a skill, time your practice sessions or log them manually, and watch a grid of 10,000 squares fill in hour by hour. Tenk also tracks daily streaks, a 26-week activity heatmap, milestone achievements, and projected finish dates based on your recent pace.
 
-Everything is stored locally in your browser — zero accounts, zero tracking, zero cloud dependencies.
+Tenk works without an account, storing everything in your browser. Sign in with Google or an email and password and your data syncs across your devices.
 
 ---
 
@@ -43,7 +43,8 @@ Optimised for mobile, tablet, and desktop screens with dark and light theme supp
 - **🎯 Milestone Progress**: Step-by-step milestones (1h, 10h, 50h, 100h, 250h, 500h, 1,000h, 2,500h, 5,000h, 7,500h, 10,000h).
 - **📅 26-Week Heatmap**: GitHub-style activity calendar for each skill.
 - **🔮 Finish Date Projections**: Automatically estimates when you'll reach your target based on recent consistency.
-- **🔒 100% Private & Offline**: Stored entirely in `localStorage`. Includes one-click JSON backup export and restore.
+- **☁️ Optional Cloud Sync**: Sign in with Google or email to keep every device in step. Works offline and syncs when the connection returns.
+- **🔒 Private by Default**: No account needed; guest data stays in `localStorage`. Synced data is protected by per-user row level security. Includes one-click JSON backup export and restore.
 - **📱 Installable PWA**: Works offline and can be added directly to your phone or desktop home screen.
 
 ---
@@ -93,10 +94,27 @@ src/
   features/   Feature modules: skills, sessions, timer, progress, settings
   store/      Zustand stores (trackerStore persisted in localStorage)
   styles/     CSS design tokens and global styles
+  sync/       Supabase client, auth, and the sync engine
+supabase/
+  migrations/ Database schema and row level security policies
+  tests/      SQL tests for the access rules
 ```
 
 - **Domain-First Design**: The `domain/` directory contains pure TypeScript logic with comprehensive unit tests and zero UI dependencies.
 - **Hash Routing**: Uses `HashRouter` to allow deep linking on GitHub Pages without server redirects.
+
+---
+
+## ☁️ Cloud Sync
+
+Accounts and sync run on [Supabase](https://supabase.com) (Postgres + Auth). The app stays a static site; the browser talks to the database directly and every access rule is enforced by Postgres.
+
+- **Local-first**: Every change is saved on the device first and queued. The sync engine pushes the queue, then pulls rows changed since its last cursor, so the app keeps working offline.
+- **Conflict handling**: Last write wins per skill or session. Deletes are soft so they reach other devices.
+- **Security**: Row level security limits each user to their own rows, check constraints bound what can be stored, and only the publishable key ships to the browser.
+- **Optional**: Without the two `VITE_SUPABASE_*` variables the build has no account features and runs on-device only.
+
+Setup takes about 15 minutes: see [`docs/cloud-setup.md`](docs/cloud-setup.md).
 
 ---
 

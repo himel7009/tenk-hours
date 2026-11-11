@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from 'react-router';
 import { Toast } from '../components/Toast';
+import { SyncIndicator } from '../features/account/SyncIndicator';
 import { RunningTimerBar } from '../features/timer/RunningTimerBar';
 import styles from './AppLayout.module.css';
 
@@ -26,6 +27,7 @@ export function AppLayout() {
           <NavLink to="/settings" className={navClass}>
             Settings
           </NavLink>
+          <SyncIndicator />
         </nav>
       </header>
 

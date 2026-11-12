@@ -1,0 +1,19 @@
+.strip {
+  display: flex;
+  gap: 3px;
+}
+
+.day {
+  width: 11px;
+  height: 11px;
+  border-radius: 2.5px;
+  background: var(--cell-empty);
+}
+
+.day[data-state='partial'] {
+  background: color-mix(in srgb, var(--skill) 35%, var(--cell-empty));
+}
+
+.day[data-state='done'] {
+  background: var(--skill);
+}

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Session, Skill, SkillColor } from '../domain/types';
+import type { Session, Skill, SkillColor, TrackerKind } from '../domain/types';
 import type { PushBatch, RemoteChanges, RemoteRow, RemoteStore } from './types';
 
 const UPSERT_CHUNK = 500;
@@ -16,9 +16,12 @@ const CURSOR_OVERLAP_MS = 5000;
 
 interface SkillRow {
   id: string;
+  kind: TrackerKind;
   name: string;
+  icon: string;
   color: SkillColor;
   target_hours: number;
+  daily_goal_minutes: number;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -36,7 +39,8 @@ interface SessionRow {
   deleted_at: string | null;
 }
 
-const SKILL_COLUMNS = 'id,name,color,target_hours,created_at,updated_at,deleted_at';
+const SKILL_COLUMNS =
+  'id,kind,name,icon,color,target_hours,daily_goal_minutes,created_at,updated_at,deleted_at';
 const SESSION_COLUMNS = 'id,skill_id,day,minutes,note,source,created_at,updated_at,deleted_at';
 
 const clamp = (value: number, min: number, max: number) =>
@@ -48,9 +52,12 @@ const clamp = (value: number, min: number, max: number) =>
 function toSkillRow(skill: Skill) {
   return {
     id: skill.id,
+    kind: skill.kind,
     name: skill.name.trim().slice(0, 40) || 'Untitled',
+    icon: skill.icon.slice(0, 16) || '🎯',
     color: skill.color,
     target_hours: clamp(skill.targetHours, 1, 100_000),
+    daily_goal_minutes: clamp(skill.dailyGoalMinutes, 1, 1440),
     created_at: new Date(skill.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -74,9 +81,12 @@ function fromSkillRow(row: SkillRow): RemoteRow<Skill> {
     deleted: row.deleted_at !== null,
     row: {
       id: row.id,
+      kind: row.kind,
       name: row.name,
+      icon: row.icon,
       color: row.color,
       targetHours: row.target_hours,
+      dailyGoalMinutes: row.daily_goal_minutes,
       createdAt: Date.parse(row.created_at),
     },
   };

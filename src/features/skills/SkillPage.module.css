@@ -104,3 +104,17 @@
     gap: var(--space-6);
   }
 }
+
+.icon {
+  margin-right: 0.3em;
+}
+
+.habitCalendar {
+  margin: 0;
+}
+
+.habitCalendar figcaption {
+  margin-top: var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

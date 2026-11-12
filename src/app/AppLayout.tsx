@@ -22,7 +22,7 @@ export function AppLayout() {
         </NavLink>
         <nav className={styles.nav} aria-label="Main">
           <NavLink to="/" end className={navClass}>
-            Skills
+            Home
           </NavLink>
           <NavLink to="/settings" className={navClass}>
             Settings

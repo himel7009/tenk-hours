@@ -6,6 +6,28 @@ export function milestonesFor(targetHours: number): number[] {
   return [...below, targetHours];
 }
 
+const STREAK_MILESTONE_DAYS = [3, 7, 14, 30, 60, 100, 200, 365];
+
+export interface Milestone {
+  label: string;
+  reached: boolean;
+}
+
+export function hourMilestones(loggedMinutes: number, targetHours: number): Milestone[] {
+  return milestonesFor(targetHours).map((hours) => ({
+    label: `${hours.toLocaleString()}h`,
+    reached: loggedMinutes >= hours * 60,
+  }));
+}
+
+/** Habit milestones, earned by the longest streak ever held. */
+export function streakMilestones(longestStreak: number): Milestone[] {
+  return STREAK_MILESTONE_DAYS.map((days) => ({
+    label: `${days} days`,
+    reached: longestStreak >= days,
+  }));
+}
+
 export function nextMilestone(loggedMinutes: number, targetHours: number): number | null {
   return milestonesFor(targetHours).find((hours) => hours * 60 > loggedMinutes) ?? null;
 }

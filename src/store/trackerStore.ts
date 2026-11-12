@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
+import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
 import type {
   ActiveTimer,
   Session,
@@ -20,7 +21,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -30,8 +31,10 @@ const MAX_SESSION_MINUTES = 24 * 60;
 
 export interface SkillInput {
   name: string;
+  icon: string;
   color: SkillColor;
   targetHours: number;
+  dailyGoalMinutes: number;
 }
 
 export interface SessionInput {
@@ -49,7 +52,7 @@ interface TrackerState {
 }
 
 interface TrackerActions {
-  addSkill: (input: SkillInput) => SkillId;
+  addSkill: (kind: TrackerKind, input: SkillInput) => SkillId;
   updateSkill: (id: SkillId, input: SkillInput) => void;
   /** Removes the skill and every session logged against it. */
   deleteSkill: (id: SkillId) => void;
@@ -58,9 +61,16 @@ interface TrackerActions {
   updateSession: (id: SessionId, input: SessionInput) => void;
   deleteSession: (id: SessionId) => void;
 
-  /** Starts a timer, replacing any running one without saving it. */
-  startTimer: (skillId: SkillId) => void;
-  /** Stops the timer. Returns the saved session, or null if the run was too short. */
+  /**
+   * Starts a timer, replacing any running one without saving it. Pass a
+   * duration for a countdown, or null for an open-ended stopwatch.
+   */
+  startTimer: (skillId: SkillId, durationMinutes: number | null) => void;
+  /**
+   * Stops the timer and saves the time spent, which for a countdown is never
+   * more than its planned length. Returns the saved session, or null if the
+   * run was too short.
+   */
   stopTimer: () => Session | null;
   discardTimer: () => void;
 
@@ -115,8 +125,8 @@ export const useTrackerStore = create<TrackerStore>()(
     (set, get) => ({
       ...initialState,
 
-      addSkill: (input) => {
-        const skill: Skill = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+      addSkill: (kind, input) => {
+        const skill: Skill = { id: crypto.randomUUID(), kind, createdAt: Date.now(), ...input };
         set((state) => ({
           skills: [...state.skills, skill],
           sync: markPending(state.sync, 'pendingSkills', [skill.id], 'upsert'),
@@ -170,13 +180,14 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingSessions', [id], 'delete'),
         })),
 
-      startTimer: (skillId) => set({ activeTimer: { skillId, startedAt: Date.now() } }),
+      startTimer: (skillId, durationMinutes) =>
+        set({ activeTimer: { skillId, startedAt: Date.now(), durationMinutes } }),
 
       stopTimer: () => {
         const timer = get().activeTimer;
         if (!timer) return null;
 
-        const elapsed = Date.now() - timer.startedAt;
+        const elapsed = Math.min(Date.now(), timerEndsAt(timer)) - timer.startedAt;
         if (elapsed < MIN_TIMER_MS) {
           set({ activeTimer: null });
           return null;
@@ -284,6 +295,16 @@ export const useTrackerStore = create<TrackerStore>()(
         const state = persisted as Partial<TrackerState>;
         // v1 predates accounts: everything in it is guest data.
         if (version < 2) state.sync = initialSyncState;
+        // v2 predates habits, icons, daily goals and countdown timers.
+        if (version < 3) {
+          state.skills = (state.skills ?? []).map((skill) => ({
+            ...skill,
+            kind: 'skill',
+            icon: DEFAULT_ICONS.skill,
+            dailyGoalMinutes: DEFAULT_DAILY_GOAL_MINUTES,
+          }));
+          if (state.activeTimer) state.activeTimer.durationMinutes = null;
+        }
         return state as TrackerState;
       },
     },
@@ -291,6 +312,13 @@ export const useTrackerStore = create<TrackerStore>()(
 );
 
 const ids = (rows: readonly { id: string }[]) => rows.map((row) => row.id);
+
+/** When a countdown finishes. Infinity for an open-ended timer. */
+export function timerEndsAt(timer: ActiveTimer): number {
+  return timer.durationMinutes === null
+    ? Infinity
+    : timer.startedAt + timer.durationMinutes * 60_000;
+}
 
 export function hasPendingChanges(sync: SyncState): boolean {
   return Object.keys(sync.pendingSkills).length > 0 || Object.keys(sync.pendingSessions).length > 0;

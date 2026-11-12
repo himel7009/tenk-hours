@@ -72,8 +72,21 @@ const pick = ({ skills, sessions, activeTimer, theme, sync }: ReturnType<typeof 
 });
 const store = () => useTrackerStore.getState();
 const sync = (remote: RemoteStore) => syncOnce(remote, useTrackerStore);
+const skillInput = {
+  name: 'Python',
+  icon: '🐍',
+  color: 'moss',
+  targetHours: 10_000,
+  dailyGoalMinutes: 60,
+} as const;
 const addSkill = (name = 'Python') =>
-  store().addSkill({ name, color: 'moss', targetHours: 10_000 });
+  store().addSkill('skill', {
+    name,
+    icon: '🐍',
+    color: 'moss',
+    targetHours: 10_000,
+    dailyGoalMinutes: 60,
+  });
 const log = (skillId: string, minutes: number) =>
   store().logSession(skillId, { day: '2026-11-11', minutes, note: '' });
 
@@ -162,7 +175,7 @@ describe('two devices', () => {
     });
 
     await phone.use(async () => {
-      store().startTimer(skillId);
+      store().startTimer(skillId, null);
       await sync(remote);
       expect(store()).toMatchObject({ skills: [], sessions: [], activeTimer: null });
     });
@@ -178,8 +191,7 @@ describe('two devices', () => {
     });
     await phone.use(() => sync(remote));
 
-    const rename = (name: string) =>
-      store().updateSkill(skillId, { name, color: 'moss', targetHours: 10_000 });
+    const rename = (name: string) => store().updateSkill(skillId, { ...skillInput, name });
     await laptop.use(async () => {
       rename('Python (laptop)');
       await sync(remote);
@@ -218,7 +230,7 @@ describe('failures and races', () => {
       push: async (batch) => {
         await remote.push(batch);
         // The user renames the skill while the request is in flight.
-        store().updateSkill(skillId, { name: 'Renamed', color: 'moss', targetHours: 10_000 });
+        store().updateSkill(skillId, { ...skillInput, name: 'Renamed' });
       },
     };
     await syncOnce(slowRemote, useTrackerStore);
@@ -236,7 +248,7 @@ describe('failures and races', () => {
     await sync(remote);
 
     store().replaceData({
-      skills: [{ id: 'new', name: 'New', color: 'teal', targetHours: 100, createdAt: 1 }],
+      skills: [{ ...skillInput, id: 'new', kind: 'habit', name: 'New', createdAt: 1 }],
       sessions: [],
     });
     await sync(remote);

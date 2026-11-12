@@ -10,7 +10,8 @@ one-time setup. The free tier is enough.
 2. Open **SQL Editor**, paste the contents of
    [`supabase/migrations/20261111000000_cloud_sync.sql`](../supabase/migrations/20261111000000_cloud_sync.sql)
    and run it. This creates the `skills` and `sessions` tables, the row level
-   security policies and the `delete_account` function.
+   security policies and the `delete_account` function. Then run every later
+   file in `supabase/migrations/` the same way, in filename order.
 3. Optional but recommended: run
    [`supabase/tests/rls_test.sql`](../supabase/tests/rls_test.sql) the same way.
    It checks that one user cannot read or change another user's data, then

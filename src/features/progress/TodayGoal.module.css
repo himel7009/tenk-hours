@@ -1,0 +1,49 @@
+.goal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.ring {
+  flex: none;
+  width: 3.25rem;
+  height: 3.25rem;
+  transform: rotate(-90deg);
+}
+
+.track,
+.fill {
+  fill: none;
+  stroke-width: 5;
+}
+
+.track {
+  stroke: var(--cell-empty);
+}
+
+.fill {
+  stroke: var(--skill);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 300ms ease-out;
+}
+
+.check {
+  fill: none;
+  stroke: var(--skill);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: rotate(90deg);
+  transform-origin: center;
+}
+
+.goal strong {
+  display: block;
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+
+.hint {
+  color: var(--ink-soft);
+}

@@ -1,17 +1,19 @@
 import { formatClock } from '../../domain/format';
+import type { ActiveTimer } from '../../domain/types';
 import { useNow } from '../progress/useNow';
+import { clockMs } from './clockMs';
 
 interface ClockProps {
-  startedAt: number;
+  timer: ActiveTimer;
   className?: string;
 }
 
-/** Ticking elapsed time. Isolated so only this node re-renders each second. */
-export function Clock({ startedAt, className }: ClockProps) {
+/** Ticking clock. Isolated so only this node re-renders each second. */
+export function Clock({ timer, className }: ClockProps) {
   const now = useNow(1000);
   return (
     <span className={`tabular ${className ?? ''}`} role="timer">
-      {formatClock(now - startedAt)}
+      {formatClock(clockMs(timer, now))}
     </span>
   );
 }

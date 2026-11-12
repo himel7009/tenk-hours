@@ -1,7 +1,8 @@
 import { formatDuration } from '../../domain/format';
-import type { Skill } from '../../domain/types';
+import type { Skill, SkillId } from '../../domain/types';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { requestNotificationPermission } from './alerts';
 
 /** Timer actions with the user-facing confirmation each one produces. */
 export function useTimer() {
@@ -19,7 +20,11 @@ export function useTimer() {
   return {
     activeTimer,
     activeSkill,
-    start: startTimer,
+    /** Starts a countdown of the given length, or a stopwatch if null. */
+    start: (skillId: SkillId, durationMinutes: number | null) => {
+      if (durationMinutes !== null) requestNotificationPermission();
+      startTimer(skillId, durationMinutes);
+    },
     stop: () => {
       const saved = stopTimer();
       toast(

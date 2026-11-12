@@ -37,9 +37,10 @@ Optimised for mobile, tablet, and desktop screens with dark and light theme supp
 
 ## ⚡ Features
 
-- **⏱ Flexible Time Tracking**: Built-in stopwatch timer with auto-save, plus manual logging for past practice.
+- **🎯 Skills and Habits**: Track long-term skills towards 10,000 hours and daily habits side by side, each with its own icon and colour.
+- **⏱ Countdown Timer**: Set a timer for a session (25m, 1h, 2h or your own length); it saves itself when it ends. Stopwatch and manual logging are there too.
 - **⬛ 10,000-Hour Visual Grid**: Every single hour completed is reflected visually on your skill field.
-- **🔥 Daily Streaks & Pace**: Real-time streak counter and 30-day average pace tracking.
+- **🔥 Per-Skill Streaks & Daily Goals**: Every skill and habit has its own streak. A day only counts once you reach its daily goal (one hour by default).
 - **🎯 Milestone Progress**: Step-by-step milestones (1h, 10h, 50h, 100h, 250h, 500h, 1,000h, 2,500h, 5,000h, 7,500h, 10,000h).
 - **📅 26-Week Heatmap**: GitHub-style activity calendar for each skill.
 - **🔮 Finish Date Projections**: Automatically estimates when you'll reach your target based on recent consistency.

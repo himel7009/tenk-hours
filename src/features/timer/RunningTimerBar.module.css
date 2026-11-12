@@ -44,3 +44,9 @@
   gap: var(--space-1);
   margin-left: auto;
 }
+
+.left {
+  margin-left: calc(var(--space-2) * -1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

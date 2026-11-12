@@ -10,22 +10,23 @@ const LABEL_HEIGHT = 16;
 
 interface HeatmapProps {
   byDay: ReadonlyMap<DayKey, number>;
+  /** Minutes at which a day counts as complete. */
+  goalMinutes: number;
   today: DayKey;
 }
 
-function levelFor(minutes: number): 0 | 1 | 2 | 3 | 4 {
+/** 0 nothing, 1 below the goal, 3 goal reached, 4 double the goal or more. */
+function levelFor(minutes: number, goalMinutes: number): 0 | 1 | 3 | 4 {
   if (minutes <= 0) return 0;
-  if (minutes < 30) return 1;
-  if (minutes < 60) return 2;
-  if (minutes < 120) return 3;
-  return 4;
+  if (minutes < goalMinutes) return 1;
+  return minutes < goalMinutes * 2 ? 3 : 4;
 }
 
 /** Monday-first index of the weekday, 0 to 6. */
 const weekdayIndex = (day: DayKey) => (fromDayKey(day).getDay() + 6) % 7;
 
 /** The last 26 weeks as a calendar grid, one column per week. */
-export function Heatmap({ byDay, today }: HeatmapProps) {
+export function Heatmap({ byDay, goalMinutes, today }: HeatmapProps) {
   const firstDay = addDays(today, -(weekdayIndex(today) + (WEEKS - 1) * 7));
   const dayCount = (WEEKS - 1) * 7 + weekdayIndex(today) + 1;
   const days = Array.from({ length: dayCount }, (_, index) => addDays(firstDay, index));
@@ -60,7 +61,7 @@ export function Heatmap({ byDay, today }: HeatmapProps) {
             height={CELL}
             rx={2.5}
             className={styles.day}
-            data-level={levelFor(minutes)}
+            data-level={levelFor(minutes, goalMinutes)}
           >
             <title>
               {formatDay(day, today)}: {minutes > 0 ? formatDuration(minutes) : 'nothing logged'}

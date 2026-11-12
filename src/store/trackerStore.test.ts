@@ -2,7 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { resetTrackerStore, useTrackerStore } from './trackerStore';
 
 const store = () => useTrackerStore.getState();
-const newSkill = () => store().addSkill({ name: 'Drawing', color: 'plum', targetHours: 10_000 });
+const newSkill = () =>
+  store().addSkill('skill', {
+    name: 'Drawing',
+    icon: '🎨',
+    color: 'plum',
+    targetHours: 10_000,
+    dailyGoalMinutes: 60,
+  });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -31,7 +38,7 @@ describe('sessions', () => {
   it('deleting a skill removes its sessions and running timer', () => {
     const skillId = newSkill();
     store().logSession(skillId, { day: '2026-03-10', minutes: 45, note: '' });
-    store().startTimer(skillId);
+    store().startTimer(skillId, null);
 
     store().deleteSkill(skillId);
 
@@ -43,7 +50,7 @@ describe('timer', () => {
   it('saves the elapsed time as a session on the day it started', () => {
     const skillId = newSkill();
     vi.setSystemTime(new Date(2026, 2, 10, 23, 30));
-    store().startTimer(skillId);
+    store().startTimer(skillId, null);
     vi.setSystemTime(new Date(2026, 2, 11, 0, 45));
 
     const saved = store().stopTimer();
@@ -53,8 +60,23 @@ describe('timer', () => {
     expect(store().sessions).toHaveLength(1);
   });
 
+  it('saves a countdown as its planned length, however late it is stopped', () => {
+    store().startTimer(newSkill(), 120);
+    // The tab was closed and reopened five hours later.
+    vi.advanceTimersByTime(5 * 60 * 60_000);
+
+    expect(store().stopTimer()).toMatchObject({ minutes: 120, day: '2026-03-10' });
+  });
+
+  it('saves only the time spent when a countdown is stopped early', () => {
+    store().startTimer(newSkill(), 120);
+    vi.advanceTimersByTime(45 * 60_000);
+
+    expect(store().stopTimer()).toMatchObject({ minutes: 45 });
+  });
+
   it('does not save a run shorter than a minute', () => {
-    store().startTimer(newSkill());
+    store().startTimer(newSkill(), null);
     vi.advanceTimersByTime(20_000);
 
     expect(store().stopTimer()).toBeNull();

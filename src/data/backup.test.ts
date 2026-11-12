@@ -5,9 +5,12 @@ import { BackupError, createBackup, parseBackup } from './backup';
 const SKILL_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const skill: Skill = {
   id: SKILL_ID,
+  kind: 'skill',
   name: 'Python',
+  icon: '🐍',
   color: 'moss',
   targetHours: 10_000,
+  dailyGoalMinutes: 60,
   createdAt: 1,
 };
 const session: Session = {
@@ -21,6 +24,16 @@ const session: Session = {
 };
 
 describe('backup', () => {
+  it('fills in defaults for backups made before habits existed', () => {
+    const oldSkill = { id: SKILL_ID, name: 'Python', color: 'moss', targetHours: 10_000 };
+    const json = JSON.stringify({ ...createBackup([], []), version: 1, skills: [oldSkill] });
+    expect(parseBackup(json).skills[0]).toMatchObject({
+      kind: 'skill',
+      icon: '🎯',
+      dailyGoalMinutes: 60,
+    });
+  });
+
   it('round-trips skills and sessions', () => {
     const json = JSON.stringify(createBackup([skill], [session]));
     expect(parseBackup(json)).toEqual({ skills: [skill], sessions: [session] });

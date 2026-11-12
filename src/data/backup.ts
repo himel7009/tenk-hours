@@ -1,7 +1,15 @@
 import { isDayKey } from '../domain/dates';
-import { SKILL_COLORS, type Session, type Skill, type SkillColor } from '../domain/types';
+import {
+  DEFAULT_DAILY_GOAL_MINUTES,
+  DEFAULT_ICONS,
+  SKILL_COLORS,
+  type Session,
+  type Skill,
+  type SkillColor,
+  type TrackerKind,
+} from '../domain/types';
 
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export interface Backup {
   app: 'tenk';
@@ -54,11 +62,18 @@ function parseSkill(value: unknown): Skill {
   ) {
     throw new BackupError('This backup contains a skill that cannot be read.');
   }
+  // Backups from before habits existed have none of the newer fields.
+  const kind: TrackerKind = value.kind === 'habit' ? 'habit' : 'skill';
   return {
     id: value.id,
+    kind,
     name: value.name,
+    icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon : DEFAULT_ICONS[kind],
     color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
     targetHours: value.targetHours,
+    dailyGoalMinutes: isPositive(value.dailyGoalMinutes)
+      ? Math.round(value.dailyGoalMinutes)
+      : DEFAULT_DAILY_GOAL_MINUTES,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

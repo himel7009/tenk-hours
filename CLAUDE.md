@@ -1,6 +1,6 @@
 # Tenk
 
-A 10,000-hours skill tracker. React 19 + TypeScript + Vite, Zustand for state,
+A 10,000-hours skill tracker with daily habits. React 19 + TypeScript + Vite, Zustand for state,
 CSS Modules for styling, Vitest for tests. Deployed to GitHub Pages at
 https://himel7009.github.io/tenk-hours/ by `.github/workflows/deploy.yml` on
 every push to `main`. Optional accounts and sync run on Supabase.
@@ -43,61 +43,27 @@ failure blocks the deploy.
 - Never commit `.env.local`.
 - Access control lives in Postgres policies, not in the client.
 
-## Remaining work for cloud sync
+## Skills and habits
 
-The cloud sync code is written and tested locally but not yet committed or
-live. Work through these in order. Delete this section when all are done.
+A row in `skills` (type `Skill`) is either a skill or a habit, told apart by
+`kind`. Both share sessions, timers, streaks and sync. The name `Skill` is
+historical; do not rename the table or type without a data migration plan.
 
-### Things you (Claude Code) can do now
+- Streaks are per skill or habit, never app-wide. A day counts only when that
+  day's minutes reach the item's `dailyGoalMinutes` (default 60).
+- Timers are countdowns by default (`ActiveTimer.durationMinutes`), saved
+  automatically when they end; `null` means an open-ended stopwatch.
 
-1. Move the updated workflow into place:
-   `mkdir -p .github/workflows && mv deploy-workflow.yml .github/workflows/deploy.yml`
-2. Run `npm install`, then `npm run lint`, `npm test` and `npm run build`. All
-   must pass (43 tests). Fix anything that fails before continuing.
-3. Commit everything on `main` with the message
-   "Add optional cloud sync with Supabase accounts" and push. This is safe
-   before Supabase exists: without the two variables the site builds exactly
-   as before, with no sign-in button.
-4. Check the Actions run succeeds: `gh run watch`.
+## Deploying changes that touch the database
 
-### Things only Himel can do (walk him through them one at a time)
+The live site talks to a real Supabase project with real user data. When a
+change adds a migration, Himel must run the new SQL file in the Supabase SQL
+editor **before** the code is pushed to `main`. If the code goes first, sync
+fails for signed-in users until the migration is applied (their data stays
+safe on the device and syncs afterwards).
 
-These need his logins in a browser. Follow `docs/cloud-setup.md` and ask him
-to confirm each step before moving on. Do not ask him to paste secrets into
-the chat other than the project URL and publishable key.
+## Before opening sign-up to the public
 
-5. Create a Supabase project and run
-   `supabase/migrations/20261111000000_cloud_sync.sql` in the SQL editor, then
-   `supabase/tests/rls_test.sql` (every output line should start with `ok:`).
-6. In Supabase, set the Site URL and Redirect URLs to
-   `https://himel7009.github.io/tenk-hours/` (plus `http://localhost:5173/`).
-7. Create a Google OAuth client (Web application) and enable the Google
-   provider in Supabase with its client ID and secret.
-
-### Once he gives you the project URL and publishable key
-
-8. Write them to `.env.local` (see `.env.example`) for local development.
-9. Set them as GitHub repository variables so the deployed build picks them up:
-   `gh variable set VITE_SUPABASE_URL --body "<url>"` and
-   `gh variable set VITE_SUPABASE_PUBLISHABLE_KEY --body "<key>"`,
-   then re-run the deploy: `gh workflow run deploy.yml`.
-
-### Verify on the live site, with Himel
-
-10. Create an account with email and password, confirm the email, sign in.
-11. Sign in with Google.
-12. Add a skill and log time, then sign in on a second browser or phone and
-    check the same data appears. Edit on one, confirm it reaches the other
-    within a minute.
-13. Request a password reset and set a new password.
-14. Sign out and confirm the device is empty and the data returns on sign-in.
-
-Real Google login and real Supabase emails have not been tested yet; so far
-they were only exercised against a stand-in auth server. If something fails
-here, check the browser console and the Supabase Auth logs first.
-
-### Before opening sign-up to the public
-
-15. Configure a custom SMTP provider in Supabase (the built-in sender allows
-    only a few emails an hour).
-16. Publish the Google OAuth consent screen (it starts in Testing mode).
+- Configure a custom SMTP provider in Supabase (the built-in sender allows
+  only a few emails an hour).
+- Publish the Google OAuth consent screen (it starts in Testing mode).

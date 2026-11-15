@@ -25,6 +25,8 @@ export interface Skill {
   targetHours: number;
   /** Minutes needed in a day for that day to count towards the streak. */
   dailyGoalMinutes: number;
+  /** The domain this skill is grouped under, or null if it stands alone. */
+  domainId: string | null;
   createdAt: number;
 }
 

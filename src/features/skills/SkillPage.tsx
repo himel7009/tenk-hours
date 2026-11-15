@@ -42,6 +42,9 @@ function SkillDetail({ skill }: { skill: Skill }) {
   const sessions = useSkillSessions(skill.id);
   const progress = useSkillProgress(skill);
   const [editing, setEditing] = useState(false);
+  const domain = useTrackerStore((state) =>
+    state.domains.find((candidate) => candidate.id === skill.domainId),
+  );
   const isHabit = skill.kind === 'habit';
 
   const heatmap = (
@@ -65,6 +68,11 @@ function SkillDetail({ skill }: { skill: Skill }) {
             Edit {isHabit ? 'habit' : 'skill'}
           </Button>
         </div>
+        {domain && (
+          <p className={styles.domain}>
+            Part of {domain.icon} {domain.name}
+          </p>
+        )}
         <p className={`tabular ${styles.total}`}>
           {isHabit ? (
             <>

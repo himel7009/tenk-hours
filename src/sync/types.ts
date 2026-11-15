@@ -1,3 +1,4 @@
+import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
 import type { Session, SessionId, Skill, SkillId } from '../domain/types';
 
@@ -21,21 +22,26 @@ export interface SyncState {
    * though its skills and sessions are already up to date.
    */
   libraryCursor: string | null;
+  /** The same for domains, which arrived later still. */
+  domainCursor: string | null;
   /** Counter bumped on every local change while an account owns the data. */
   rev: number;
   pendingSkills: Record<SkillId, PendingChange>;
   pendingSessions: Record<SessionId, PendingChange>;
   pendingLibrary: Record<LibraryItemId, PendingChange>;
+  pendingDomains: Record<DomainId, PendingChange>;
 }
 
 export const initialSyncState: SyncState = {
   ownerId: null,
   cursor: null,
   libraryCursor: null,
+  domainCursor: null,
   rev: 0,
   pendingSkills: {},
   pendingSessions: {},
   pendingLibrary: {},
+  pendingDomains: {},
 };
 
 export interface RemoteRow<T> {
@@ -48,6 +54,7 @@ export interface RemoteChanges {
   skills: RemoteRow<Skill>[];
   sessions: RemoteRow<Session>[];
   library: RemoteRow<LibraryItem>[];
+  domains: RemoteRow<Domain>[];
   /** Cursors to store for the next pull. */
   cursors: SyncCursors;
 }
@@ -55,6 +62,7 @@ export interface RemoteChanges {
 export interface SyncCursors {
   cursor: string | null;
   libraryCursor: string | null;
+  domainCursor: string | null;
 }
 
 export interface PushBatch {
@@ -64,6 +72,8 @@ export interface PushBatch {
   sessionDeletes: SessionId[];
   libraryUpserts: LibraryItem[];
   libraryDeletes: LibraryItemId[];
+  domainUpserts: Domain[];
+  domainDeletes: DomainId[];
 }
 
 /** The revisions a push covered, so only unchanged entries are cleared. */
@@ -71,6 +81,7 @@ export interface PushedRevisions {
   skills: Record<SkillId, number>;
   sessions: Record<SessionId, number>;
   library: Record<LibraryItemId, number>;
+  domains: Record<DomainId, number>;
 }
 
 /**

@@ -1,0 +1,284 @@
+.grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.card {
+  min-width: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.cardTitle {
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.cardFigure {
+  margin-top: var(--space-1);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.cardNote {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* Today: the one card on the ink colour, so the eye lands here first. */
+.todayCard {
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.date {
+  opacity: 0.7;
+  font-size: var(--text-sm);
+}
+
+.headline {
+  margin-top: var(--space-2);
+  font-size: clamp(var(--text-2xl), 4.2vw, var(--text-3xl));
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.goals {
+  margin-top: var(--space-6);
+}
+
+.goalPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.goalPill {
+  width: 2rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--on-ink) 22%, transparent);
+}
+
+.goalPill[data-done='true'] {
+  background: var(--skill);
+}
+
+.todayCard .cardNote {
+  color: inherit;
+  opacity: 0.7;
+}
+
+.todayList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  font-size: var(--text-sm);
+}
+
+.todayList li {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) 4.5rem auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.todayName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todayBar {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--on-ink) 22%, transparent);
+}
+
+.todayBar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--skill);
+}
+
+.todayList .todayMore {
+  display: block;
+  opacity: 0.7;
+}
+
+.totals {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-top: auto;
+  padding-top: var(--space-6);
+}
+
+.totals dt {
+  opacity: 0.7;
+  font-size: var(--text-xs);
+}
+
+.totals dd {
+  margin-top: var(--space-1);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.timeCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.ring {
+  flex: none;
+  width: 6.5rem;
+  height: 6.5rem;
+}
+
+.ringTrack,
+.ringFill {
+  fill: none;
+  stroke-width: 10;
+}
+
+.ringTrack {
+  stroke: var(--cell-empty);
+}
+
+.ringFill {
+  stroke: var(--streak);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 600ms ease-out;
+}
+
+.ringLabel {
+  fill: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 650;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.yearHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.yearHead .cardFigure {
+  margin-top: 0;
+}
+
+.months {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.month {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.monthBar {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 2.75rem;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--cell-empty);
+}
+
+.monthFill {
+  width: 100%;
+  background: var(--cobalt);
+}
+
+.weekCard {
+  grid-column: span 2;
+}
+
+.weekHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  max-height: 11rem;
+}
+
+.barTrack {
+  fill: color-mix(in srgb, var(--cell-empty) 55%, transparent);
+}
+
+.barSegment {
+  fill: var(--skill);
+}
+
+.barLabel {
+  fill: var(--ink-soft);
+  font-size: 11px;
+  text-anchor: middle;
+}
+
+.barLabel[data-today='true'] {
+  fill: var(--ink);
+  font-weight: 700;
+}
+
+@media (max-width: 56rem) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .todayCard {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 36rem) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .weekCard {
+    grid-column: auto;
+  }
+}

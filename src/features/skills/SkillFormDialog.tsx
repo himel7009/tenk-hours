@@ -2,7 +2,8 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
-import { Field, Input } from '../../components/Field';
+import { Field, Input, Select } from '../../components/Field';
+import type { DomainId } from '../../domain/domains';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
   DEFAULT_ICONS,
@@ -26,7 +27,13 @@ const COPY: Record<TrackerKind, { noun: string; add: string; placeholder: string
 
 type SkillFormDialogProps = { onClose: () => void } & (
   | { /** The skill or habit to edit. */ skill: Skill; kind?: never }
-  | { /** What to create. */ kind: TrackerKind; skill?: never }
+  | {
+      /** What to create. */
+      kind: TrackerKind;
+      /** The domain a new skill starts in. */
+      domainId?: DomainId | null;
+      skill?: never;
+    }
 );
 
 export function SkillFormDialog(props: SkillFormDialogProps) {
@@ -39,6 +46,7 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const updateSkill = useTrackerStore((state) => state.updateSkill);
   const deleteSkill = useTrackerStore((state) => state.deleteSkill);
   const skillCount = useTrackerStore((state) => state.skills.length);
+  const domains = useTrackerStore((state) => state.domains);
   const sessionCount = useTrackerStore(
     (state) => state.sessions.filter((session) => session.skillId === skill?.id).length,
   );
@@ -52,6 +60,9 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const [target, setTarget] = useState(String(skill?.targetHours ?? DEFAULT_TARGET_HOURS));
   const [dailyGoal, setDailyGoal] = useState(
     String(skill?.dailyGoalMinutes ?? DEFAULT_DAILY_GOAL_MINUTES),
+  );
+  const [domainId, setDomainId] = useState<DomainId | null>(
+    props.skill ? props.skill.domainId : (props.domainId ?? null),
   );
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -87,7 +98,15 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
       return;
     }
 
-    const input = { name: trimmed, icon, color, targetHours, dailyGoalMinutes };
+    const input = {
+      name: trimmed,
+      icon,
+      color,
+      targetHours,
+      dailyGoalMinutes,
+      // Only skills can sit in a domain.
+      domainId: kind === 'skill' ? domainId : null,
+    };
     if (skill) {
       updateSkill(skill.id, input);
       toast('Changes saved');
@@ -153,6 +172,25 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
             </label>
           ))}
         </fieldset>
+
+        {kind === 'skill' && domains.length > 0 && (
+          <Field label="Domain" hint="Its hours count towards the domain's total.">
+            {(id) => (
+              <Select
+                id={id}
+                value={domainId ?? ''}
+                onChange={(event) => setDomainId(event.target.value || null)}
+              >
+                <option value="">No domain, a skill of its own</option>
+                {domains.map((domain) => (
+                  <option key={domain.id} value={domain.id}>
+                    {domain.icon} {domain.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
 
         <div className={styles.numbers}>
           <Field

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
 import { resetTrackerStore, useTrackerStore } from '../store/trackerStore';
@@ -11,6 +12,7 @@ class FakeRemote implements RemoteStore {
   skills = new Map<string, { row: Skill; deleted: boolean; at: number }>();
   sessions = new Map<string, { row: Session; deleted: boolean; at: number }>();
   library = new Map<string, { row: LibraryItem; deleted: boolean; at: number }>();
+  domains = new Map<string, { row: Domain; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -25,9 +27,11 @@ class FakeRemote implements RemoteStore {
     for (const id of batch.sessionDeletes) this.softDelete(this.sessions, id, at);
     for (const row of batch.libraryUpserts) this.library.set(row.id, { row, deleted: false, at });
     for (const id of batch.libraryDeletes) this.softDelete(this.library, id, at);
+    for (const row of batch.domainUpserts) this.domains.set(row.id, { row, deleted: false, at });
+    for (const id of batch.domainDeletes) this.softDelete(this.domains, id, at);
   }
 
-  async pull({ cursor, libraryCursor }: SyncCursors): Promise<RemoteChanges> {
+  async pull({ cursor, libraryCursor, domainCursor }: SyncCursors): Promise<RemoteChanges> {
     const changed = <T>(
       rows: Map<string, { row: T; deleted: boolean; at: number }>,
       since: string | null,
@@ -38,13 +42,16 @@ class FakeRemote implements RemoteStore {
     const skills = changed(this.skills, cursor);
     const sessions = changed(this.sessions, cursor);
     const library = changed(this.library, libraryCursor);
+    const domains = changed(this.domains, domainCursor);
     return {
       skills,
       sessions,
       library,
+      domains,
       cursors: {
         cursor: newest(cursor, [...skills, ...sessions]),
         libraryCursor: newest(libraryCursor, library),
+        domainCursor: newest(domainCursor, domains),
       },
     };
   }
@@ -83,6 +90,7 @@ const pick = ({
   skills,
   sessions,
   library,
+  domains,
   activeTimer,
   theme,
   sync,
@@ -90,6 +98,7 @@ const pick = ({
   skills,
   sessions,
   library,
+  domains,
   activeTimer,
   theme,
   sync,
@@ -102,6 +111,7 @@ const skillInput = {
   color: 'moss',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  domainId: null,
 } as const;
 const addSkill = (name = 'Python') =>
   store().addSkill('skill', {
@@ -110,6 +120,7 @@ const addSkill = (name = 'Python') =>
     color: 'moss',
     targetHours: 10_000,
     dailyGoalMinutes: 60,
+    domainId: null,
   });
 const log = (skillId: string, minutes: number) =>
   store().logSession(skillId, { day: '2026-11-11', minutes, note: '' });
@@ -275,6 +286,7 @@ describe('failures and races', () => {
       skills: [{ ...skillInput, id: 'new', kind: 'habit', name: 'New', createdAt: 1 }],
       sessions: [],
       library: [],
+      domains: [],
     });
     await sync(remote);
 
@@ -345,10 +357,57 @@ describe('library', () => {
 
     store().adoptAccount('user-1');
     useTrackerStore.setState((state) => ({
-      sync: { ...state.sync, cursor: '999', libraryCursor: null },
+      sync: { ...state.sync, cursor: '999', libraryCursor: null, domainCursor: null },
     }));
     await sync(remote);
 
     expect(store().library).toHaveLength(1);
+  });
+});
+
+describe('domains', () => {
+  const ai = { name: 'AI', icon: '🤖', color: 'cobalt' } as const;
+
+  it('syncs a domain and the skills grouped under it', async () => {
+    const laptop = new Device();
+    const phone = new Device();
+
+    await laptop.use(async () => {
+      const domainId = store().addDomain(ai);
+      store().addSkill('skill', { ...skillInput, name: 'Machine learning', domainId });
+      await sync(remote);
+    });
+
+    await phone.use(async () => {
+      await sync(remote);
+      const [domain] = store().domains;
+      expect(domain?.name).toBe('AI');
+      expect(store().skills[0]?.domainId).toBe(domain?.id);
+    });
+  });
+
+  it('deleting a domain keeps its skills and makes them standalone everywhere', async () => {
+    const laptop = new Device();
+    const phone = new Device();
+
+    await laptop.use(async () => {
+      const domainId = store().addDomain(ai);
+      store().addSkill('skill', { ...skillInput, domainId });
+      await sync(remote);
+    });
+    await phone.use(() => sync(remote));
+
+    await laptop.use(async () => {
+      store().deleteDomain(store().domains[0]!.id);
+      expect(store().skills[0]?.domainId).toBeNull();
+      await sync(remote);
+    });
+
+    await phone.use(async () => {
+      await sync(remote);
+      expect(store().domains).toEqual([]);
+      expect(store().skills).toHaveLength(1);
+      expect(store().skills[0]?.domainId).toBeNull();
+    });
   });
 });

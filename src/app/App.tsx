@@ -2,9 +2,9 @@ import { useEffect } from 'react';
 import { HashRouter, Route, Routes, useNavigate } from 'react-router';
 import { ResetPasswordPage } from '../features/account/ResetPasswordPage';
 import { SignInPage } from '../features/account/SignInPage';
+import { HomePage } from '../features/dashboard/HomePage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
-import { SkillListPage } from '../features/skills/SkillListPage';
 import { SkillPage } from '../features/skills/SkillPage';
 import { useAccountStore } from '../store/accountStore';
 import { useCloudSync } from '../sync/useCloudSync';
@@ -22,7 +22,7 @@ export function App() {
       <PasswordRecoveryRedirect />
       <Routes>
         <Route element={<AppLayout />}>
-          <Route index element={<SkillListPage />} />
+          <Route index element={<HomePage />} />
           <Route path="skills/:skillId" element={<SkillPage />} />
           <Route path="library" element={<LibraryPage />} />
           <Route path="settings" element={<SettingsPage />} />

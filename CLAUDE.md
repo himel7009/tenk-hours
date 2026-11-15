@@ -54,11 +54,30 @@ historical; do not rename the table or type without a data migration plan.
 - Timers are countdowns by default (`ActiveTimer.durationMinutes`), saved
   automatically when they end; `null` means an open-ended stopwatch.
 
+## Domains
+
+A `Domain` (table `domains`) groups skills, for example AI holding machine
+learning and deep learning. A skill has at most one domain (`Skill.domainId`,
+nullable); habits never have one.
+
+- A domain stores no progress. `summarizeDomain` derives its hours (the sum
+  of its skills) and its streak (a day counts when any one of its skills
+  reached that skill's own daily goal).
+- Deleting a domain keeps its skills and sets their `domainId` to null.
+- Push order matters: domains, then skills, then sessions.
+
+## Home dashboard
+
+`features/dashboard/` is the home page: the Today card, day and year progress
+(`domain/timeProgress.ts`), the 7-day chart, then domains, standalone skills
+and habits as cards. All figures come from `summarizeDashboard`.
+
 ## Library
 
 `LibraryItem` (table `library_items`) is a book or course with progress in
 chapters, pages or lessons, a free-text bookmark and notes. It is independent
-of skills and sessions and has its own sync cursor (`sync.libraryCursor`).
+of skills and sessions and has its own sync cursor (`sync.libraryCursor`), as
+domains do (`sync.domainCursor`).
 
 - `url` is the only user-supplied value rendered as a link. It must pass
   `isWebUrl` (http or https only) wherever it enters the app: the form, backup
@@ -70,13 +89,14 @@ of skills and sessions and has its own sync cursor (`sync.libraryCursor`).
 ## Deploying changes that touch the database
 
 The live site talks to a real Supabase project with real user data. When a
-change adds a migration, Himel must run the new SQL file in the Supabase SQL
-editor **before** the code is pushed to `main`. If the code goes first, sync
+change adds a migration, it must be applied to the Supabase project **before**
+the code is pushed to `main`, either in the SQL editor or through the Supabase
+connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All three migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-15.
+All four migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-16.
 
 ## Before opening sign-up to the public
 

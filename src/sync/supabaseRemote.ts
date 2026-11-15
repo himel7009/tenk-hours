@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Domain } from '../domain/domains';
 import {
   isWebUrl,
   LIBRARY_LIMITS,
@@ -30,6 +31,7 @@ interface SkillRow {
   color: SkillColor;
   target_hours: number;
   daily_goal_minutes: number;
+  domain_id: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -64,10 +66,21 @@ interface LibraryRow {
   deleted_at: string | null;
 }
 
-type Table = 'skills' | 'sessions' | 'library_items';
+interface DomainRow {
+  id: string;
+  name: string;
+  icon: string;
+  color: SkillColor;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+type Table = 'skills' | 'sessions' | 'library_items' | 'domains';
 
 const SKILL_COLUMNS =
-  'id,kind,name,icon,color,target_hours,daily_goal_minutes,created_at,updated_at,deleted_at';
+  'id,kind,name,icon,color,target_hours,daily_goal_minutes,domain_id,created_at,updated_at,deleted_at';
+const DOMAIN_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const SESSION_COLUMNS = 'id,skill_id,day,minutes,note,source,created_at,updated_at,deleted_at';
 
 const LIBRARY_COLUMNS =
@@ -88,6 +101,7 @@ function toSkillRow(skill: Skill) {
     color: skill.color,
     target_hours: clamp(skill.targetHours, 1, 100_000),
     daily_goal_minutes: clamp(skill.dailyGoalMinutes, 1, 1440),
+    domain_id: skill.domainId,
     created_at: new Date(skill.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -103,6 +117,30 @@ function toSessionRow(session: Session) {
     source: session.source,
     created_at: new Date(session.createdAt).toISOString(),
     deleted_at: null,
+  };
+}
+
+function toDomainRow(domain: Domain) {
+  return {
+    id: domain.id,
+    name: domain.name.trim().slice(0, 40) || 'Untitled',
+    icon: domain.icon.slice(0, 16) || '🧭',
+    color: domain.color,
+    created_at: new Date(domain.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromDomainRow(row: DomainRow): RemoteRow<Domain> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      color: row.color,
+      createdAt: Date.parse(row.created_at),
+    },
   };
 }
 
@@ -156,6 +194,7 @@ function fromSkillRow(row: SkillRow): RemoteRow<Skill> {
       color: row.color,
       targetHours: row.target_hours,
       dailyGoalMinutes: row.daily_goal_minutes,
+      domainId: row.domain_id,
       createdAt: Date.parse(row.created_at),
     },
   };
@@ -241,16 +280,20 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
 
   return {
     async push(batch: PushBatch) {
-      // Skills first: sessions reference them.
+      // Order matters: skills reference domains, and sessions reference skills.
+      await upsert('domains', batch.domainUpserts.map(toDomainRow));
       await upsert('skills', batch.skillUpserts.map(toSkillRow));
       await upsert('sessions', batch.sessionUpserts.map(toSessionRow));
       await softDelete('sessions', batch.sessionDeletes);
       await softDelete('skills', batch.skillDeletes);
       await upsert('library_items', batch.libraryUpserts.map(toLibraryRow));
       await softDelete('library_items', batch.libraryDeletes);
+      // After the skill upserts above have moved every skill out of them.
+      await softDelete('domains', batch.domainDeletes);
     },
 
-    async pull({ cursor, libraryCursor }: SyncCursors): Promise<RemoteChanges> {
+    async pull({ cursor, libraryCursor, domainCursor }: SyncCursors): Promise<RemoteChanges> {
+      const domainRows = await fetchChanged<DomainRow>('domains', DOMAIN_COLUMNS, domainCursor);
       const skillRows = await fetchChanged<SkillRow>('skills', SKILL_COLUMNS, cursor);
       const sessionRows = await fetchChanged<SessionRow>('sessions', SESSION_COLUMNS, cursor);
       const libraryRows = await fetchChanged<LibraryRow>(
@@ -262,17 +305,22 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       const next: SyncCursors = {
         cursor: advance(cursor, [...skillRows, ...sessionRows]),
         libraryCursor: advance(libraryCursor, libraryRows),
+        domainCursor: advance(domainCursor, domainRows),
       };
       // Nothing newer turned up, so later pulls from here can skip the overlap.
       if (next.cursor !== null && next.cursor === cursor) settled.add(cursor);
       if (next.libraryCursor !== null && next.libraryCursor === libraryCursor) {
         settled.add(libraryCursor);
       }
+      if (next.domainCursor !== null && next.domainCursor === domainCursor) {
+        settled.add(domainCursor);
+      }
 
       return {
         skills: skillRows.map(fromSkillRow),
         sessions: sessionRows.map(fromSessionRow),
         library: libraryRows.map(fromLibraryRow),
+        domains: domainRows.map(fromDomainRow),
         cursors: next,
       };
     },

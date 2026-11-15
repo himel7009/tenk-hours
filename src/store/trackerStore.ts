@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
+import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
 import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
 import type {
@@ -22,7 +23,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 4;
+const STORAGE_VERSION = 5;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -36,7 +37,10 @@ export interface SkillInput {
   color: SkillColor;
   targetHours: number;
   dailyGoalMinutes: number;
+  domainId: DomainId | null;
 }
+
+export type DomainInput = Pick<Domain, 'name' | 'icon' | 'color'>;
 
 /** Everything about a library item that a form can set. */
 export type LibraryInput = Omit<LibraryItem, 'id' | 'createdAt'>;
@@ -51,6 +55,7 @@ interface TrackerState {
   skills: Skill[];
   sessions: Session[];
   library: LibraryItem[];
+  domains: Domain[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   sync: SyncState;
@@ -79,12 +84,17 @@ interface TrackerActions {
   stopTimer: () => Session | null;
   discardTimer: () => void;
 
+  addDomain: (input: DomainInput) => DomainId;
+  updateDomain: (id: DomainId, input: DomainInput) => void;
+  /** Removes the domain. Its skills are kept and become standalone. */
+  deleteDomain: (id: DomainId) => void;
+
   addLibraryItem: (input: LibraryInput) => void;
   updateLibraryItem: (id: LibraryItemId, input: LibraryInput) => void;
   deleteLibraryItem: (id: LibraryItemId) => void;
 
   setTheme: (theme: Theme) => void;
-  replaceData: (data: Pick<TrackerState, 'skills' | 'sessions' | 'library'>) => void;
+  replaceData: (data: Pick<TrackerState, 'skills' | 'sessions' | 'library' | 'domains'>) => void;
 
   /**
    * Ties the local data to a signed-in account. Guest data is kept and queued
@@ -105,12 +115,13 @@ const initialState: TrackerState = {
   skills: [],
   sessions: [],
   library: [],
+  domains: [],
   activeTimer: null,
   theme: 'system',
   sync: initialSyncState,
 };
 
-type PendingKey = 'pendingSkills' | 'pendingSessions' | 'pendingLibrary';
+type PendingKey = 'pendingSkills' | 'pendingSessions' | 'pendingLibrary' | 'pendingDomains';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
@@ -223,6 +234,36 @@ export const useTrackerStore = create<TrackerStore>()(
 
       discardTimer: () => set({ activeTimer: null }),
 
+      addDomain: (input) => {
+        const domain: Domain = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+        set((state) => ({
+          domains: [...state.domains, domain],
+          sync: markPending(state.sync, 'pendingDomains', [domain.id], 'upsert'),
+        }));
+        return domain.id;
+      },
+
+      updateDomain: (id, input) =>
+        set((state) => ({
+          domains: state.domains.map((domain) =>
+            domain.id === id ? { ...domain, ...input } : domain,
+          ),
+          sync: markPending(state.sync, 'pendingDomains', [id], 'upsert'),
+        })),
+
+      deleteDomain: (id) =>
+        set((state) => {
+          const freed = state.skills.filter((skill) => skill.domainId === id).map((s) => s.id);
+          const sync = markPending(state.sync, 'pendingDomains', [id], 'delete');
+          return {
+            domains: state.domains.filter((domain) => domain.id !== id),
+            skills: state.skills.map((skill) =>
+              skill.domainId === id ? { ...skill, domainId: null } : skill,
+            ),
+            sync: markPending(sync, 'pendingSkills', freed, 'upsert'),
+          };
+        }),
+
       addLibraryItem: (input) => {
         const item: LibraryItem = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
         set((state) => ({
@@ -245,7 +286,7 @@ export const useTrackerStore = create<TrackerStore>()(
 
       setTheme: (theme) => set({ theme }),
 
-      replaceData: ({ skills, sessions, library }) =>
+      replaceData: ({ skills, sessions, library, domains }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
           // that was here is deleted remotely, then the backup is uploaded.
@@ -253,10 +294,12 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingSkills', ids(state.skills), 'delete');
           sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'delete');
           sync = markPending(sync, 'pendingLibrary', ids(state.library), 'delete');
+          sync = markPending(sync, 'pendingDomains', ids(state.domains), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
-          return { skills, sessions, library, activeTimer: null, sync };
+          sync = markPending(sync, 'pendingDomains', ids(domains), 'upsert');
+          return { skills, sessions, library, domains, activeTimer: null, sync };
         }),
 
       adoptAccount: (userId) =>
@@ -266,17 +309,25 @@ export const useTrackerStore = create<TrackerStore>()(
 
           const owned: SyncState = { ...initialSyncState, ownerId: userId };
           if (ownerId !== null) {
-            return { skills: [], sessions: [], library: [], activeTimer: null, sync: owned };
+            return {
+              skills: [],
+              sessions: [],
+              library: [],
+              domains: [],
+              activeTimer: null,
+              sync: owned,
+            };
           }
           let sync = markPending(owned, 'pendingSkills', ids(state.skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(state.library), 'upsert');
+          sync = markPending(sync, 'pendingDomains', ids(state.domains), 'upsert');
           return { sync };
         }),
 
       applyRemoteChanges: (changes) =>
         set((state) => {
-          const { pendingSkills, pendingSessions, pendingLibrary } = state.sync;
+          const { pendingSkills, pendingSessions, pendingLibrary, pendingDomains } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
           for (const { row, deleted } of changes.skills) {
@@ -299,10 +350,25 @@ export const useTrackerStore = create<TrackerStore>()(
             else library.set(row.id, row);
           }
 
+          const domains = new Map(state.domains.map((domain) => [domain.id, domain]));
+          for (const { row, deleted } of changes.domains) {
+            if (pendingDomains[row.id]) continue;
+            if (deleted) domains.delete(row.id);
+            else domains.set(row.id, row);
+          }
+
+          // A skill whose domain was deleted on another device stands alone.
+          const ungrouped = [...skills.values()].map((skill) =>
+            skill.domainId !== null && !domains.has(skill.domainId)
+              ? { ...skill, domainId: null }
+              : skill,
+          );
+
           const { activeTimer } = state;
           return {
             library: [...library.values()],
-            skills: [...skills.values()],
+            domains: [...domains.values()],
+            skills: ungrouped,
             // A skill deleted on another device takes its sessions with it.
             sessions: [...sessions.values()].filter((session) => skills.has(session.skillId)),
             activeTimer: activeTimer && skills.has(activeTimer.skillId) ? activeTimer : null,
@@ -317,6 +383,7 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingSkills: withoutAcknowledged(state.sync.pendingSkills, pushed.skills),
             pendingSessions: withoutAcknowledged(state.sync.pendingSessions, pushed.sessions),
             pendingLibrary: withoutAcknowledged(state.sync.pendingLibrary, pushed.library),
+            pendingDomains: withoutAcknowledged(state.sync.pendingDomains, pushed.domains),
           },
         })),
 
@@ -325,10 +392,11 @@ export const useTrackerStore = create<TrackerStore>()(
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
-      partialize: ({ skills, sessions, library, activeTimer, theme, sync }) => ({
+      partialize: ({ skills, sessions, library, domains, activeTimer, theme, sync }) => ({
         skills,
         sessions,
         library,
+        domains,
         activeTimer,
         theme,
         sync,
@@ -357,6 +425,16 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingLibrary: {},
           };
         }
+        // v4 predates domains: every skill starts out standalone.
+        if (version < 5) {
+          state.domains = [];
+          state.skills = (state.skills ?? []).map((skill) => ({ ...skill, domainId: null }));
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            domainCursor: null,
+            pendingDomains: {},
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -373,7 +451,7 @@ export function timerEndsAt(timer: ActiveTimer): number {
 }
 
 export function hasPendingChanges(sync: SyncState): boolean {
-  return [sync.pendingSkills, sync.pendingSessions, sync.pendingLibrary].some(
+  return [sync.pendingSkills, sync.pendingSessions, sync.pendingLibrary, sync.pendingDomains].some(
     (pending) => Object.keys(pending).length > 0,
   );
 }

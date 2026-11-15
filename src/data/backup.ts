@@ -1,4 +1,5 @@
 import { isDayKey } from '../domain/dates';
+import type { Domain } from '../domain/domains';
 import { isWebUrl, UNITS_FOR_KIND, type LibraryItem, type LibraryKind } from '../domain/library';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
@@ -10,7 +11,7 @@ import {
   type TrackerKind,
 } from '../domain/types';
 
-export const BACKUP_VERSION = 3;
+export const BACKUP_VERSION = 4;
 
 export interface Backup {
   app: 'tenk';
@@ -19,9 +20,10 @@ export interface Backup {
   skills: Skill[];
   sessions: Session[];
   library: LibraryItem[];
+  domains: Domain[];
 }
 
-export type BackupData = Pick<Backup, 'skills' | 'sessions' | 'library'>;
+export type BackupData = Pick<Backup, 'skills' | 'sessions' | 'library' | 'domains'>;
 
 export class BackupError extends Error {}
 
@@ -51,12 +53,21 @@ export function parseBackup(json: string): BackupData {
     throw new BackupError('This backup is missing its skills or sessions.');
   }
 
-  const skills = raw.skills.map(parseSkill);
+  // Backups from before domains existed have none, and no skill refers to one.
+  const domains = Array.isArray(raw.domains) ? raw.domains.map(parseDomain) : [];
+  const domainIds = new Set(domains.map((domain) => domain.id));
+  const skills = raw.skills
+    .map(parseSkill)
+    .map((skill) =>
+      skill.domainId !== null && !domainIds.has(skill.domainId)
+        ? { ...skill, domainId: null }
+        : skill,
+    );
   const skillIds = new Set(skills.map((skill) => skill.id));
   const sessions = raw.sessions.map(parseSession).filter((s) => skillIds.has(s.skillId));
   // Backups from before the library existed simply have none.
   const library = Array.isArray(raw.library) ? raw.library.map(parseLibraryItem) : [];
-  return { skills, sessions, library };
+  return { skills, sessions, library, domains };
 }
 
 function parseSkill(value: unknown): Skill {
@@ -80,6 +91,7 @@ function parseSkill(value: unknown): Skill {
     dailyGoalMinutes: isPositive(value.dailyGoalMinutes)
       ? Math.round(value.dailyGoalMinutes)
       : DEFAULT_DAILY_GOAL_MINUTES,
+    domainId: isUuid(value.domainId) ? value.domainId : null,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }
@@ -101,6 +113,19 @@ function parseSession(value: unknown): Session {
     minutes: Math.round(value.minutes),
     note: typeof value.note === 'string' ? value.note : '',
     source: value.source === 'timer' ? 'timer' : 'manual',
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+function parseDomain(value: unknown): Domain {
+  if (!isRecord(value) || !isUuid(value.id) || typeof value.name !== 'string') {
+    throw new BackupError('This backup contains a domain that cannot be read.');
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon : '🧭',
+    color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

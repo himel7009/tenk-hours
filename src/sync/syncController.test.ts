@@ -7,7 +7,8 @@ const EMPTY: RemoteChanges = {
   skills: [],
   sessions: [],
   library: [],
-  cursors: { cursor: null, libraryCursor: null },
+  domains: [],
+  cursors: { cursor: null, libraryCursor: null, domainCursor: null },
 };
 
 function slowRemote() {

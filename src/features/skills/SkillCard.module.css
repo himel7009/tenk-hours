@@ -1,0 +1,92 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--skill) 55%, var(--line));
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  text-decoration: none;
+}
+
+/* The emoji sits on a tile tinted with the tracker's own colour. */
+.icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--skill) 18%, var(--surface));
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.heading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headline {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.bar {
+  grid-column: 1 / -1;
+  height: 8px;
+  margin-top: var(--space-2);
+  border-radius: 999px;
+  background: var(--cell-empty);
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--skill);
+}
+
+.caption {
+  grid-column: 1 / -1;
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+}
+
+.streak {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}

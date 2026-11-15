@@ -8,20 +8,20 @@ import { useToday } from '../progress/useNow';
 import { useSkillProgress } from '../progress/useProgress';
 import { WeekStrip } from '../progress/WeekStrip';
 import { useTimer } from '../timer/useTimer';
-import styles from './SkillRow.module.css';
+import styles from './SkillCard.module.css';
 
-interface SkillRowProps {
+interface SkillCardProps {
   skill: Skill;
 }
 
-interface RowSummary {
+interface CardSummary {
   headline: string;
   fraction: number;
   caption: string;
 }
 
 /** Skills measure the long haul to the next milestone. */
-function summarizeSkill(skill: Skill, progress: Progress): RowSummary {
+function summarizeSkill(skill: Skill, progress: Progress): CardSummary {
   // Against 10,000 hours a bar barely moves, so measure to the next milestone.
   const milestone = progress.nextMilestoneHours ?? skill.targetHours;
   const fraction = Math.min(1, progress.loggedMinutes / (milestone * 60));
@@ -36,7 +36,7 @@ function summarizeSkill(skill: Skill, progress: Progress): RowSummary {
 }
 
 /** Habits measure today against the daily goal. */
-function summarizeHabit(skill: Skill, progress: Progress): RowSummary {
+function summarizeHabit(skill: Skill, progress: Progress): CardSummary {
   const remaining = skill.dailyGoalMinutes - progress.minutesToday;
   return {
     headline: `${formatDuration(progress.minutesToday)} of ${formatDuration(skill.dailyGoalMinutes)} today`,
@@ -45,7 +45,8 @@ function summarizeHabit(skill: Skill, progress: Progress): RowSummary {
   };
 }
 
-export function SkillRow({ skill }: SkillRowProps) {
+/** One skill or habit on the home page: where it stands and a way to start. */
+export function SkillCard({ skill }: SkillCardProps) {
   const today = useToday();
   const progress = useSkillProgress(skill);
   const { activeTimer, start } = useTimer();
@@ -54,28 +55,38 @@ export function SkillRow({ skill }: SkillRowProps) {
     skill.kind === 'habit' ? summarizeHabit(skill, progress) : summarizeSkill(skill, progress);
 
   return (
-    <li className={styles.row} data-color={skill.color}>
-      <span className={styles.icon} aria-hidden="true">
-        {skill.icon}
-      </span>
+    <li className={styles.card} data-color={skill.color}>
       <Link to={`/skills/${skill.id}`} className={styles.main}>
-        <span className={styles.name}>{skill.name}</span>
-        <span className={`tabular ${styles.headline}`}>{headline}</span>
+        <span className={styles.icon} aria-hidden="true">
+          {skill.icon}
+        </span>
+        <span className={styles.heading}>
+          <span className={styles.name}>{skill.name}</span>
+          <span className={`tabular ${styles.headline}`}>{headline}</span>
+        </span>
         <span className={styles.bar} aria-hidden="true">
           <span className={styles.barFill} style={{ width: `${fraction * 100}%` }} />
         </span>
         <span className={`tabular ${styles.caption}`}>{caption}</span>
       </Link>
-      <div className={styles.streak}>
-        <StreakBadge streak={progress.streak} />
-        <WeekStrip progress={progress} today={today} />
+
+      <div className={styles.footer}>
+        <div className={styles.streak}>
+          <StreakBadge streak={progress.streak} />
+          <WeekStrip
+            completedDays={progress.completedDays}
+            activeDays={progress.byDay}
+            today={today}
+          />
+        </div>
+        <Button
+          size="sm"
+          onClick={() => start(skill.id, skill.dailyGoalMinutes)}
+          disabled={Boolean(activeTimer)}
+        >
+          {running ? 'Timer running' : `Start ${formatDuration(skill.dailyGoalMinutes)}`}
+        </Button>
       </div>
-      <Button
-        onClick={() => start(skill.id, skill.dailyGoalMinutes)}
-        disabled={Boolean(activeTimer)}
-      >
-        {running ? 'Timer running' : `Start ${formatDuration(skill.dailyGoalMinutes)}`}
-      </Button>
     </li>
   );
 }

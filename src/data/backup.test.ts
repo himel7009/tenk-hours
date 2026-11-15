@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
 import { BackupError, createBackup, parseBackup } from './backup';
 
+const DOMAIN_ID = '5a1f0c2e-7b3d-4e6f-9a8b-1c2d3e4f5a6b';
 const SKILL_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
 const skill: Skill = {
   id: SKILL_ID,
@@ -12,8 +14,10 @@ const skill: Skill = {
   color: 'moss',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  domainId: DOMAIN_ID,
   createdAt: 1,
 };
+const domain: Domain = { id: DOMAIN_ID, name: 'AI', icon: '🤖', color: 'cobalt', createdAt: 0 };
 const session: Session = {
   id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
   skillId: SKILL_ID,
@@ -40,12 +44,20 @@ const item: LibraryItem = {
 };
 
 describe('backup', () => {
+  it('makes a skill standalone when its domain is not in the backup', () => {
+    const json = JSON.stringify(
+      createBackup({ skills: [skill], sessions: [], library: [], domains: [] }),
+    );
+    expect(parseBackup(json).skills[0]?.domainId).toBeNull();
+  });
+
   it('drops a link that is not a web address', () => {
     const json = JSON.stringify(
       createBackup({
         skills: [],
         sessions: [],
         library: [{ ...item, url: 'javascript:alert(1)' }],
+        domains: [],
       }),
     );
     expect(parseBackup(json).library[0]?.url).toBe('');
@@ -54,7 +66,7 @@ describe('backup', () => {
   it('fills in defaults for backups made before habits existed', () => {
     const oldSkill = { id: SKILL_ID, name: 'Python', color: 'moss', targetHours: 10_000 };
     const json = JSON.stringify({
-      ...createBackup({ skills: [], sessions: [], library: [] }),
+      ...createBackup({ skills: [], sessions: [], library: [], domains: [] }),
       version: 1,
       skills: [oldSkill],
     });
@@ -67,9 +79,14 @@ describe('backup', () => {
 
   it('round-trips skills and sessions', () => {
     const json = JSON.stringify(
-      createBackup({ skills: [skill], sessions: [session], library: [item] }),
+      createBackup({ skills: [skill], sessions: [session], library: [item], domains: [domain] }),
     );
-    expect(parseBackup(json)).toEqual({ skills: [skill], sessions: [session], library: [item] });
+    expect(parseBackup(json)).toEqual({
+      skills: [skill],
+      sessions: [session],
+      library: [item],
+      domains: [domain],
+    });
   });
 
   it('drops sessions whose skill is missing', () => {
@@ -78,6 +95,7 @@ describe('backup', () => {
         skills: [skill],
         sessions: [{ ...session, skillId: '00000000-0000-4000-8000-000000000000' }],
         library: [],
+        domains: [],
       }),
     );
     expect(parseBackup(json).sessions).toEqual([]);
@@ -93,6 +111,7 @@ describe('backup', () => {
           skills: [skill],
           sessions: [{ ...session, day: '2026-02-31' }],
           library: [],
+          domains: [],
         }),
       }),
       'session that cannot be read',

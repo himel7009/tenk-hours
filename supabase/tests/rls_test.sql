@@ -85,6 +85,16 @@ select pg_temp.expect_error(
   $$delete from public.library_items$$,
   'library hard deletes are not granted');
 
+insert into public.domains (id, name, color)
+  values ('40000000-0000-0000-0000-000000000001', 'AI', 'cobalt');
+update public.skills set domain_id = '40000000-0000-0000-0000-000000000001'
+  where id = '10000000-0000-0000-0000-000000000001';
+select pg_temp.expect_count(
+  'select 1 from public.skills where domain_id is not null', 1, 'A groups a skill under their domain');
+select pg_temp.expect_error(
+  $$delete from public.domains$$,
+  'domain hard deletes are not granted');
+
 -- User B sees nothing of A's and cannot change or reference it.
 select pg_temp.sign_in('00000000-0000-0000-0000-00000000000b');
 select pg_temp.expect_count('select 1 from public.skills', 0, 'B cannot read A''s skills');
@@ -110,10 +120,19 @@ select pg_temp.expect_error(
     on conflict (id) do update set title = excluded.title$$,
   'B cannot upsert over A''s library item id');
 
+select pg_temp.expect_count('select 1 from public.domains', 0, 'B cannot read A''s domains');
+select pg_temp.expect_affected(
+  $$update public.domains set name = 'hacked'$$, 0, 'B cannot update A''s domain');
+select pg_temp.expect_error(
+  $$insert into public.skills (id, name, color, target_hours, domain_id)
+    values ('10000000-0000-0000-0000-000000000005', 'x', 'moss', 1, '40000000-0000-0000-0000-000000000001')$$,
+  'B cannot put a skill into A''s domain');
+
 -- Signed-out visitors have no access at all.
 select set_config('role', 'anon', true), set_config('request.jwt.claims', '', true);
 select pg_temp.expect_error($$select 1 from public.skills$$, 'anon cannot read skills');
 select pg_temp.expect_error($$select 1 from public.library_items$$, 'anon cannot read the library');
+select pg_temp.expect_error($$select 1 from public.domains$$, 'anon cannot read domains');
 select pg_temp.expect_error($$select public.delete_account()$$, 'anon cannot call delete_account');
 
 -- Deleting an account removes only that user's data.
@@ -128,5 +147,6 @@ select public.delete_account();
 reset role;
 select pg_temp.expect_count('select 1 from public.skills', 0, 'A''s data is removed with the account');
 select pg_temp.expect_count('select 1 from public.library_items', 0, 'A''s library is removed with the account');
+select pg_temp.expect_count('select 1 from public.domains', 0, 'A''s domains are removed with the account');
 
 rollback;

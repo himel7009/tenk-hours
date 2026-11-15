@@ -9,6 +9,7 @@ const newSkill = () =>
     color: 'plum',
     targetHours: 10_000,
     dailyGoalMinutes: 60,
+    domainId: null,
   });
 
 beforeEach(() => {

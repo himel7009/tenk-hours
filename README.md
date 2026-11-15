@@ -38,6 +38,9 @@ Optimised for mobile, tablet, and desktop screens with dark and light theme supp
 ## ⚡ Features
 
 - **🎯 Skills and Habits**: Track long-term skills towards 10,000 hours and daily habits side by side, each with its own icon and colour.
+- **🧭 Domains**: Group related skills under a field, such as AI holding machine learning and deep learning. The domain shows the combined hours and keeps its own streak.
+- **📅 Day and Year Progress**: See how much of today and of the year has passed and how much is left.
+- **📈 Dashboard**: Today's time against each daily goal and a 7-day chart split by skill.
 - **📚 Library**: Keep the books you are reading and the courses you are taking, with chapter or lesson progress, a bookmark of where you are, and your own notes.
 - **⏱ Countdown Timer**: Set a timer for a session (25m, 1h, 2h or your own length); it saves itself when it ends. Stopwatch and manual logging are there too.
 - **⬛ 10,000-Hour Visual Grid**: Every single hour completed is reflected visually on your skill field.
@@ -93,7 +96,7 @@ src/
   components/ Shared UI primitives (Button, Dialog, Field, Toast)
   data/       Backup export/import schema validation
   domain/     Pure business logic: dates, streaks, stats, milestones, formatting
-  features/   Feature modules: skills, sessions, timer, progress, library, settings
+  features/   Feature modules: dashboard, domains, skills, sessions, timer, progress, library, settings
   store/      Zustand stores (trackerStore persisted in localStorage)
   styles/     CSS design tokens and global styles
   sync/       Supabase client, auth, and the sync engine

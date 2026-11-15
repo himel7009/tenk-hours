@@ -1,0 +1,127 @@
+/* A domain is a tinted panel in its own colour holding its skills' cards. */
+.panel {
+  padding: var(--space-5);
+  border: 1px solid color-mix(in srgb, var(--skill) 35%, var(--line));
+  border-radius: calc(var(--radius-panel) + 4px);
+  background: color-mix(in srgb, var(--skill) 7%, var(--bg));
+}
+
+.panel + .panel {
+  margin-top: var(--space-4);
+}
+
+.header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 14px;
+  background: var(--skill);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.name {
+  overflow: hidden;
+  font-size: var(--text-xl);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.total {
+  margin-top: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.total strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.streak {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.shares {
+  margin-top: var(--space-4);
+}
+
+.shareBar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+}
+
+.shareSegment {
+  min-width: 4px;
+  background: var(--skill);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--skill);
+}
+
+.skills {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.empty {
+  margin-top: var(--space-4);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 48rem) {
+  .header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .streak {
+    flex-direction: row;
+    align-items: center;
+    grid-column: 1 / -1;
+    gap: var(--space-3);
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+  }
+}

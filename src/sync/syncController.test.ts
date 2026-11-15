@@ -3,6 +3,13 @@ import { resetTrackerStore, useTrackerStore } from '../store/trackerStore';
 import { createSyncController } from './syncController';
 import type { RemoteChanges, RemoteStore } from './types';
 
+const EMPTY: RemoteChanges = {
+  skills: [],
+  sessions: [],
+  library: [],
+  cursors: { cursor: null, libraryCursor: null },
+};
+
 function slowRemote() {
   const releases: (() => void)[] = [];
   const remote: RemoteStore = {
@@ -10,7 +17,7 @@ function slowRemote() {
     pull: vi.fn<RemoteStore['pull']>(
       () =>
         new Promise<RemoteChanges>((resolve) => {
-          releases.push(() => resolve({ skills: [], sessions: [], cursor: null }));
+          releases.push(() => resolve(EMPTY));
         }),
     ),
   };
@@ -43,7 +50,7 @@ describe('sync controller', () => {
     const pull = vi
       .fn<RemoteStore['pull']>()
       .mockRejectedValueOnce(new Error('boom'))
-      .mockResolvedValue({ skills: [], sessions: [], cursor: null });
+      .mockResolvedValue(EMPTY);
     const phases: string[] = [];
     const controller = createSyncController({ push: async () => {}, pull }, useTrackerStore, (p) =>
       phases.push(p),

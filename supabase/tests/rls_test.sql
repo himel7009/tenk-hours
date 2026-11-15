@@ -74,6 +74,17 @@ select pg_temp.expect_error(
   $$delete from public.skills$$,
   'hard deletes are not granted');
 
+insert into public.library_items (id, kind, title, unit, url)
+  values ('30000000-0000-0000-0000-000000000001', 'book', 'Deep Learning', 'chapter', 'https://example.com/book');
+select pg_temp.expect_count('select 1 from public.library_items', 1, 'A sees their library item');
+select pg_temp.expect_error(
+  $$insert into public.library_items (id, kind, title, unit, url)
+    values ('30000000-0000-0000-0000-000000000009', 'book', 'x', 'chapter', 'javascript:alert(1)')$$,
+  'library links must be web links');
+select pg_temp.expect_error(
+  $$delete from public.library_items$$,
+  'library hard deletes are not granted');
+
 -- User B sees nothing of A's and cannot change or reference it.
 select pg_temp.sign_in('00000000-0000-0000-0000-00000000000b');
 select pg_temp.expect_count('select 1 from public.skills', 0, 'B cannot read A''s skills');
@@ -90,9 +101,19 @@ select pg_temp.expect_error(
     values ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', '2026-11-11', 30, 'manual')$$,
   'B cannot log a session against A''s skill');
 
+select pg_temp.expect_count('select 1 from public.library_items', 0, 'B cannot read A''s library');
+select pg_temp.expect_affected(
+  $$update public.library_items set notes = 'hacked'$$, 0, 'B cannot update A''s library item');
+select pg_temp.expect_error(
+  $$insert into public.library_items (id, kind, title, unit)
+    values ('30000000-0000-0000-0000-000000000001', 'book', 'taken', 'chapter')
+    on conflict (id) do update set title = excluded.title$$,
+  'B cannot upsert over A''s library item id');
+
 -- Signed-out visitors have no access at all.
 select set_config('role', 'anon', true), set_config('request.jwt.claims', '', true);
 select pg_temp.expect_error($$select 1 from public.skills$$, 'anon cannot read skills');
+select pg_temp.expect_error($$select 1 from public.library_items$$, 'anon cannot read the library');
 select pg_temp.expect_error($$select public.delete_account()$$, 'anon cannot call delete_account');
 
 -- Deleting an account removes only that user's data.
@@ -106,5 +127,6 @@ select pg_temp.sign_in('00000000-0000-0000-0000-00000000000a');
 select public.delete_account();
 reset role;
 select pg_temp.expect_count('select 1 from public.skills', 0, 'A''s data is removed with the account');
+select pg_temp.expect_count('select 1 from public.library_items', 0, 'A''s library is removed with the account');
 
 rollback;

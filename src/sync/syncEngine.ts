@@ -1,3 +1,4 @@
+import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
 import type { PushBatch, PushedRevisions, RemoteChanges, RemoteStore, SyncState } from './types';
 
@@ -6,6 +7,7 @@ export interface SyncableStore {
   getState(): {
     skills: Skill[];
     sessions: Session[];
+    library: LibraryItem[];
     sync: SyncState;
     acknowledgePush(pushed: PushedRevisions): void;
     applyRemoteChanges(changes: RemoteChanges): void;
@@ -18,16 +20,24 @@ interface PlannedPush {
 }
 
 /** Turns the pending entries into the rows and ids to send. */
-export function planPush(skills: Skill[], sessions: Session[], sync: SyncState): PlannedPush {
+export function planPush(
+  skills: Skill[],
+  sessions: Session[],
+  library: LibraryItem[],
+  sync: SyncState,
+): PlannedPush {
   const skillsById = new Map(skills.map((skill) => [skill.id, skill]));
   const sessionsById = new Map(sessions.map((session) => [session.id, session]));
+  const libraryById = new Map(library.map((item) => [item.id, item]));
   const batch: PushBatch = {
     skillUpserts: [],
     sessionUpserts: [],
     skillDeletes: [],
     sessionDeletes: [],
+    libraryUpserts: [],
+    libraryDeletes: [],
   };
-  const revisions: PushedRevisions = { skills: {}, sessions: {} };
+  const revisions: PushedRevisions = { skills: {}, sessions: {}, library: {} };
 
   for (const [id, { op, rev }] of Object.entries(sync.pendingSkills)) {
     revisions.skills[id] = rev;
@@ -44,6 +54,13 @@ export function planPush(skills: Skill[], sessions: Session[], sync: SyncState):
     else if (session && skillsById.has(session.skillId)) batch.sessionUpserts.push(session);
   }
 
+  for (const [id, { op, rev }] of Object.entries(sync.pendingLibrary)) {
+    revisions.library[id] = rev;
+    const item = libraryById.get(id);
+    if (op === 'delete') batch.libraryDeletes.push(id);
+    else if (item) batch.libraryUpserts.push(item);
+  }
+
   return { batch, revisions };
 }
 
@@ -57,12 +74,13 @@ const isEmpty = (batch: PushBatch) => Object.values(batch).every((list) => list.
  * following pull brings every device to that same state.
  */
 export async function syncOnce(remote: RemoteStore, store: SyncableStore): Promise<void> {
-  const { skills, sessions, sync } = store.getState();
-  const { batch, revisions } = planPush(skills, sessions, sync);
+  const { skills, sessions, library, sync } = store.getState();
+  const { batch, revisions } = planPush(skills, sessions, library, sync);
 
   if (!isEmpty(batch)) await remote.push(batch);
   store.getState().acknowledgePush(revisions);
 
-  const changes = await remote.pull(store.getState().sync.cursor);
+  const { cursor, libraryCursor } = store.getState().sync;
+  const changes = await remote.pull({ cursor, libraryCursor });
   store.getState().applyRemoteChanges(changes);
 }

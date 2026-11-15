@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
 import { BackupError, createBackup, parseBackup } from './backup';
 
@@ -23,10 +24,40 @@ const session: Session = {
   createdAt: 2,
 };
 
+const item: LibraryItem = {
+  id: '9b2c1f6e-1d3a-4f5b-8c7d-2e4f6a8b0c1d',
+  kind: 'course',
+  title: 'Neural Networks: Zero to Hero',
+  author: 'Andrej Karpathy',
+  url: 'https://www.youtube.com/playlist?list=example',
+  unit: 'lesson',
+  totalUnits: 8,
+  doneUnits: 3,
+  position: 'Video 4 at 12:30',
+  notes: 'Redo the backprop exercise',
+  status: 'active',
+  createdAt: 3,
+};
+
 describe('backup', () => {
+  it('drops a link that is not a web address', () => {
+    const json = JSON.stringify(
+      createBackup({
+        skills: [],
+        sessions: [],
+        library: [{ ...item, url: 'javascript:alert(1)' }],
+      }),
+    );
+    expect(parseBackup(json).library[0]?.url).toBe('');
+  });
+
   it('fills in defaults for backups made before habits existed', () => {
     const oldSkill = { id: SKILL_ID, name: 'Python', color: 'moss', targetHours: 10_000 };
-    const json = JSON.stringify({ ...createBackup([], []), version: 1, skills: [oldSkill] });
+    const json = JSON.stringify({
+      ...createBackup({ skills: [], sessions: [], library: [] }),
+      version: 1,
+      skills: [oldSkill],
+    });
     expect(parseBackup(json).skills[0]).toMatchObject({
       kind: 'skill',
       icon: '🎯',
@@ -35,13 +66,19 @@ describe('backup', () => {
   });
 
   it('round-trips skills and sessions', () => {
-    const json = JSON.stringify(createBackup([skill], [session]));
-    expect(parseBackup(json)).toEqual({ skills: [skill], sessions: [session] });
+    const json = JSON.stringify(
+      createBackup({ skills: [skill], sessions: [session], library: [item] }),
+    );
+    expect(parseBackup(json)).toEqual({ skills: [skill], sessions: [session], library: [item] });
   });
 
   it('drops sessions whose skill is missing', () => {
     const json = JSON.stringify(
-      createBackup([skill], [{ ...session, skillId: '00000000-0000-4000-8000-000000000000' }]),
+      createBackup({
+        skills: [skill],
+        sessions: [{ ...session, skillId: '00000000-0000-4000-8000-000000000000' }],
+        library: [],
+      }),
     );
     expect(parseBackup(json).sessions).toEqual([]);
   });
@@ -51,7 +88,13 @@ describe('backup', () => {
     [JSON.stringify({ app: 'other' }), 'not a Tenk backup'],
     [JSON.stringify({ app: 'tenk', version: 99, skills: [], sessions: [] }), 'newer version'],
     [
-      JSON.stringify({ ...createBackup([skill], [{ ...session, day: '2026-02-31' }]) }),
+      JSON.stringify({
+        ...createBackup({
+          skills: [skill],
+          sessions: [{ ...session, day: '2026-02-31' }],
+          library: [],
+        }),
+      }),
       'session that cannot be read',
     ],
   ])('rejects bad input: %#', (json, message) => {

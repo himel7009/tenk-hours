@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { HashRouter, Route, Routes, useNavigate } from 'react-router';
 import { ResetPasswordPage } from '../features/account/ResetPasswordPage';
 import { SignInPage } from '../features/account/SignInPage';
+import { LibraryPage } from '../features/library/LibraryPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { SkillListPage } from '../features/skills/SkillListPage';
 import { SkillPage } from '../features/skills/SkillPage';
@@ -23,6 +24,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route index element={<SkillListPage />} />
           <Route path="skills/:skillId" element={<SkillPage />} />
+          <Route path="library" element={<LibraryPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="sign-in" element={<SignInPage />} />
           <Route path="reset-password" element={<ResetPasswordPage />} />

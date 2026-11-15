@@ -26,3 +26,9 @@
 .input:hover {
   border-color: var(--ink-soft);
 }
+
+.textarea {
+  min-height: 6rem;
+  line-height: 1.45;
+  resize: vertical;
+}

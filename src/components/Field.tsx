@@ -1,4 +1,10 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
 import styles from './Field.module.css';
 
 interface FieldProps {
@@ -22,4 +28,12 @@ export function Field({ label, hint, children }: FieldProps) {
 
 export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={styles.input} {...props} />;
+}
+
+export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={`${styles.input} ${styles.textarea}`} {...props} />;
+}
+
+export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select className={styles.input} {...props} />;
 }

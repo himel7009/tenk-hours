@@ -54,6 +54,19 @@ historical; do not rename the table or type without a data migration plan.
 - Timers are countdowns by default (`ActiveTimer.durationMinutes`), saved
   automatically when they end; `null` means an open-ended stopwatch.
 
+## Library
+
+`LibraryItem` (table `library_items`) is a book or course with progress in
+chapters, pages or lessons, a free-text bookmark and notes. It is independent
+of skills and sessions and has its own sync cursor (`sync.libraryCursor`).
+
+- `url` is the only user-supplied value rendered as a link. It must pass
+  `isWebUrl` (http or https only) wherever it enters the app: the form, backup
+  import and rows pulled from the server. Keep `rel="noopener noreferrer"`.
+- Adding another synced table means: a migration with RLS and a test case, a
+  pending map and cursor in `SyncState`, entries in `PushBatch` and
+  `RemoteChanges`, and a storage `migrate` step.
+
 ## Deploying changes that touch the database
 
 The live site talks to a real Supabase project with real user data. When a
@@ -61,6 +74,9 @@ change adds a migration, Himel must run the new SQL file in the Supabase SQL
 editor **before** the code is pushed to `main`. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
+
+Pending: `supabase/migrations/20261115000000_library.sql` must be applied
+before the library release is pushed. Remove this line once done.
 
 ## Before opening sign-up to the public
 

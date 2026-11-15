@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
 import { resetTrackerStore, useTrackerStore } from '../store/trackerStore';
 import { syncOnce } from './syncEngine';
-import type { PushBatch, RemoteChanges, RemoteStore } from './types';
+import type { PushBatch, RemoteChanges, RemoteStore, SyncCursors } from './types';
 
 /** In-memory server with the same soft-delete and cursor behaviour. */
 class FakeRemote implements RemoteStore {
   private clock = 0;
   skills = new Map<string, { row: Skill; deleted: boolean; at: number }>();
   sessions = new Map<string, { row: Session; deleted: boolean; at: number }>();
+  library = new Map<string, { row: LibraryItem; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -21,16 +23,30 @@ class FakeRemote implements RemoteStore {
     for (const row of batch.sessionUpserts) this.sessions.set(row.id, { row, deleted: false, at });
     for (const id of batch.skillDeletes) this.softDelete(this.skills, id, at);
     for (const id of batch.sessionDeletes) this.softDelete(this.sessions, id, at);
+    for (const row of batch.libraryUpserts) this.library.set(row.id, { row, deleted: false, at });
+    for (const id of batch.libraryDeletes) this.softDelete(this.library, id, at);
   }
 
-  async pull(cursor: string | null): Promise<RemoteChanges> {
-    const since = cursor === null ? 0 : Number(cursor);
-    const changed = <T>(rows: Map<string, { row: T; deleted: boolean; at: number }>) =>
-      [...rows.values()].filter((entry) => entry.at > since);
-    const skills = changed(this.skills);
-    const sessions = changed(this.sessions);
-    const newest = Math.max(since, ...[...skills, ...sessions].map((entry) => entry.at));
-    return { skills, sessions, cursor: newest > since ? String(newest) : null };
+  async pull({ cursor, libraryCursor }: SyncCursors): Promise<RemoteChanges> {
+    const changed = <T>(
+      rows: Map<string, { row: T; deleted: boolean; at: number }>,
+      since: string | null,
+    ) => [...rows.values()].filter((entry) => entry.at > Number(since ?? 0));
+    const newest = (since: string | null, entries: { at: number }[]) =>
+      entries.length === 0 ? since : String(Math.max(...entries.map((entry) => entry.at)));
+
+    const skills = changed(this.skills, cursor);
+    const sessions = changed(this.sessions, cursor);
+    const library = changed(this.library, libraryCursor);
+    return {
+      skills,
+      sessions,
+      library,
+      cursors: {
+        cursor: newest(cursor, [...skills, ...sessions]),
+        libraryCursor: newest(libraryCursor, library),
+      },
+    };
   }
 
   private softDelete<T>(
@@ -63,9 +79,17 @@ class Device {
   }
 }
 
-const pick = ({ skills, sessions, activeTimer, theme, sync }: ReturnType<typeof store>) => ({
+const pick = ({
   skills,
   sessions,
+  library,
+  activeTimer,
+  theme,
+  sync,
+}: ReturnType<typeof store>) => ({
+  skills,
+  sessions,
+  library,
   activeTimer,
   theme,
   sync,
@@ -226,7 +250,7 @@ describe('failures and races', () => {
     const skillId = addSkill();
 
     const slowRemote: RemoteStore = {
-      pull: (cursor) => remote.pull(cursor),
+      pull: (cursors) => remote.pull(cursors),
       push: async (batch) => {
         await remote.push(batch);
         // The user renames the skill while the request is in flight.
@@ -250,10 +274,81 @@ describe('failures and races', () => {
     store().replaceData({
       skills: [{ ...skillInput, id: 'new', kind: 'habit', name: 'New', createdAt: 1 }],
       sessions: [],
+      library: [],
     });
     await sync(remote);
 
     expect(remote.skills.get(oldId)?.deleted).toBe(true);
     expect(remote.skills.get('new')?.deleted).toBe(false);
+  });
+});
+
+describe('library', () => {
+  const book = {
+    kind: 'book',
+    title: 'Deep Learning',
+    author: '',
+    url: '',
+    unit: 'chapter',
+    totalUnits: 20,
+    doneUnits: 4,
+    position: 'Section 5.2',
+    notes: '',
+    status: 'active',
+  } as const;
+
+  it('syncs books and courses between devices, including edits and deletes', async () => {
+    const laptop = new Device();
+    const phone = new Device();
+
+    await laptop.use(async () => {
+      store().addLibraryItem(book);
+      await sync(remote);
+    });
+
+    const id = await phone.use(async () => {
+      await sync(remote);
+      const [item] = store().library;
+      expect(item).toMatchObject({ title: 'Deep Learning', doneUnits: 4 });
+      store().updateLibraryItem(item!.id, { ...book, doneUnits: 5, position: 'Section 6.1' });
+      await sync(remote);
+      return item!.id;
+    });
+
+    await laptop.use(async () => {
+      await sync(remote);
+      expect(store().library[0]).toMatchObject({ doneUnits: 5, position: 'Section 6.1' });
+      store().deleteLibraryItem(id);
+      await sync(remote);
+    });
+
+    await phone.use(async () => {
+      await sync(remote);
+      expect(store().library).toEqual([]);
+    });
+  });
+
+  it('uploads a guest library on sign-in', async () => {
+    store().addLibraryItem(book);
+    store().adoptAccount('user-1');
+    await sync(remote);
+    expect(remote.library.size).toBe(1);
+  });
+
+  it('pulls the whole library on a device whose other data was already synced', async () => {
+    // Another device added a book before this one learned about the library.
+    await new Device().use(async () => {
+      addSkill();
+      store().addLibraryItem(book);
+      await sync(remote);
+    });
+
+    store().adoptAccount('user-1');
+    useTrackerStore.setState((state) => ({
+      sync: { ...state.sync, cursor: '999', libraryCursor: null },
+    }));
+    await sync(remote);
+
+    expect(store().library).toHaveLength(1);
   });
 });

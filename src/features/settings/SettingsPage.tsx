@@ -26,8 +26,9 @@ export function SettingsPage() {
   const [importError, setImportError] = useState<string | null>(null);
 
   const handleExport = () => {
-    const { skills, sessions } = useTrackerStore.getState();
-    const blob = new Blob([JSON.stringify(createBackup(skills, sessions), null, 2)], {
+    const { skills, sessions, library } = useTrackerStore.getState();
+    const backup = createBackup({ skills, sessions, library });
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',
     });
     const url = URL.createObjectURL(blob);
@@ -47,7 +48,7 @@ export function SettingsPage() {
     try {
       const data = parseBackup(await file.text());
       const confirmed = window.confirm(
-        `Replace everything in Tenk${signedIn ? ', on all your devices,' : ''} with this backup (${data.skills.length} skills, ${data.sessions.length} sessions)?`,
+        `Replace everything in Tenk${signedIn ? ', on all your devices,' : ''} with this backup (${data.skills.length} skills and habits, ${data.sessions.length} sessions, ${data.library.length} books and courses)?`,
       );
       if (!confirmed) return;
       replaceData(data);

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
+import type { LibraryItem, LibraryItemId } from '../domain/library';
 import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
 import type {
   ActiveTimer,
@@ -21,7 +22,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 3;
+const STORAGE_VERSION = 4;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -37,6 +38,9 @@ export interface SkillInput {
   dailyGoalMinutes: number;
 }
 
+/** Everything about a library item that a form can set. */
+export type LibraryInput = Omit<LibraryItem, 'id' | 'createdAt'>;
+
 export interface SessionInput {
   day: DayKey;
   minutes: number;
@@ -46,6 +50,7 @@ export interface SessionInput {
 interface TrackerState {
   skills: Skill[];
   sessions: Session[];
+  library: LibraryItem[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   sync: SyncState;
@@ -74,8 +79,12 @@ interface TrackerActions {
   stopTimer: () => Session | null;
   discardTimer: () => void;
 
+  addLibraryItem: (input: LibraryInput) => void;
+  updateLibraryItem: (id: LibraryItemId, input: LibraryInput) => void;
+  deleteLibraryItem: (id: LibraryItemId) => void;
+
   setTheme: (theme: Theme) => void;
-  replaceData: (data: Pick<TrackerState, 'skills' | 'sessions'>) => void;
+  replaceData: (data: Pick<TrackerState, 'skills' | 'sessions' | 'library'>) => void;
 
   /**
    * Ties the local data to a signed-in account. Guest data is kept and queued
@@ -95,12 +104,13 @@ export type TrackerStore = TrackerState & TrackerActions;
 const initialState: TrackerState = {
   skills: [],
   sessions: [],
+  library: [],
   activeTimer: null,
   theme: 'system',
   sync: initialSyncState,
 };
 
-type PendingKey = 'pendingSkills' | 'pendingSessions';
+type PendingKey = 'pendingSkills' | 'pendingSessions' | 'pendingLibrary';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
@@ -213,18 +223,40 @@ export const useTrackerStore = create<TrackerStore>()(
 
       discardTimer: () => set({ activeTimer: null }),
 
+      addLibraryItem: (input) => {
+        const item: LibraryItem = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+        set((state) => ({
+          library: [...state.library, item],
+          sync: markPending(state.sync, 'pendingLibrary', [item.id], 'upsert'),
+        }));
+      },
+
+      updateLibraryItem: (id, input) =>
+        set((state) => ({
+          library: state.library.map((item) => (item.id === id ? { ...item, ...input } : item)),
+          sync: markPending(state.sync, 'pendingLibrary', [id], 'upsert'),
+        })),
+
+      deleteLibraryItem: (id) =>
+        set((state) => ({
+          library: state.library.filter((item) => item.id !== id),
+          sync: markPending(state.sync, 'pendingLibrary', [id], 'delete'),
+        })),
+
       setTheme: (theme) => set({ theme }),
 
-      replaceData: ({ skills, sessions }) =>
+      replaceData: ({ skills, sessions, library }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
           // that was here is deleted remotely, then the backup is uploaded.
           let sync = state.sync;
           sync = markPending(sync, 'pendingSkills', ids(state.skills), 'delete');
           sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'delete');
+          sync = markPending(sync, 'pendingLibrary', ids(state.library), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
-          return { skills, sessions, activeTimer: null, sync };
+          sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
+          return { skills, sessions, library, activeTimer: null, sync };
         }),
 
       adoptAccount: (userId) =>
@@ -234,17 +266,17 @@ export const useTrackerStore = create<TrackerStore>()(
 
           const owned: SyncState = { ...initialSyncState, ownerId: userId };
           if (ownerId !== null) {
-            return { skills: [], sessions: [], activeTimer: null, sync: owned };
+            return { skills: [], sessions: [], library: [], activeTimer: null, sync: owned };
           }
-          const withSkills = markPending(owned, 'pendingSkills', ids(state.skills), 'upsert');
-          return {
-            sync: markPending(withSkills, 'pendingSessions', ids(state.sessions), 'upsert'),
-          };
+          let sync = markPending(owned, 'pendingSkills', ids(state.skills), 'upsert');
+          sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'upsert');
+          sync = markPending(sync, 'pendingLibrary', ids(state.library), 'upsert');
+          return { sync };
         }),
 
       applyRemoteChanges: (changes) =>
         set((state) => {
-          const { pendingSkills, pendingSessions } = state.sync;
+          const { pendingSkills, pendingSessions, pendingLibrary } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
           for (const { row, deleted } of changes.skills) {
@@ -260,13 +292,21 @@ export const useTrackerStore = create<TrackerStore>()(
             else sessions.set(row.id, row);
           }
 
+          const library = new Map(state.library.map((item) => [item.id, item]));
+          for (const { row, deleted } of changes.library) {
+            if (pendingLibrary[row.id]) continue;
+            if (deleted) library.delete(row.id);
+            else library.set(row.id, row);
+          }
+
           const { activeTimer } = state;
           return {
+            library: [...library.values()],
             skills: [...skills.values()],
             // A skill deleted on another device takes its sessions with it.
             sessions: [...sessions.values()].filter((session) => skills.has(session.skillId)),
             activeTimer: activeTimer && skills.has(activeTimer.skillId) ? activeTimer : null,
-            sync: { ...state.sync, cursor: changes.cursor ?? state.sync.cursor },
+            sync: { ...state.sync, ...changes.cursors },
           };
         }),
 
@@ -276,6 +316,7 @@ export const useTrackerStore = create<TrackerStore>()(
             ...state.sync,
             pendingSkills: withoutAcknowledged(state.sync.pendingSkills, pushed.skills),
             pendingSessions: withoutAcknowledged(state.sync.pendingSessions, pushed.sessions),
+            pendingLibrary: withoutAcknowledged(state.sync.pendingLibrary, pushed.library),
           },
         })),
 
@@ -284,9 +325,10 @@ export const useTrackerStore = create<TrackerStore>()(
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
-      partialize: ({ skills, sessions, activeTimer, theme, sync }) => ({
+      partialize: ({ skills, sessions, library, activeTimer, theme, sync }) => ({
         skills,
         sessions,
+        library,
         activeTimer,
         theme,
         sync,
@@ -305,6 +347,16 @@ export const useTrackerStore = create<TrackerStore>()(
           }));
           if (state.activeTimer) state.activeTimer.durationMinutes = null;
         }
+        // v3 predates the library. Its cursor starts empty so the first sync
+        // after upgrading pulls every library item already in the account.
+        if (version < 4) {
+          state.library = [];
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            libraryCursor: null,
+            pendingLibrary: {},
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -321,7 +373,9 @@ export function timerEndsAt(timer: ActiveTimer): number {
 }
 
 export function hasPendingChanges(sync: SyncState): boolean {
-  return Object.keys(sync.pendingSkills).length > 0 || Object.keys(sync.pendingSessions).length > 0;
+  return [sync.pendingSkills, sync.pendingSessions, sync.pendingLibrary].some(
+    (pending) => Object.keys(pending).length > 0,
+  );
 }
 
 export function resetTrackerStore(): void {

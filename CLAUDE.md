@@ -75,8 +75,8 @@ editor **before** the code is pushed to `main`. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-Pending: `supabase/migrations/20261115000000_library.sql` must be applied
-before the library release is pushed. Remove this line once done.
+All three migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-15.
 
 ## Before opening sign-up to the public
 

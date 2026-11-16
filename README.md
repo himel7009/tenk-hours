@@ -1,81 +1,95 @@
 # Tenk — 10,000 Hours Tracker
 
-> **Track the hours you put into a skill on the way to 10,000.**
+> **Track the hours you put into a skill on the way to 10,000, and the habits you keep every day.**
 
 [![Deploy](https://github.com/himel7009/tenk-hours/actions/workflows/deploy.yml/badge.svg)](https://github.com/himel7009/tenk-hours/actions/workflows/deploy.yml)
 [![Live Demo](https://img.shields.io/badge/demo-online-brightgreen.svg)](https://himel7009.github.io/tenk-hours/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**[✨ View Live Demo ✨](https://himel7009.github.io/tenk-hours/)**
+**[✨ Open Tenk ✨](https://himel7009.github.io/tenk-hours/)**
 
-Tenk is a clean, distraction-free web app and PWA for mastering any craft. Add a skill, time your practice sessions or log them manually, and watch a grid of 10,000 squares fill in hour by hour. Tenk also tracks daily streaks, a 26-week activity heatmap, milestone achievements, and projected finish dates based on your recent pace.
+Tenk is a web app and installable PWA for getting seriously good at things. Add a skill, group related skills under a domain, keep daily habits, and time every session with a countdown timer. Each skill fills a grid of 10,000 squares hour by hour, and every skill, habit and domain keeps its own streak. A Library keeps your place in the books and courses you are working through, and the ones you want to take up next.
 
 Tenk works without an account, storing everything in your browser. Sign in with Google or an email and password and your data syncs across your devices.
 
 ---
 
-## 📸 Demo & Screenshots
+## 📸 Screenshots
 
-### 1. Dashboard & Skills Overview
-Track today's practice at a glance, maintain your active streak, and monitor your full skill portfolio.
+### Dashboard
 
-![Tenk Dashboard](docs/screenshots/dashboard.png)
+Today's time against each daily goal, how much of the day and year has passed, a 7-day chart split by skill, and cards for every domain, skill and habit.
 
-### 2. Deep-Dive Skill Tracker
-Visualise your 10,000-hour journey with an interactive practice timer, milestone ladder, 26-week activity heatmap, pace calculation, and session history.
+![Tenk dashboard](docs/screenshots/dashboard.png)
 
-![Skill Detail View](docs/screenshots/skill-detail.png)
+### Skill page
 
-### 3. Responsive & Mobile-Ready (PWA)
-Optimised for mobile, tablet, and desktop screens with dark and light theme support.
+The 10,000-hour grid, today's goal, a countdown timer, manual logging, streaks, pace and a projected finish date.
+
+![Skill page](docs/screenshots/skill-detail.png)
+
+### Library
+
+Books and courses in progress with a bookmark of where you are, and the ones saved for later.
+
+![Library](docs/screenshots/library.png)
+
+### Mobile and dark theme
 
 <p align="center">
-  <img src="docs/screenshots/mobile-view.png" alt="Tenk Mobile View" width="360" />
+  <img src="docs/screenshots/mobile-view.png" alt="Tenk on a phone in dark theme" width="360" />
 </p>
 
 ---
 
 ## ⚡ Features
 
-- **🎯 Skills and Habits**: Track long-term skills towards 10,000 hours and daily habits side by side, each with its own icon and colour.
-- **🧭 Domains**: Group related skills under a field, such as AI holding machine learning and deep learning. The domain shows the combined hours and keeps its own streak.
-- **📅 Day and Year Progress**: See how much of today and of the year has passed and how much is left.
-- **📈 Dashboard**: Today's time against each daily goal and a 7-day chart split by skill.
-- **📚 Library**: Keep the books you are reading and the courses you are taking, with chapter or lesson progress, a bookmark of where you are, and your own notes.
-- **⏱ Countdown Timer**: Set a timer for a session (25m, 1h, 2h or your own length); it saves itself when it ends. Stopwatch and manual logging are there too.
-- **⬛ 10,000-Hour Visual Grid**: Every single hour completed is reflected visually on your skill field.
-- **🔥 Per-Skill Streaks & Daily Goals**: Every skill and habit has its own streak. A day only counts once you reach its daily goal (one hour by default).
-- **🎯 Milestone Progress**: Step-by-step milestones (1h, 10h, 50h, 100h, 250h, 500h, 1,000h, 2,500h, 5,000h, 7,500h, 10,000h).
-- **📅 26-Week Heatmap**: GitHub-style activity calendar for each skill.
-- **🔮 Finish Date Projections**: Automatically estimates when you'll reach your target based on recent consistency.
-- **☁️ Optional Cloud Sync**: Sign in with Google or email to keep every device in step. Works offline and syncs when the connection returns.
-- **🔒 Private by Default**: No account needed; guest data stays in `localStorage`. Synced data is protected by per-user row level security. Includes one-click JSON backup export and restore.
-- **📱 Installable PWA**: Works offline and can be added directly to your phone or desktop home screen.
+### Tracking
+
+- **🎯 Skills and habits**: Long-term skills count towards 10,000 hours; habits are about showing up every day. Each has its own emoji and colour.
+- **🧭 Domains**: Group related skills under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of its skills and keeps a streak of its own.
+- **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
+- **🔥 Streaks with daily goals**: Every skill, habit and domain has its own streak. A day only counts once its daily goal is reached (one hour by default).
+
+### Seeing progress
+
+- **📈 Dashboard**: Today's time against each daily goal, a 7-day chart split by skill, and a comparison with the week before.
+- **📅 Day and year progress**: How much of today and of the year has passed, and how much is left.
+- **⬛ 10,000-hour grid**: One square per hour on every skill page.
+- **🏁 Milestones and projections**: Hour milestones for skills, streak milestones for habits, a 26-week activity calendar and a projected date for reaching your target.
+
+### Library
+
+- **📚 Books and courses**: Progress in chapters, pages or lessons, a free-text bookmark ("Video 12 at 34:10"), notes and a link to the course or playlist.
+- **🔖 Saved for later**: Keep courses and books you have found but not started. Start one with a click when you are ready.
+
+### Your data
+
+- **☁️ Optional cloud sync**: Sign in with Google or email to keep every device in step. Works offline and catches up when the connection returns.
+- **🔒 Private by default**: No account needed. Synced data is protected by per-user row level security. One-click JSON backup and restore.
+- **📱 Installable PWA**: Add it to your phone or desktop home screen.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting started
 
 ### Prerequisites
 
 - Node.js 22 or newer
 - npm
 
-### Local Development
+### Local development
 
 ```sh
-# Clone the repository
 git clone https://github.com/himel7009/tenk-hours.git
 cd tenk-hours
-
-# Install dependencies
 npm install
-
-# Start development server
 npm run dev
 ```
 
-### Available Scripts
+The app runs on-device only until you add Supabase settings; see [Cloud sync](#️-cloud-sync).
+
+### Scripts
 
 | Command           | What it does                       |
 | ----------------- | ---------------------------------- |
@@ -88,58 +102,65 @@ npm run dev
 
 ---
 
-## 🏗 Project Architecture
+## 🏗 Architecture
+
+**Stack**: React 19, TypeScript, Vite, Zustand, CSS Modules, Vitest, Supabase (Postgres and Auth), GitHub Actions and GitHub Pages.
 
 ```
 src/
-  app/        App shell, router, and theme wiring
+  app/        App shell, router and theme wiring
   components/ Shared UI primitives (Button, Dialog, Field, Toast)
-  data/       Backup export/import schema validation
-  domain/     Pure business logic: dates, streaks, stats, milestones, formatting
-  features/   Feature modules: dashboard, domains, skills, sessions, timer, progress, library, settings
-  store/      Zustand stores (trackerStore persisted in localStorage)
-  styles/     CSS design tokens and global styles
-  sync/       Supabase client, auth, and the sync engine
+  data/       Backup export and import with validation
+  domain/     Pure logic: dates, streaks, stats, domains, dashboard, time progress, library
+  features/   Feature modules: dashboard, domains, skills, sessions, timer, progress, library, account, settings
+  store/      Zustand stores; trackerStore is persisted to localStorage
+  styles/     Design tokens and global styles
+  sync/       Supabase client, auth and the sync engine
 supabase/
   migrations/ Database schema and row level security policies
   tests/      SQL tests for the access rules
 ```
 
-- **Domain-First Design**: The `domain/` directory contains pure TypeScript logic with comprehensive unit tests and zero UI dependencies.
-- **Hash Routing**: Uses `HashRouter` to allow deep linking on GitHub Pages without server redirects.
+- **Logic apart from UI**: `domain/` is plain TypeScript with unit tests and no React or storage. Components never compute streaks or totals themselves.
+- **Local-first state**: every change is written to the device first and queued for sync, so the app is fully usable offline and without an account.
+- **Versioned storage**: the persisted state carries a version and migration steps, so upgrades never lose a user's data.
+- **Hash routing**: deep links work on GitHub Pages without server rewrites.
 
 ---
 
-## ☁️ Cloud Sync
+## ☁️ Cloud sync
 
-Accounts and sync run on [Supabase](https://supabase.com) (Postgres + Auth). The app stays a static site; the browser talks to the database directly and every access rule is enforced by Postgres.
+Accounts and sync run on [Supabase](https://supabase.com). The app stays a static site; the browser talks to the database directly, and every access rule is enforced by Postgres.
 
-- **Local-first**: Every change is saved on the device first and queued. The sync engine pushes the queue, then pulls rows changed since its last cursor, so the app keeps working offline.
-- **Conflict handling**: Last write wins per skill or session. Deletes are soft so they reach other devices.
-- **Security**: Row level security limits each user to their own rows, check constraints bound what can be stored, and only the publishable key ships to the browser.
-- **Optional**: Without the two `VITE_SUPABASE_*` variables the build has no account features and runs on-device only.
+- **Sync engine**: pushes the local queue, then pulls rows changed since the device's last cursor. Each synced table keeps its own cursor.
+- **Conflicts**: last write wins per row. Deletes are soft so they reach every device.
+- **Security**: row level security limits each user to their own rows, check constraints bound what can be stored, and only the publishable key ships to the browser.
+- **Optional**: without the two `VITE_SUPABASE_*` variables the build has no account features.
 
 Setup takes about 15 minutes: see [`docs/cloud-setup.md`](docs/cloud-setup.md).
 
 ---
 
-## 🌐 Deployment to GitHub Pages
+## 🌐 Deployment
 
-The workflow in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) automatically runs linting, tests, builds, and deploys on every push to `main`.
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) lints, tests, builds and deploys to GitHub Pages on every push to `main`. Database migrations in `supabase/migrations/` are applied to the Supabase project before the code that needs them is pushed.
 
-Live deployment URL: **[https://himel7009.github.io/tenk-hours/](https://himel7009.github.io/tenk-hours/)**
+Live: **[https://himel7009.github.io/tenk-hours/](https://himel7009.github.io/tenk-hours/)**
+
+---
+
+## 📱 Install as an app
+
+- **Android**: open the site in Chrome and tap **Add to Home screen**.
+- **iOS**: open it in Safari, tap the share icon and choose **Add to Home Screen**.
+- **Desktop**: click the install icon in the browser's address bar.
 
 ---
 
-## 📱 Mobile & PWA Installation
+## 🗒 Changelog
 
-Tenk is a Progressive Web App (PWA):
-- **On Android**: Open the live site in Chrome and tap **Add to Home screen**.
-- **On iOS**: Open in Safari, tap the share icon, and select **Add to Home Screen**.
-- **On Desktop**: Click the install icon in your browser address bar.
-
----
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT](LICENSE)

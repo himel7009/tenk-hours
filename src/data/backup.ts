@@ -1,6 +1,12 @@
 import { isDayKey } from '../domain/dates';
 import type { Domain } from '../domain/domains';
-import { isWebUrl, UNITS_FOR_KIND, type LibraryItem, type LibraryKind } from '../domain/library';
+import {
+  isWebUrl,
+  LIBRARY_STATUSES,
+  UNITS_FOR_KIND,
+  type LibraryItem,
+  type LibraryKind,
+} from '../domain/library';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
   DEFAULT_ICONS,
@@ -148,7 +154,7 @@ function parseLibraryItem(value: unknown): LibraryItem {
     doneUnits: isPositive(value.doneUnits) ? Math.round(value.doneUnits) : 0,
     position: text(value.position),
     notes: text(value.notes),
-    status: value.status === 'done' || value.status === 'paused' ? value.status : 'active',
+    status: LIBRARY_STATUSES.find((status) => status === value.status) ?? 'active',
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

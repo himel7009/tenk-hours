@@ -36,6 +36,12 @@ describe('stepProgress', () => {
     });
   });
 
+  it('starts an item saved for later once progress is made on it', () => {
+    const saved = { ...book, status: 'planned' as const, doneUnits: 0 };
+    expect(stepProgress(saved, 1).status).toBe('active');
+    expect(stepProgress(saved, -1).status).toBe('planned');
+  });
+
   it('leaves a paused item paused', () => {
     expect(stepProgress({ ...book, status: 'paused' }, 1).status).toBe('paused');
   });

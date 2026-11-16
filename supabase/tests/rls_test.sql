@@ -81,6 +81,12 @@ select pg_temp.expect_error(
   $$insert into public.library_items (id, kind, title, unit, url)
     values ('30000000-0000-0000-0000-000000000009', 'book', 'x', 'chapter', 'javascript:alert(1)')$$,
   'library links must be web links');
+insert into public.library_items (id, kind, title, unit, status)
+  values ('30000000-0000-0000-0000-000000000002', 'course', 'For later', 'lesson', 'planned');
+select pg_temp.expect_error(
+  $$insert into public.library_items (id, kind, title, unit, status)
+    values ('30000000-0000-0000-0000-000000000003', 'course', 'x', 'lesson', 'someday')$$,
+  'library status must be a known one');
 select pg_temp.expect_error(
   $$delete from public.library_items$$,
   'library hard deletes are not granted');

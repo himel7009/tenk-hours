@@ -39,6 +39,7 @@ const COPY: Record<
 };
 
 const STATUS_LABELS: Record<LibraryStatus, string> = {
+  planned: 'Saved for later',
   active: 'In progress',
   paused: 'Paused',
   done: 'Finished',
@@ -46,12 +47,18 @@ const STATUS_LABELS: Record<LibraryStatus, string> = {
 
 type LibraryItemDialogProps = { onClose: () => void } & (
   | { /** The book or course to edit. */ item: LibraryItem; kind?: never }
-  | { /** What to create. */ kind: LibraryKind; item?: never }
+  | {
+      /** What to create. */
+      kind: LibraryKind;
+      /** Starting status, such as saved for later. Defaults to in progress. */
+      status?: LibraryStatus;
+      item?: never;
+    }
 );
 
 export function LibraryItemDialog(props: LibraryItemDialogProps) {
   const { item, onClose } = props;
-  const kind = props.item ? props.item.kind : props.kind;
+  const [kind, setKind] = useState<LibraryKind>(props.item ? props.item.kind : props.kind);
   const copy = COPY[kind];
   const units = UNITS_FOR_KIND[kind];
 
@@ -68,7 +75,15 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
   const [done, setDone] = useState(item ? String(item.doneUnits) : '');
   const [position, setPosition] = useState(item?.position ?? '');
   const [notes, setNotes] = useState(item?.notes ?? '');
-  const [status, setStatus] = useState<LibraryStatus>(item?.status ?? 'active');
+  const [status, setStatus] = useState<LibraryStatus>(
+    props.item ? props.item.status : (props.status ?? 'active'),
+  );
+  const savingForLater = !item && status === 'planned';
+
+  const changeKind = (next: LibraryKind) => {
+    setKind(next);
+    setUnit(UNITS_FOR_KIND[next][0]!);
+  };
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -137,8 +152,29 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
   };
 
   return (
-    <Dialog title={item ? `Edit ${copy.noun}` : copy.add} onClose={onClose}>
+    <Dialog
+      title={item ? `Edit ${copy.noun}` : savingForLater ? 'Save for later' : copy.add}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit} className={styles.form} noValidate>
+        {!item && (
+          <fieldset className={styles.kindChoice}>
+            <legend>What is it?</legend>
+            {(['course', 'book'] as const).map((option) => (
+              <label key={option} className={styles.kindOption}>
+                <input
+                  type="radio"
+                  name="library-kind"
+                  className="visually-hidden"
+                  checked={kind === option}
+                  onChange={() => changeKind(option)}
+                />
+                {option === 'course' ? '🎓 Course' : '📖 Book'}
+              </label>
+            ))}
+          </fieldset>
+        )}
+
         <Field label="Title">
           {(id) => (
             <Input
@@ -288,7 +324,7 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
             Cancel
           </Button>
           <Button type="submit" variant="primary">
-            {item ? 'Save changes' : `Add ${copy.noun}`}
+            {item ? 'Save changes' : savingForLater ? 'Save for later' : `Add ${copy.noun}`}
           </Button>
         </div>
       </form>

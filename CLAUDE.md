@@ -75,7 +75,8 @@ and habits as cards. All figures come from `summarizeDashboard`.
 ## Library
 
 `LibraryItem` (table `library_items`) is a book or course with progress in
-chapters, pages or lessons, a free-text bookmark and notes. It is independent
+chapters, pages or lessons, a free-text bookmark and notes. Its status is
+`planned` (saved for later), `active`, `paused` or `done`. It is independent
 of skills and sessions and has its own sync cursor (`sync.libraryCursor`), as
 domains do (`sync.domainCursor`).
 
@@ -95,8 +96,13 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All four migrations in `supabase/migrations/` are applied to the live project
+All five migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-16.
+
+## Releases
+
+Add a short entry to `CHANGELOG.md` for every change users will notice, and
+keep the README's feature list and screenshots in step with the app.
 
 ## Before opening sign-up to the public
 

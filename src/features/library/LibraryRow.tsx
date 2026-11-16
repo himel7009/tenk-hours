@@ -34,6 +34,11 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
     if (next.status === 'done' && item.status !== 'done') toast(`Finished ${item.title}`);
   };
 
+  const startNow = () => {
+    updateLibraryItem(item.id, { ...item, status: 'active' });
+    toast(`Moved ${item.title} to in progress`);
+  };
+
   return (
     <li className={styles.row} data-color={COLORS[item.kind]}>
       <span className={styles.icon} aria-hidden="true">
@@ -53,8 +58,10 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
           </p>
         )}
 
-        <p className={`tabular ${styles.progress}`}>{progressLabel(item)}</p>
-        {fraction !== null && (
+        {item.status !== 'planned' && (
+          <p className={`tabular ${styles.progress}`}>{progressLabel(item)}</p>
+        )}
+        {fraction !== null && item.status !== 'planned' && (
           <div className={styles.bar} aria-hidden="true">
             <div className={styles.barFill} style={{ width: `${fraction * 100}%` }} />
           </div>
@@ -69,7 +76,12 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
       </div>
 
       <div className={styles.rowActions}>
-        {item.status !== 'done' && (
+        {item.status === 'planned' && (
+          <Button size="sm" variant="primary" onClick={startNow}>
+            Start now
+          </Button>
+        )}
+        {(item.status === 'active' || item.status === 'paused') && (
           <>
             <Button
               size="sm"

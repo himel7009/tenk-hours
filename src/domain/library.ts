@@ -2,7 +2,10 @@
 export type LibraryItemId = string;
 export type LibraryKind = 'book' | 'course';
 export type LibraryUnit = 'chapter' | 'page' | 'lesson';
-export type LibraryStatus = 'active' | 'paused' | 'done';
+/** `planned` is saved for later: not started, kept so it isn't forgotten. */
+export type LibraryStatus = 'planned' | 'active' | 'paused' | 'done';
+
+export const LIBRARY_STATUSES: LibraryStatus[] = ['planned', 'active', 'paused', 'done'];
 
 export interface LibraryItem {
   id: LibraryItemId;
@@ -76,11 +79,13 @@ export function progressLabel(item: LibraryItem): string {
 /**
  * Moves progress by a number of units, staying within 0 and the total.
  * Reaching the total finishes the item; stepping back from it reopens it.
+ * Making progress on something saved for later means it has been started.
  */
 export function stepProgress(item: LibraryItem, by: number): LibraryItem {
   const max = item.totalUnits ?? LIBRARY_LIMITS.units;
   const doneUnits = Math.min(max, Math.max(0, item.doneUnits + by));
   const finished = item.totalUnits !== null && doneUnits >= item.totalUnits;
-  const status = finished ? 'done' : item.status === 'done' ? 'active' : item.status;
+  const started = item.status === 'planned' && doneUnits > item.doneUnits;
+  const status = finished ? 'done' : item.status === 'done' || started ? 'active' : item.status;
   return { ...item, doneUnits, status };
 }

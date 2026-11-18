@@ -9,6 +9,8 @@ export function useTimer() {
   const activeTimer = useTrackerStore((state) => state.activeTimer);
   const skills = useTrackerStore((state) => state.skills);
   const startTimer = useTrackerStore((state) => state.startTimer);
+  const pauseTimer = useTrackerStore((state) => state.pauseTimer);
+  const resumeTimer = useTrackerStore((state) => state.resumeTimer);
   const stopTimer = useTrackerStore((state) => state.stopTimer);
   const discardTimer = useTrackerStore((state) => state.discardTimer);
   const toast = useToastStore((state) => state.show);
@@ -20,17 +22,20 @@ export function useTimer() {
   return {
     activeTimer,
     activeSkill,
-    /** Starts a countdown of the given length, or a stopwatch if null. */
-    start: (skillId: SkillId, durationMinutes: number | null) => {
-      if (durationMinutes !== null) requestNotificationPermission();
-      startTimer(skillId, durationMinutes);
+    paused: activeTimer?.pausedAt != null,
+    /** Starts a countdown of the given length in seconds, or a stopwatch if null. */
+    start: (skillId: SkillId, durationSeconds: number | null) => {
+      if (durationSeconds !== null) requestNotificationPermission();
+      startTimer(skillId, durationSeconds);
     },
+    pause: pauseTimer,
+    resume: resumeTimer,
     stop: () => {
       const saved = stopTimer();
       toast(
         saved
           ? `Saved ${formatDuration(saved.minutes)} to ${activeSkill?.name ?? 'your skill'}`
-          : 'Timer ran for under a minute, so nothing was saved',
+          : 'Less than a minute was timed, so nothing was saved',
       );
     },
     discard: () => {

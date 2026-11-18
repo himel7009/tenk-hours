@@ -48,7 +48,7 @@ Books and courses in progress with a bookmark of where you are, and the ones sav
 
 - **🎯 Skills and habits**: Long-term skills count towards 10,000 hours; habits are about showing up every day. Each has its own emoji and colour.
 - **🧭 Domains**: Group related skills under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of its skills and keeps a streak of its own.
-- **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
+- **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length down to the second, and pause it when you step away. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
 - **🔥 Streaks with daily goals**: Every skill, habit and domain has its own streak. A day only counts once its daily goal is reached (one hour by default).
 
 ### Seeing progress

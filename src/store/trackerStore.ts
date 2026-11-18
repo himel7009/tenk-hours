@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
+import { elapsedMs, pause, resume } from '../domain/timer';
 import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
 import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
@@ -23,7 +24,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 5;
+const STORAGE_VERSION = 6;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -73,9 +74,12 @@ interface TrackerActions {
 
   /**
    * Starts a timer, replacing any running one without saving it. Pass a
-   * duration for a countdown, or null for an open-ended stopwatch.
+   * duration in seconds for a countdown, or null for an open-ended stopwatch.
    */
-  startTimer: (skillId: SkillId, durationMinutes: number | null) => void;
+  startTimer: (skillId: SkillId, durationSeconds: number | null) => void;
+  /** Stops the clock without ending the session. */
+  pauseTimer: () => void;
+  resumeTimer: () => void;
   /**
    * Stops the timer and saves the time spent, which for a countdown is never
    * more than its planned length. Returns the saved session, or null if the
@@ -201,14 +205,32 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingSessions', [id], 'delete'),
         })),
 
-      startTimer: (skillId, durationMinutes) =>
-        set({ activeTimer: { skillId, startedAt: Date.now(), durationMinutes } }),
+      startTimer: (skillId, durationSeconds) =>
+        set({
+          activeTimer: {
+            skillId,
+            startedAt: Date.now(),
+            durationSeconds,
+            pausedAt: null,
+            pausedMs: 0,
+          },
+        }),
+
+      pauseTimer: () =>
+        set((state) => ({
+          activeTimer: state.activeTimer && pause(state.activeTimer, Date.now()),
+        })),
+
+      resumeTimer: () =>
+        set((state) => ({
+          activeTimer: state.activeTimer && resume(state.activeTimer, Date.now()),
+        })),
 
       stopTimer: () => {
         const timer = get().activeTimer;
         if (!timer) return null;
 
-        const elapsed = Math.min(Date.now(), timerEndsAt(timer)) - timer.startedAt;
+        const elapsed = elapsedMs(timer, Date.now());
         if (elapsed < MIN_TIMER_MS) {
           set({ activeTimer: null });
           return null;
@@ -413,7 +435,9 @@ export const useTrackerStore = create<TrackerStore>()(
             icon: DEFAULT_ICONS.skill,
             dailyGoalMinutes: DEFAULT_DAILY_GOAL_MINUTES,
           }));
-          if (state.activeTimer) state.activeTimer.durationMinutes = null;
+          if (state.activeTimer) {
+            (state.activeTimer as unknown as { durationMinutes: null }).durationMinutes = null;
+          }
         }
         // v3 predates the library. Its cursor starts empty so the first sync
         // after upgrading pulls every library item already in the account.
@@ -435,6 +459,17 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingDomains: {},
           };
         }
+        // v5 timers had a length in minutes and could not be paused.
+        if (version < 6 && state.activeTimer) {
+          const old = state.activeTimer as ActiveTimer & { durationMinutes?: number | null };
+          const { durationMinutes = null, ...rest } = old;
+          state.activeTimer = {
+            ...rest,
+            durationSeconds: durationMinutes === null ? null : durationMinutes * 60,
+            pausedAt: null,
+            pausedMs: 0,
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -442,13 +477,6 @@ export const useTrackerStore = create<TrackerStore>()(
 );
 
 const ids = (rows: readonly { id: string }[]) => rows.map((row) => row.id);
-
-/** When a countdown finishes. Infinity for an open-ended timer. */
-export function timerEndsAt(timer: ActiveTimer): number {
-  return timer.durationMinutes === null
-    ? Infinity
-    : timer.startedAt + timer.durationMinutes * 60_000;
-}
 
 export function hasPendingChanges(sync: SyncState): boolean {
   return [sync.pendingSkills, sync.pendingSessions, sync.pendingLibrary, sync.pendingDomains].some(

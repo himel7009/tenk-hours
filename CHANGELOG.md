@@ -2,6 +2,11 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-18
+
+- **Pause the timer.** Pause and resume a running timer; time spent paused does not count.
+- **Seconds in custom timers.** Set a custom length in hours, minutes and seconds.
+
 ## 2026-11-16
 
 - **Library: saved for later.** Keep courses and books you want to take up, then start one with a click.

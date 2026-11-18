@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { formatClock, formatDuration } from '../../domain/format';
 import { useToastStore } from '../../store/toastStore';
-import { timerEndsAt, useTrackerStore } from '../../store/trackerStore';
+import { clockMs, timerEndsAt } from '../../domain/timer';
+import { useTrackerStore } from '../../store/trackerStore';
 import { notify, playChime } from './alerts';
-import { clockMs } from './clockMs';
 
 /** setTimeout cannot wait longer than this many milliseconds. */
 const MAX_TIMEOUT_MS = 2 ** 31 - 1;
@@ -42,7 +42,9 @@ export function useCountdownCompletion(): void {
 
     const originalTitle = document.title;
     const showClock = () => {
-      document.title = `${formatClock(clockMs(activeTimer, Date.now()))} ${skillName ?? ''}`.trim();
+      const clock = formatClock(clockMs(activeTimer, Date.now()));
+      const label = activeTimer.pausedAt === null ? clock : `Paused ${clock}`;
+      document.title = `${label} ${skillName ?? ''}`.trim();
     };
     showClock();
     const tick = window.setInterval(showClock, 1000);

@@ -111,3 +111,11 @@
   background: var(--bg);
   color: var(--ink);
 }
+
+.clock[data-paused='true'] {
+  color: var(--ink-soft);
+}
+
+.custom {
+  flex-wrap: wrap;
+}

@@ -20,6 +20,16 @@
   animation: pulse 1.6s ease-in-out infinite;
 }
 
+/* A paused timer stops pulsing and dims, like a clock that has stopped. */
+.bar[data-paused='true'] .pulse {
+  animation: none;
+  opacity: 0.35;
+}
+
+.bar[data-paused='true'] .clock {
+  color: var(--ink-soft);
+}
+
 @keyframes pulse {
   50% {
     opacity: 0.25;

@@ -140,7 +140,7 @@ export function SkillCard({ skill }: SkillCardProps) {
           </div>
           <Button
             size="sm"
-            onClick={() => start(skill.id, skill.dailyGoalMinutes)}
+            onClick={() => start(skill.id, skill.dailyGoalMinutes * 60)}
             disabled={Boolean(activeTimer)}
           >
             {running ? 'Timer running' : `Start ${formatDuration(skill.dailyGoalMinutes)}`}

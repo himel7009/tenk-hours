@@ -62,7 +62,7 @@ describe('timer', () => {
   });
 
   it('saves a countdown as its planned length, however late it is stopped', () => {
-    store().startTimer(newSkill(), 120);
+    store().startTimer(newSkill(), 120 * 60);
     // The tab was closed and reopened five hours later.
     vi.advanceTimersByTime(5 * 60 * 60_000);
 
@@ -70,10 +70,30 @@ describe('timer', () => {
   });
 
   it('saves only the time spent when a countdown is stopped early', () => {
-    store().startTimer(newSkill(), 120);
+    store().startTimer(newSkill(), 120 * 60);
     vi.advanceTimersByTime(45 * 60_000);
 
     expect(store().stopTimer()).toMatchObject({ minutes: 45 });
+  });
+
+  it('leaves paused time out of the saved session', () => {
+    store().startTimer(newSkill(), null);
+    vi.advanceTimersByTime(20 * 60_000);
+    store().pauseTimer();
+    vi.advanceTimersByTime(45 * 60_000); // away from the desk
+    store().resumeTimer();
+    vi.advanceTimersByTime(10 * 60_000);
+
+    expect(store().stopTimer()).toMatchObject({ minutes: 30 });
+  });
+
+  it('saves what was done when stopped while paused', () => {
+    store().startTimer(newSkill(), 60 * 60);
+    vi.advanceTimersByTime(25 * 60_000);
+    store().pauseTimer();
+    vi.advanceTimersByTime(3 * 60 * 60_000);
+
+    expect(store().stopTimer()).toMatchObject({ minutes: 25 });
   });
 
   it('does not save a run shorter than a minute', () => {

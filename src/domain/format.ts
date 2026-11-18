@@ -9,6 +9,16 @@ export function formatDuration(minutes: number): string {
   return m === 0 ? `${h.toLocaleString()}h` : `${h.toLocaleString()}h ${m}m`;
 }
 
+/** Whole seconds as "1h 30m 45s", "25m" or "45s", leaving out zero parts. */
+export function formatSeconds(totalSeconds: number): string {
+  const rounded = Math.max(0, Math.round(totalSeconds));
+  const h = Math.floor(rounded / 3600);
+  const m = Math.floor((rounded % 3600) / 60);
+  const s = rounded % 60;
+  const parts = [h > 0 && `${h}h`, m > 0 && `${m}m`, s > 0 && `${s}s`].filter(Boolean);
+  return parts.length > 0 ? parts.join(' ') : '0s';
+}
+
 /** Hours with one decimal below 100h, whole hours above. */
 export function formatHours(minutes: number): string {
   const hours = minutes / 60;

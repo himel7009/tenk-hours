@@ -51,8 +51,10 @@ historical; do not rename the table or type without a data migration plan.
 
 - Streaks are per skill or habit, never app-wide. A day counts only when that
   day's minutes reach the item's `dailyGoalMinutes` (default 60).
-- Timers are countdowns by default (`ActiveTimer.durationMinutes`), saved
-  automatically when they end; `null` means an open-ended stopwatch.
+- Timers are countdowns by default (`ActiveTimer.durationSeconds`), saved
+  automatically when they end; `null` means an open-ended stopwatch. Timers
+  can be paused (`pausedAt`, `pausedMs`); paused time never counts. All timer
+  maths lives in `domain/timer.ts`. Sessions are stored in whole minutes.
 
 ## Domains
 

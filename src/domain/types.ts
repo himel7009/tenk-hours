@@ -44,8 +44,12 @@ export interface Session {
 export interface ActiveTimer {
   skillId: SkillId;
   startedAt: number;
-  /** Planned length of a countdown, or null for an open-ended stopwatch. */
-  durationMinutes: number | null;
+  /** Planned length of a countdown in seconds, or null for an open-ended stopwatch. */
+  durationSeconds: number | null;
+  /** When the timer was paused, or null while it is running. */
+  pausedAt: number | null;
+  /** Total length of earlier pauses, left out of the time spent. */
+  pausedMs: number;
 }
 
 export type Theme = 'system' | 'light' | 'dark';

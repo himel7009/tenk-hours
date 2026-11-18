@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
@@ -13,6 +14,8 @@ class FakeRemote implements RemoteStore {
   sessions = new Map<string, { row: Session; deleted: boolean; at: number }>();
   library = new Map<string, { row: LibraryItem; deleted: boolean; at: number }>();
   domains = new Map<string, { row: Domain; deleted: boolean; at: number }>();
+  badHabits = new Map<string, { row: BadHabit; deleted: boolean; at: number }>();
+  checkIns = new Map<string, { row: CheckIn; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -29,9 +32,19 @@ class FakeRemote implements RemoteStore {
     for (const id of batch.libraryDeletes) this.softDelete(this.library, id, at);
     for (const row of batch.domainUpserts) this.domains.set(row.id, { row, deleted: false, at });
     for (const id of batch.domainDeletes) this.softDelete(this.domains, id, at);
+    for (const row of batch.badHabitUpserts)
+      this.badHabits.set(row.id, { row, deleted: false, at });
+    for (const row of batch.checkInUpserts) this.checkIns.set(row.id, { row, deleted: false, at });
+    for (const id of batch.checkInDeletes) this.softDelete(this.checkIns, id, at);
+    for (const id of batch.badHabitDeletes) this.softDelete(this.badHabits, id, at);
   }
 
-  async pull({ cursor, libraryCursor, domainCursor }: SyncCursors): Promise<RemoteChanges> {
+  async pull({
+    cursor,
+    libraryCursor,
+    domainCursor,
+    badHabitCursor,
+  }: SyncCursors): Promise<RemoteChanges> {
     const changed = <T>(
       rows: Map<string, { row: T; deleted: boolean; at: number }>,
       since: string | null,
@@ -43,15 +56,20 @@ class FakeRemote implements RemoteStore {
     const sessions = changed(this.sessions, cursor);
     const library = changed(this.library, libraryCursor);
     const domains = changed(this.domains, domainCursor);
+    const badHabits = changed(this.badHabits, badHabitCursor);
+    const checkIns = changed(this.checkIns, badHabitCursor);
     return {
       skills,
       sessions,
       library,
       domains,
+      badHabits,
+      checkIns,
       cursors: {
         cursor: newest(cursor, [...skills, ...sessions]),
         libraryCursor: newest(libraryCursor, library),
         domainCursor: newest(domainCursor, domains),
+        badHabitCursor: newest(badHabitCursor, [...badHabits, ...checkIns]),
       },
     };
   }
@@ -91,6 +109,8 @@ const pick = ({
   sessions,
   library,
   domains,
+  badHabits,
+  checkIns,
   activeTimer,
   theme,
   sync,
@@ -99,6 +119,8 @@ const pick = ({
   sessions,
   library,
   domains,
+  badHabits,
+  checkIns,
   activeTimer,
   theme,
   sync,
@@ -287,6 +309,8 @@ describe('failures and races', () => {
       sessions: [],
       library: [],
       domains: [],
+      badHabits: [],
+      checkIns: [],
     });
     await sync(remote);
 
@@ -357,7 +381,13 @@ describe('library', () => {
 
     store().adoptAccount('user-1');
     useTrackerStore.setState((state) => ({
-      sync: { ...state.sync, cursor: '999', libraryCursor: null, domainCursor: null },
+      sync: {
+        ...state.sync,
+        cursor: '999',
+        libraryCursor: null,
+        domainCursor: null,
+        badHabitCursor: null,
+      },
     }));
     await sync(remote);
 
@@ -408,6 +438,72 @@ describe('domains', () => {
       expect(store().domains).toEqual([]);
       expect(store().skills).toHaveLength(1);
       expect(store().skills[0]?.domainId).toBeNull();
+    });
+  });
+});
+
+describe('bad habits', () => {
+  const doomscrolling = { name: 'Doomscrolling', icon: '📱', color: 'rose' } as const;
+
+  it('syncs bad habits and their answers, and the later answer for a day wins', async () => {
+    const laptop = new Device();
+    const phone = new Device();
+
+    const habitId = await laptop.use(async () => {
+      const id = store().addBadHabit(doomscrolling);
+      store().setCheckIn(id, '2026-11-17', 'clean');
+      await sync(remote);
+      return id;
+    });
+
+    await phone.use(async () => {
+      await sync(remote);
+      expect(store().badHabits.map((h) => h.name)).toEqual(['Doomscrolling']);
+      expect(store().checkIns).toMatchObject([{ day: '2026-11-17', status: 'clean' }]);
+      // Both devices answer for today before either has synced.
+      store().setCheckIn(habitId, '2026-11-18', 'clean');
+    });
+    await laptop.use(() => store().setCheckIn(habitId, '2026-11-18', 'slipped'));
+
+    await phone.use(() => sync(remote));
+    await laptop.use(() => sync(remote));
+    await phone.use(async () => {
+      await sync(remote);
+      // One row per day: the laptop answered last, so its answer stands.
+      const today = store().checkIns.filter((c) => c.day === '2026-11-18');
+      expect(today).toMatchObject([{ status: 'slipped' }]);
+    });
+  });
+
+  it('clearing an answer and deleting a habit reach other devices', async () => {
+    const laptop = new Device();
+    const phone = new Device();
+
+    const habitId = await laptop.use(async () => {
+      const id = store().addBadHabit(doomscrolling);
+      store().setCheckIn(id, '2026-11-17', 'clean');
+      store().setCheckIn(id, '2026-11-18', 'clean');
+      await sync(remote);
+      return id;
+    });
+    await phone.use(() => sync(remote));
+
+    await laptop.use(async () => {
+      store().setCheckIn(habitId, '2026-11-18', null);
+      await sync(remote);
+    });
+    await phone.use(async () => {
+      await sync(remote);
+      expect(store().checkIns.map((c) => c.day)).toEqual(['2026-11-17']);
+    });
+
+    await laptop.use(async () => {
+      store().deleteBadHabit(habitId);
+      await sync(remote);
+    });
+    await phone.use(async () => {
+      await sync(remote);
+      expect(store()).toMatchObject({ badHabits: [], checkIns: [] });
     });
   });
 });

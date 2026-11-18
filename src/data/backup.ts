@@ -1,4 +1,5 @@
 import { isDayKey } from '../domain/dates';
+import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import {
   isWebUrl,
@@ -17,7 +18,7 @@ import {
   type TrackerKind,
 } from '../domain/types';
 
-export const BACKUP_VERSION = 4;
+export const BACKUP_VERSION = 5;
 
 export interface Backup {
   app: 'tenk';
@@ -27,9 +28,14 @@ export interface Backup {
   sessions: Session[];
   library: LibraryItem[];
   domains: Domain[];
+  badHabits: BadHabit[];
+  checkIns: CheckIn[];
 }
 
-export type BackupData = Pick<Backup, 'skills' | 'sessions' | 'library' | 'domains'>;
+export type BackupData = Pick<
+  Backup,
+  'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns'
+>;
 
 export class BackupError extends Error {}
 
@@ -73,7 +79,13 @@ export function parseBackup(json: string): BackupData {
   const sessions = raw.sessions.map(parseSession).filter((s) => skillIds.has(s.skillId));
   // Backups from before the library existed simply have none.
   const library = Array.isArray(raw.library) ? raw.library.map(parseLibraryItem) : [];
-  return { skills, sessions, library, domains };
+  // Backups from before bad habits existed have none.
+  const badHabits = Array.isArray(raw.badHabits) ? raw.badHabits.map(parseBadHabit) : [];
+  const habitIds = new Set(badHabits.map((habit) => habit.id));
+  const checkIns = Array.isArray(raw.checkIns)
+    ? raw.checkIns.map(parseCheckIn).filter((checkIn) => habitIds.has(checkIn.habitId))
+    : [];
+  return { skills, sessions, library, domains, badHabits, checkIns };
 }
 
 function parseSkill(value: unknown): Skill {
@@ -120,6 +132,38 @@ function parseSession(value: unknown): Session {
     minutes: Math.round(value.minutes),
     note: typeof value.note === 'string' ? value.note : '',
     source: value.source === 'timer' ? 'timer' : 'manual',
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+function parseBadHabit(value: unknown): BadHabit {
+  if (!isRecord(value) || !isUuid(value.id) || typeof value.name !== 'string') {
+    throw new BackupError('This backup contains a bad habit that cannot be read.');
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon : '🚫',
+    color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+function parseCheckIn(value: unknown): CheckIn {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.habitId) ||
+    !isDayKey(value.day) ||
+    (value.status !== 'clean' && value.status !== 'slipped')
+  ) {
+    throw new BackupError('This backup contains a bad habit check-in that cannot be read.');
+  }
+  return {
+    // Rebuilt rather than trusted, so it always matches the habit and day.
+    id: checkInId(value.habitId, value.day),
+    habitId: value.habitId,
+    day: value.day,
+    status: value.status,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

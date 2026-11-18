@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
 import type { Session, Skill } from '../domain/types';
@@ -43,10 +44,47 @@ const item: LibraryItem = {
   createdAt: 3,
 };
 
+const HABIT_ID = '7d3e1a2b-4c5d-4e6f-8a9b-0c1d2e3f4a5b';
+const habit: BadHabit = {
+  id: HABIT_ID,
+  name: 'Doomscrolling',
+  icon: '📱',
+  color: 'rose',
+  createdAt: 4,
+};
+const checkIn: CheckIn = {
+  id: checkInId(HABIT_ID, '2026-11-18'),
+  habitId: HABIT_ID,
+  day: '2026-11-18',
+  status: 'clean',
+  createdAt: 5,
+};
+
 describe('backup', () => {
+  it('drops check-ins whose bad habit is not in the backup', () => {
+    const json = JSON.stringify(
+      createBackup({
+        skills: [],
+        sessions: [],
+        library: [],
+        domains: [],
+        badHabits: [],
+        checkIns: [checkIn],
+      }),
+    );
+    expect(parseBackup(json).checkIns).toEqual([]);
+  });
+
   it('makes a skill standalone when its domain is not in the backup', () => {
     const json = JSON.stringify(
-      createBackup({ skills: [skill], sessions: [], library: [], domains: [] }),
+      createBackup({
+        skills: [skill],
+        sessions: [],
+        library: [],
+        domains: [],
+        badHabits: [],
+        checkIns: [],
+      }),
     );
     expect(parseBackup(json).skills[0]?.domainId).toBeNull();
   });
@@ -58,6 +96,8 @@ describe('backup', () => {
         sessions: [],
         library: [{ ...item, url: 'javascript:alert(1)' }],
         domains: [],
+        badHabits: [],
+        checkIns: [],
       }),
     );
     expect(parseBackup(json).library[0]?.url).toBe('');
@@ -66,7 +106,14 @@ describe('backup', () => {
   it('fills in defaults for backups made before habits existed', () => {
     const oldSkill = { id: SKILL_ID, name: 'Python', color: 'moss', targetHours: 10_000 };
     const json = JSON.stringify({
-      ...createBackup({ skills: [], sessions: [], library: [], domains: [] }),
+      ...createBackup({
+        skills: [],
+        sessions: [],
+        library: [],
+        domains: [],
+        badHabits: [],
+        checkIns: [],
+      }),
       version: 1,
       skills: [oldSkill],
     });
@@ -79,13 +126,22 @@ describe('backup', () => {
 
   it('round-trips skills and sessions', () => {
     const json = JSON.stringify(
-      createBackup({ skills: [skill], sessions: [session], library: [item], domains: [domain] }),
+      createBackup({
+        skills: [skill],
+        sessions: [session],
+        library: [item],
+        domains: [domain],
+        badHabits: [habit],
+        checkIns: [checkIn],
+      }),
     );
     expect(parseBackup(json)).toEqual({
       skills: [skill],
       sessions: [session],
       library: [item],
       domains: [domain],
+      badHabits: [habit],
+      checkIns: [checkIn],
     });
   });
 
@@ -96,6 +152,8 @@ describe('backup', () => {
         sessions: [{ ...session, skillId: '00000000-0000-4000-8000-000000000000' }],
         library: [],
         domains: [],
+        badHabits: [],
+        checkIns: [],
       }),
     );
     expect(parseBackup(json).sessions).toEqual([]);
@@ -112,6 +170,8 @@ describe('backup', () => {
           sessions: [{ ...session, day: '2026-02-31' }],
           library: [],
           domains: [],
+          badHabits: [],
+          checkIns: [],
         }),
       }),
       'session that cannot be read',

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { BadHabit, CheckIn, CheckInStatus } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import {
   isWebUrl,
@@ -76,7 +77,31 @@ interface DomainRow {
   deleted_at: string | null;
 }
 
-type Table = 'skills' | 'sessions' | 'library_items' | 'domains';
+interface BadHabitRow {
+  id: string;
+  name: string;
+  icon: string;
+  color: SkillColor;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface CheckInRow {
+  id: string;
+  habit_id: string;
+  day: string;
+  status: CheckInStatus;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+type Table =
+  'skills' | 'sessions' | 'library_items' | 'domains' | 'bad_habits' | 'bad_habit_checkins';
+
+const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
+const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
 
 const SKILL_COLUMNS =
   'id,kind,name,icon,color,target_hours,daily_goal_minutes,domain_id,created_at,updated_at,deleted_at';
@@ -139,6 +164,54 @@ function fromDomainRow(row: DomainRow): RemoteRow<Domain> {
       name: row.name,
       icon: row.icon,
       color: row.color,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+function toBadHabitRow(habit: BadHabit) {
+  return {
+    id: habit.id,
+    name: habit.name.trim().slice(0, 40) || 'Untitled',
+    icon: habit.icon.slice(0, 16) || '🚫',
+    color: habit.color,
+    created_at: new Date(habit.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromBadHabitRow(row: BadHabitRow): RemoteRow<BadHabit> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      color: row.color,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+function toCheckInRow(checkIn: CheckIn) {
+  return {
+    id: checkIn.id,
+    habit_id: checkIn.habitId,
+    day: checkIn.day,
+    status: checkIn.status,
+    created_at: new Date(checkIn.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromCheckInRow(row: CheckInRow): RemoteRow<CheckIn> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      habitId: row.habit_id,
+      day: row.day,
+      status: row.status,
       createdAt: Date.parse(row.created_at),
     },
   };
@@ -290,9 +363,29 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       await softDelete('library_items', batch.libraryDeletes);
       // After the skill upserts above have moved every skill out of them.
       await softDelete('domains', batch.domainDeletes);
+      // Check-ins reference bad habits.
+      await upsert('bad_habits', batch.badHabitUpserts.map(toBadHabitRow));
+      await upsert('bad_habit_checkins', batch.checkInUpserts.map(toCheckInRow));
+      await softDelete('bad_habit_checkins', batch.checkInDeletes);
+      await softDelete('bad_habits', batch.badHabitDeletes);
     },
 
-    async pull({ cursor, libraryCursor, domainCursor }: SyncCursors): Promise<RemoteChanges> {
+    async pull({
+      cursor,
+      libraryCursor,
+      domainCursor,
+      badHabitCursor,
+    }: SyncCursors): Promise<RemoteChanges> {
+      const badHabitRows = await fetchChanged<BadHabitRow>(
+        'bad_habits',
+        BAD_HABIT_COLUMNS,
+        badHabitCursor,
+      );
+      const checkInRows = await fetchChanged<CheckInRow>(
+        'bad_habit_checkins',
+        CHECK_IN_COLUMNS,
+        badHabitCursor,
+      );
       const domainRows = await fetchChanged<DomainRow>('domains', DOMAIN_COLUMNS, domainCursor);
       const skillRows = await fetchChanged<SkillRow>('skills', SKILL_COLUMNS, cursor);
       const sessionRows = await fetchChanged<SessionRow>('sessions', SESSION_COLUMNS, cursor);
@@ -306,6 +399,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         cursor: advance(cursor, [...skillRows, ...sessionRows]),
         libraryCursor: advance(libraryCursor, libraryRows),
         domainCursor: advance(domainCursor, domainRows),
+        badHabitCursor: advance(badHabitCursor, [...badHabitRows, ...checkInRows]),
       };
       // Nothing newer turned up, so later pulls from here can skip the overlap.
       if (next.cursor !== null && next.cursor === cursor) settled.add(cursor);
@@ -315,12 +409,17 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       if (next.domainCursor !== null && next.domainCursor === domainCursor) {
         settled.add(domainCursor);
       }
+      if (next.badHabitCursor !== null && next.badHabitCursor === badHabitCursor) {
+        settled.add(badHabitCursor);
+      }
 
       return {
         skills: skillRows.map(fromSkillRow),
         sessions: sessionRows.map(fromSessionRow),
         library: libraryRows.map(fromLibraryRow),
         domains: domainRows.map(fromDomainRow),
+        badHabits: badHabitRows.map(fromBadHabitRow),
+        checkIns: checkInRows.map(fromCheckInRow),
         cursors: next,
       };
     },

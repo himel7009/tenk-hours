@@ -4,6 +4,9 @@ import { usePersistentState } from '../../components/usePersistentState';
 import type { Domain, DomainId } from '../../domain/domains';
 import type { Skill, TrackerKind } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
+import { BadHabitCard } from '../badHabits/BadHabitCard';
+import { BadHabitFormDialog } from '../badHabits/BadHabitFormDialog';
+import { useUnansweredBadHabits } from '../badHabits/useBadHabitProgress';
 import { DomainFormDialog } from '../domains/DomainFormDialog';
 import { DomainPanel } from '../domains/DomainPanel';
 import { useDashboard } from '../progress/useDashboard';
@@ -19,9 +22,10 @@ import { WeekChart } from './WeekChart';
 type DialogState =
   | { type: 'tracker'; kind: TrackerKind; domainId: DomainId | null }
   | { type: 'domain'; domain?: Domain }
+  | { type: 'bad' }
   | null;
 
-type TabId = 'domains' | 'skills' | 'projects' | 'habits';
+type TabId = 'domains' | 'skills' | 'projects' | 'habits' | 'bad';
 
 const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add: string }> = {
   domains: {
@@ -49,9 +53,15 @@ const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add:
     empty: 'No habits yet.',
     add: 'Add habit',
   },
+  bad: {
+    label: 'Bad habits',
+    note: 'Things you want to stay away from. Answer once a day: did you avoid it?',
+    empty: 'No bad habits yet. Add one you want to quit, such as doomscrolling.',
+    add: 'Add bad habit',
+  },
 };
 
-const TAB_KIND: Record<Exclude<TabId, 'domains'>, TrackerKind> = {
+const TAB_KIND: Record<Exclude<TabId, 'domains' | 'bad'>, TrackerKind> = {
   skills: 'skill',
   projects: 'project',
   habits: 'habit',
@@ -61,6 +71,8 @@ export function HomePage() {
   const today = useToday();
   const skills = useTrackerStore((state) => state.skills);
   const domains = useTrackerStore((state) => state.domains);
+  const badHabits = useTrackerStore((state) => state.badHabits);
+  const unanswered = useUnansweredBadHabits();
   const dashboard = useDashboard();
   const [dialog, setDialog] = useState<DialogState>(null);
   const [tab, setTab] = usePersistentState<TabId>('tenk:home-tab', 'domains');
@@ -68,12 +80,12 @@ export function HomePage() {
   const addTracker = (kind: TrackerKind, domainId: DomainId | null = null) =>
     setDialog({ type: 'tracker', kind, domainId });
 
-  const lists: Record<Exclude<TabId, 'domains'>, Skill[]> = {
+  const lists: Record<Exclude<TabId, 'domains' | 'bad'>, Skill[]> = {
     skills: skills.filter((skill) => skill.kind === 'skill' && skill.domainId === null),
     projects: skills.filter((skill) => skill.kind === 'project' && skill.domainId === null),
     habits: skills.filter((skill) => skill.kind === 'habit'),
   };
-  const isEmpty = skills.length === 0 && domains.length === 0;
+  const isEmpty = skills.length === 0 && domains.length === 0 && badHabits.length === 0;
   const copy = TAB_COPY[tab];
 
   const dialogs = (
@@ -88,6 +100,7 @@ export function HomePage() {
       {dialog?.type === 'domain' && (
         <DomainFormDialog domain={dialog.domain} onClose={() => setDialog(null)} />
       )}
+      {dialog?.type === 'bad' && <BadHabitFormDialog onClose={() => setDialog(null)} />}
     </>
   );
 
@@ -108,6 +121,7 @@ export function HomePage() {
             <Button onClick={() => setDialog({ type: 'domain' })}>Add a domain</Button>
             <Button onClick={() => addTracker('project')}>Add a project</Button>
             <Button onClick={() => addTracker('habit')}>Add a habit</Button>
+            <Button onClick={() => setDialog({ type: 'bad' })}>Add a bad habit</Button>
           </div>
         </section>
         <div className={styles.welcomeTime}>
@@ -143,6 +157,13 @@ export function HomePage() {
               { id: 'skills', label: 'Skills', count: lists.skills.length },
               { id: 'projects', label: 'Projects', count: lists.projects.length },
               { id: 'habits', label: 'Habits', count: lists.habits.length },
+              {
+                id: 'bad',
+                label: 'Bad habits',
+                count: badHabits.length,
+                // Shown on the tab so a missing answer is hard to miss.
+                alert: unanswered > 0 ? `${unanswered} to answer today` : undefined,
+              },
             ]}
             selected={tab}
             onSelect={setTab}
@@ -151,14 +172,28 @@ export function HomePage() {
               <p className={styles.note}>{copy.note}</p>
               <Button
                 onClick={() =>
-                  tab === 'domains' ? setDialog({ type: 'domain' }) : addTracker(TAB_KIND[tab])
+                  tab === 'domains'
+                    ? setDialog({ type: 'domain' })
+                    : tab === 'bad'
+                      ? setDialog({ type: 'bad' })
+                      : addTracker(TAB_KIND[tab])
                 }
               >
                 {copy.add}
               </Button>
             </div>
 
-            {tab === 'domains' ? (
+            {tab === 'bad' ? (
+              badHabits.length === 0 ? (
+                <p className={styles.empty}>{copy.empty}</p>
+              ) : (
+                <ul className={styles.cards}>
+                  {badHabits.map((habit) => (
+                    <BadHabitCard key={habit.id} habit={habit} />
+                  ))}
+                </ul>
+              )
+            ) : tab === 'domains' ? (
               domains.length === 0 ? (
                 <p className={styles.empty}>{copy.empty}</p>
               ) : (

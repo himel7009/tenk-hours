@@ -8,7 +8,9 @@ const EMPTY: RemoteChanges = {
   sessions: [],
   library: [],
   domains: [],
-  cursors: { cursor: null, libraryCursor: null, domainCursor: null },
+  badHabits: [],
+  checkIns: [],
+  cursors: { cursor: null, libraryCursor: null, domainCursor: null, badHabitCursor: null },
 };
 
 function slowRemote() {

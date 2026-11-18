@@ -5,6 +5,8 @@ export interface TabDefinition<Id extends string> {
   id: Id;
   label: string;
   count: number;
+  /** Marks the tab as needing attention; read out after the label. */
+  alert?: string;
 }
 
 interface TrackerTabsProps<Id extends string> {
@@ -60,7 +62,10 @@ export function TrackerTabs<Id extends string>({
             onKeyDown={(event) => handleKeyDown(event, index)}
           >
             {tab.label}
-            <span className={`tabular ${styles.count}`}>{tab.count}</span>
+            <span className={`tabular ${styles.count}`} data-alert={tab.alert !== undefined}>
+              {tab.count}
+            </span>
+            {tab.alert && <span className="visually-hidden">, {tab.alert}</span>}
           </button>
         ))}
       </div>

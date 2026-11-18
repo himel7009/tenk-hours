@@ -73,12 +73,24 @@ nullable); habits never have one.
 - Deleting a domain keeps its skills and sets their `domainId` to null.
 - Push order matters: domains, then skills, then sessions.
 
+## Bad habits
+
+`BadHabit` (table `bad_habits`) is something to stay away from, tracked by a
+daily `CheckIn` (table `bad_habit_checkins`): `clean` or `slipped`, at most one
+per habit per day. Logic lives in `domain/badHabits.ts`.
+
+- A check-in's id is derived from habit and day (`checkInId`), so two devices
+  answering the same day write the same row and the later answer wins. Never
+  give a check-in a random id.
+- The streak is clean days in a row; a slip or a day with no answer ends it.
+- Both tables share one sync cursor (`sync.badHabitCursor`).
+
 ## Home dashboard
 
 `features/dashboard/` is the home page. Wide screens get two panes: a sticky
 overview rail (Today card, day and year progress from `domain/timeProgress.ts`,
 the 7-day chart) and the trackers in tabs (`TrackerTabs`: domains, skills,
-projects, habits). Below 62rem the rail dissolves with `display: contents` so
+projects, habits, bad habits). Below 62rem the rail dissolves with `display: contents` so
 the tabs come straight after the Today card. The open tab and each domain's
 collapsed state are remembered per browser (`usePersistentState`). All
 figures come from `summarizeDashboard`.
@@ -107,7 +119,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All six migrations in `supabase/migrations/` are applied to the live project
+All seven migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-18.
 
 ## Releases

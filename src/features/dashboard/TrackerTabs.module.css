@@ -68,3 +68,9 @@
     font-size: var(--text-xs);
   }
 }
+
+/* A tab with something waiting, such as a bad habit to answer today. */
+.count[data-alert='true'] {
+  background: var(--streak);
+  color: var(--on-ink);
+}

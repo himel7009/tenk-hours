@@ -2,6 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
 import { elapsedMs, pause, resume } from '../domain/timer';
+import {
+  checkInId,
+  type BadHabit,
+  type BadHabitId,
+  type CheckIn,
+  type CheckInStatus,
+} from '../domain/badHabits';
 import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
 import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
@@ -24,7 +31,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 6;
+const STORAGE_VERSION = 7;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -42,6 +49,7 @@ export interface SkillInput {
 }
 
 export type DomainInput = Pick<Domain, 'name' | 'icon' | 'color'>;
+export type BadHabitInput = Pick<BadHabit, 'name' | 'icon' | 'color'>;
 
 /** Everything about a library item that a form can set. */
 export type LibraryInput = Omit<LibraryItem, 'id' | 'createdAt'>;
@@ -57,6 +65,8 @@ interface TrackerState {
   sessions: Session[];
   library: LibraryItem[];
   domains: Domain[];
+  badHabits: BadHabit[];
+  checkIns: CheckIn[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   sync: SyncState;
@@ -94,12 +104,24 @@ interface TrackerActions {
   /** Removes the domain. Its skills are kept and become standalone. */
   deleteDomain: (id: DomainId) => void;
 
+  addBadHabit: (input: BadHabitInput) => BadHabitId;
+  updateBadHabit: (id: BadHabitId, input: BadHabitInput) => void;
+  /** Removes the bad habit and every answer logged for it. */
+  deleteBadHabit: (id: BadHabitId) => void;
+  /** Records whether a bad habit was avoided on a day. Null clears the answer. */
+  setCheckIn: (habitId: BadHabitId, day: DayKey, status: CheckInStatus | null) => void;
+
   addLibraryItem: (input: LibraryInput) => void;
   updateLibraryItem: (id: LibraryItemId, input: LibraryInput) => void;
   deleteLibraryItem: (id: LibraryItemId) => void;
 
   setTheme: (theme: Theme) => void;
-  replaceData: (data: Pick<TrackerState, 'skills' | 'sessions' | 'library' | 'domains'>) => void;
+  replaceData: (
+    data: Pick<
+      TrackerState,
+      'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns'
+    >,
+  ) => void;
 
   /**
    * Ties the local data to a signed-in account. Guest data is kept and queued
@@ -121,12 +143,20 @@ const initialState: TrackerState = {
   sessions: [],
   library: [],
   domains: [],
+  badHabits: [],
+  checkIns: [],
   activeTimer: null,
   theme: 'system',
   sync: initialSyncState,
 };
 
-type PendingKey = 'pendingSkills' | 'pendingSessions' | 'pendingLibrary' | 'pendingDomains';
+type PendingKey =
+  | 'pendingSkills'
+  | 'pendingSessions'
+  | 'pendingLibrary'
+  | 'pendingDomains'
+  | 'pendingBadHabits'
+  | 'pendingCheckIns';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
@@ -287,6 +317,51 @@ export const useTrackerStore = create<TrackerStore>()(
           };
         }),
 
+      addBadHabit: (input) => {
+        const habit: BadHabit = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+        set((state) => ({
+          badHabits: [...state.badHabits, habit],
+          sync: markPending(state.sync, 'pendingBadHabits', [habit.id], 'upsert'),
+        }));
+        return habit.id;
+      },
+
+      updateBadHabit: (id, input) =>
+        set((state) => ({
+          badHabits: state.badHabits.map((habit) =>
+            habit.id === id ? { ...habit, ...input } : habit,
+          ),
+          sync: markPending(state.sync, 'pendingBadHabits', [id], 'upsert'),
+        })),
+
+      deleteBadHabit: (id) =>
+        set((state) => {
+          const answers = state.checkIns.filter((c) => c.habitId === id).map((c) => c.id);
+          const sync = markPending(state.sync, 'pendingBadHabits', [id], 'delete');
+          return {
+            badHabits: state.badHabits.filter((habit) => habit.id !== id),
+            checkIns: state.checkIns.filter((checkIn) => checkIn.habitId !== id),
+            sync: markPending(sync, 'pendingCheckIns', answers, 'delete'),
+          };
+        }),
+
+      setCheckIn: (habitId, day, status) =>
+        set((state) => {
+          const id = checkInId(habitId, day);
+          const others = state.checkIns.filter((checkIn) => checkIn.id !== id);
+          if (status === null) {
+            return {
+              checkIns: others,
+              sync: markPending(state.sync, 'pendingCheckIns', [id], 'delete'),
+            };
+          }
+          const checkIn: CheckIn = { id, habitId, day, status, createdAt: Date.now() };
+          return {
+            checkIns: [...others, checkIn],
+            sync: markPending(state.sync, 'pendingCheckIns', [id], 'upsert'),
+          };
+        }),
+
       addLibraryItem: (input) => {
         const item: LibraryItem = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
         set((state) => ({
@@ -309,7 +384,7 @@ export const useTrackerStore = create<TrackerStore>()(
 
       setTheme: (theme) => set({ theme }),
 
-      replaceData: ({ skills, sessions, library, domains }) =>
+      replaceData: ({ skills, sessions, library, domains, badHabits, checkIns }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
           // that was here is deleted remotely, then the backup is uploaded.
@@ -318,11 +393,24 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'delete');
           sync = markPending(sync, 'pendingLibrary', ids(state.library), 'delete');
           sync = markPending(sync, 'pendingDomains', ids(state.domains), 'delete');
+          sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'delete');
+          sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
           sync = markPending(sync, 'pendingDomains', ids(domains), 'upsert');
-          return { skills, sessions, library, domains, activeTimer: null, sync };
+          sync = markPending(sync, 'pendingBadHabits', ids(badHabits), 'upsert');
+          sync = markPending(sync, 'pendingCheckIns', ids(checkIns), 'upsert');
+          return {
+            skills,
+            sessions,
+            library,
+            domains,
+            badHabits,
+            checkIns,
+            activeTimer: null,
+            sync,
+          };
         }),
 
       adoptAccount: (userId) =>
@@ -337,6 +425,8 @@ export const useTrackerStore = create<TrackerStore>()(
               sessions: [],
               library: [],
               domains: [],
+              badHabits: [],
+              checkIns: [],
               activeTimer: null,
               sync: owned,
             };
@@ -345,12 +435,21 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingSessions', ids(state.sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(state.library), 'upsert');
           sync = markPending(sync, 'pendingDomains', ids(state.domains), 'upsert');
+          sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'upsert');
+          sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'upsert');
           return { sync };
         }),
 
       applyRemoteChanges: (changes) =>
         set((state) => {
-          const { pendingSkills, pendingSessions, pendingLibrary, pendingDomains } = state.sync;
+          const {
+            pendingSkills,
+            pendingSessions,
+            pendingLibrary,
+            pendingDomains,
+            pendingBadHabits,
+            pendingCheckIns,
+          } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
           for (const { row, deleted } of changes.skills) {
@@ -380,6 +479,20 @@ export const useTrackerStore = create<TrackerStore>()(
             else domains.set(row.id, row);
           }
 
+          const badHabits = new Map(state.badHabits.map((habit) => [habit.id, habit]));
+          for (const { row, deleted } of changes.badHabits) {
+            if (pendingBadHabits[row.id]) continue;
+            if (deleted) badHabits.delete(row.id);
+            else badHabits.set(row.id, row);
+          }
+
+          const checkIns = new Map(state.checkIns.map((checkIn) => [checkIn.id, checkIn]));
+          for (const { row, deleted } of changes.checkIns) {
+            if (pendingCheckIns[row.id]) continue;
+            if (deleted) checkIns.delete(row.id);
+            else checkIns.set(row.id, row);
+          }
+
           // A skill whose domain was deleted on another device stands alone.
           const ungrouped = [...skills.values()].map((skill) =>
             skill.domainId !== null && !domains.has(skill.domainId)
@@ -391,6 +504,9 @@ export const useTrackerStore = create<TrackerStore>()(
           return {
             library: [...library.values()],
             domains: [...domains.values()],
+            badHabits: [...badHabits.values()],
+            // A bad habit deleted on another device takes its answers with it.
+            checkIns: [...checkIns.values()].filter((c) => badHabits.has(c.habitId)),
             skills: ungrouped,
             // A skill deleted on another device takes its sessions with it.
             sessions: [...sessions.values()].filter((session) => skills.has(session.skillId)),
@@ -407,6 +523,8 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingSessions: withoutAcknowledged(state.sync.pendingSessions, pushed.sessions),
             pendingLibrary: withoutAcknowledged(state.sync.pendingLibrary, pushed.library),
             pendingDomains: withoutAcknowledged(state.sync.pendingDomains, pushed.domains),
+            pendingBadHabits: withoutAcknowledged(state.sync.pendingBadHabits, pushed.badHabits),
+            pendingCheckIns: withoutAcknowledged(state.sync.pendingCheckIns, pushed.checkIns),
           },
         })),
 
@@ -415,11 +533,23 @@ export const useTrackerStore = create<TrackerStore>()(
     {
       name: STORAGE_KEY,
       version: STORAGE_VERSION,
-      partialize: ({ skills, sessions, library, domains, activeTimer, theme, sync }) => ({
+      partialize: ({
         skills,
         sessions,
         library,
         domains,
+        badHabits,
+        checkIns,
+        activeTimer,
+        theme,
+        sync,
+      }) => ({
+        skills,
+        sessions,
+        library,
+        domains,
+        badHabits,
+        checkIns,
         activeTimer,
         theme,
         sync,
@@ -471,6 +601,17 @@ export const useTrackerStore = create<TrackerStore>()(
             pausedMs: 0,
           };
         }
+        // v6 predates bad habits.
+        if (version < 7) {
+          state.badHabits = [];
+          state.checkIns = [];
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            badHabitCursor: null,
+            pendingBadHabits: {},
+            pendingCheckIns: {},
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -480,9 +621,14 @@ export const useTrackerStore = create<TrackerStore>()(
 const ids = (rows: readonly { id: string }[]) => rows.map((row) => row.id);
 
 export function hasPendingChanges(sync: SyncState): boolean {
-  return [sync.pendingSkills, sync.pendingSessions, sync.pendingLibrary, sync.pendingDomains].some(
-    (pending) => Object.keys(pending).length > 0,
-  );
+  return [
+    sync.pendingSkills,
+    sync.pendingSessions,
+    sync.pendingLibrary,
+    sync.pendingDomains,
+    sync.pendingBadHabits,
+    sync.pendingCheckIns,
+  ].some((pending) => Object.keys(pending).length > 0);
 }
 
 export function resetTrackerStore(): void {

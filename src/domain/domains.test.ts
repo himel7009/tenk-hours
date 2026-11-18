@@ -67,6 +67,40 @@ describe('summarizeDomain', () => {
     expect(summary.activeDays.has(today)).toBe(true);
   });
 
+  it('adds up the daily goals into a plan and measures today against it', () => {
+    const nlp = skill('nlp', 30);
+    const cv = skill('cv', 30);
+    const app = { ...skill('app'), kind: 'project' as const };
+    const { plan } = summarizeDomain(
+      [ml, dl, nlp, cv, app],
+      [session('ml', today, 150), session('nlp', today, 20), session('app', today, 300)],
+      today,
+    );
+    // 1h + 1h + 30m + 30m; the project has no goal and is left out.
+    expect(plan.totalMinutes).toBe(180);
+    // Machine learning counts for its 60 goal minutes, not all 150.
+    expect(plan.coveredMinutes).toBe(80);
+    expect(plan.doneCount).toBe(1);
+    expect(plan.items.map((item) => item.skill.id)).toEqual(['ml', 'dl', 'nlp', 'cv']);
+  });
+
+  it('keeps the past and the longest streak when a day is missed', () => {
+    const summary = summarizeDomain(
+      [ml],
+      [
+        session('ml', '2026-11-10', 60),
+        session('ml', '2026-11-11', 60),
+        session('ml', '2026-11-12', 60),
+        // 13 and 14 missed
+        session('ml', today, 60),
+      ],
+      today,
+    );
+    expect(summary.streak).toMatchObject({ current: 1, longest: 3 });
+    expect(summary.loggedMinutes).toBe(240);
+    expect(summary.activeDays.size).toBe(4);
+  });
+
   it('ignores sessions of skills outside the domain', () => {
     const summary = summarizeDomain([ml], [session('swimming', today, 500)], today);
     expect(summary.loggedMinutes).toBe(0);

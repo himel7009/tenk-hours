@@ -1,5 +1,5 @@
 import { Button } from '../../components/Button';
-import type { Domain } from '../../domain/domains';
+import type { DailyPlan, Domain } from '../../domain/domains';
 import { hasDailyGoal, type Skill } from '../../domain/types';
 import { formatDuration, formatHours } from '../../domain/format';
 import { StreakBadge } from '../progress/StreakBadge';
@@ -25,12 +25,61 @@ function describeContents(skills: Skill[]): string {
   return parts.length === 0 ? '0 skills' : parts.join(' and ');
 }
 
+/**
+ * The domain's daily plan: one segment per skill, sized by its daily goal and
+ * filled by today's time on it.
+ */
+function DailyPlanBar({ plan }: { plan: DailyPlan }) {
+  const { items, totalMinutes, coveredMinutes, doneCount } = plan;
+  return (
+    <div className={styles.plan}>
+      <div className={styles.planHead}>
+        <p className={styles.blockTitle}>
+          Daily plan <strong className="tabular">{formatDuration(totalMinutes)} a day</strong>
+        </p>
+        <p className={`tabular ${styles.planStatus}`}>
+          {formatDuration(coveredMinutes)} of {formatDuration(totalMinutes)} covered today,{' '}
+          {doneCount} of {items.length} skill{items.length === 1 ? '' : 's'} done
+        </p>
+      </div>
+      <div className={styles.planBar} aria-hidden="true">
+        {items.map((item) => (
+          <span
+            key={item.skill.id}
+            className={styles.planSegment}
+            data-color={item.skill.color}
+            style={{ flexGrow: item.goalMinutes }}
+          >
+            <span
+              className={styles.planFill}
+              style={{ width: `${Math.min(1, item.minutesToday / item.goalMinutes) * 100}%` }}
+            />
+          </span>
+        ))}
+      </div>
+      <ul className={styles.planItems}>
+        {items.map(({ skill, goalMinutes, minutesToday, done }) => (
+          <li key={skill.id} data-color={skill.color} data-done={done} className="tabular">
+            <span aria-hidden="true">{skill.icon}</span>
+            {skill.name}{' '}
+            <span className={styles.planTime}>
+              {formatDuration(minutesToday)} / {formatDuration(goalMinutes)}
+            </span>
+            {done && <span className={styles.planDone}>done</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** A domain with its combined hours and streak, and the skills inside it. */
 export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
   const today = useToday();
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
   const hasGoals = skills.some((skill) => hasDailyGoal(skill.kind));
+  const { plan } = progress;
 
   return (
     <li className={styles.panel} data-color={domain.color}>
@@ -48,7 +97,12 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         <div className={styles.streak}>
           {/* A domain of only projects has no goals, so no streak: show today's time. */}
           {hasGoals ? (
-            <StreakBadge streak={progress.streak} />
+            <span className={styles.streakLine}>
+              <StreakBadge streak={progress.streak} />
+              {progress.streak.longest > progress.streak.current && (
+                <span className={`tabular ${styles.longest}`}>best {progress.streak.longest}</span>
+              )}
+            </span>
           ) : (
             <span className={`tabular ${styles.today}`}>
               {progress.minutesToday > 0
@@ -73,8 +127,11 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         </div>
       </header>
 
+      {plan.items.length > 0 && <DailyPlanBar plan={plan} />}
+
       {contributing.length > 0 && (
         <div className={styles.shares}>
+          <p className={styles.blockTitle}>All time, by skill</p>
           <div className={styles.shareBar} aria-hidden="true">
             {contributing.map(({ skill, minutes }) => (
               <span

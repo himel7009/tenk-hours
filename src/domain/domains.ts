@@ -25,6 +25,31 @@ export interface DomainShare {
   minutes: number;
 }
 
+/** One skill's part of the domain's daily plan. */
+export interface PlanItem {
+  skill: Skill;
+  goalMinutes: number;
+  minutesToday: number;
+  done: boolean;
+}
+
+/**
+ * The time the domain asks for each day: every skill's daily goal added up.
+ * Projects have no goal, so they are not part of it.
+ */
+export interface DailyPlan {
+  items: PlanItem[];
+  /** All the daily goals together. */
+  totalMinutes: number;
+  /**
+   * Today's time towards the plan. Each skill counts only up to its own goal,
+   * so extra time on one skill cannot make up for another left untouched.
+   */
+  coveredMinutes: number;
+  /** Skills that reached their goal today. */
+  doneCount: number;
+}
+
 export interface DomainProgress {
   /** Time across every skill in the domain. */
   loggedMinutes: number;
@@ -36,6 +61,7 @@ export interface DomainProgress {
   /** Days with any time logged in the domain. */
   activeDays: Set<DayKey>;
   streak: Streak;
+  plan: DailyPlan;
 }
 
 /**
@@ -53,6 +79,7 @@ export function summarizeDomain(
   const completedDays = new Set<DayKey>();
   const activeDays = new Set<DayKey>();
   let minutesToday = 0;
+  const planItems: PlanItem[] = [];
 
   const shares = skills.map((skill) => {
     const progress = summarizeProgress(
@@ -66,6 +93,14 @@ export function summarizeDomain(
     }
     for (const day of progress.byDay.keys()) activeDays.add(day);
     minutesToday += progress.minutesToday;
+    if (hasDailyGoal(skill.kind)) {
+      planItems.push({
+        skill,
+        goalMinutes: skill.dailyGoalMinutes,
+        minutesToday: progress.minutesToday,
+        done: progress.goalMetToday,
+      });
+    }
     return { skill, minutes: progress.loggedMinutes };
   });
 
@@ -76,5 +111,14 @@ export function summarizeDomain(
     completedDays,
     activeDays,
     streak: computeStreak(completedDays, today),
+    plan: {
+      items: planItems,
+      totalMinutes: planItems.reduce((sum, item) => sum + item.goalMinutes, 0),
+      coveredMinutes: planItems.reduce(
+        (sum, item) => sum + Math.min(item.minutesToday, item.goalMinutes),
+        0,
+      ),
+      doneCount: planItems.filter((item) => item.done).length,
+    },
   };
 }

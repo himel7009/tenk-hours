@@ -64,7 +64,8 @@ interface TrackerState {
 
 interface TrackerActions {
   addSkill: (kind: TrackerKind, input: SkillInput) => SkillId;
-  updateSkill: (id: SkillId, input: SkillInput) => void;
+  /** Changes a skill. Passing a kind switches a skill to a project or back. */
+  updateSkill: (id: SkillId, input: SkillInput & { kind?: TrackerKind }) => void;
   /** Removes the skill and every session logged against it. */
   deleteSkill: (id: SkillId) => void;
 

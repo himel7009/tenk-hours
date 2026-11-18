@@ -125,3 +125,8 @@
     grid-column: 1 / -1;
   }
 }
+
+.today {
+  font-size: var(--text-sm);
+  font-weight: 650;
+}

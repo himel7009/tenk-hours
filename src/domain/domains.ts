@@ -1,7 +1,7 @@
 import type { DayKey } from './dates';
 import { summarizeProgress } from './progress';
 import { computeStreak, type Streak } from './streaks';
-import type { Session, Skill, SkillColor, SkillId } from './types';
+import { hasDailyGoal, type Session, type Skill, type SkillColor, type SkillId } from './types';
 
 export type DomainId = string;
 
@@ -31,7 +31,7 @@ export interface DomainProgress {
   minutesToday: number;
   /** Each skill's contribution, in the order the skills were given. */
   shares: DomainShare[];
-  /** Days on which at least one skill reached its own daily goal. */
+  /** Days on which at least one skill reached its own daily goal. Projects have none. */
   completedDays: Set<DayKey>;
   /** Days with any time logged in the domain. */
   activeDays: Set<DayKey>;
@@ -61,7 +61,9 @@ export function summarizeDomain(
       skill.dailyGoalMinutes,
       today,
     );
-    for (const day of progress.completedDays) completedDays.add(day);
+    if (hasDailyGoal(skill.kind)) {
+      for (const day of progress.completedDays) completedDays.add(day);
+    }
     for (const day of progress.byDay.keys()) activeDays.add(day);
     minutesToday += progress.minutesToday;
     return { skill, minutes: progress.loggedMinutes };

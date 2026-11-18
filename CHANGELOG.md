@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-18
 
+- **Projects.** A third kind of tracker that just adds up the time you spend, with no target or streak. Projects can sit in a domain, and a skill can be switched to a project or back.
 - **Pause the timer.** Pause and resume a running timer; time spent paused does not count.
 - **Seconds in custom timers.** Set a custom length in hours, minutes and seconds.
 

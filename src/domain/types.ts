@@ -5,9 +5,16 @@ export type SessionId = string;
 
 /**
  * What is being tracked. A skill counts hours towards a long-term target; a
- * habit is about showing up every day and has no target.
+ * habit is about showing up every day and has no target; a project only adds
+ * up the time spent on it, with no target, daily goal or streak.
  */
-export type TrackerKind = 'skill' | 'habit';
+export type TrackerKind = 'skill' | 'habit' | 'project';
+
+/** Whether this kind has a daily goal, and so a streak. Projects do not. */
+export const hasDailyGoal = (kind: TrackerKind): boolean => kind !== 'project';
+
+/** Whether this kind can be grouped under a domain. Habits cannot. */
+export const canJoinDomain = (kind: TrackerKind): boolean => kind !== 'habit';
 
 /**
  * A tracked skill or habit. The name predates habits: both kinds share this
@@ -59,7 +66,11 @@ export type SkillColor = (typeof SKILL_COLORS)[number];
 
 export const DEFAULT_TARGET_HOURS = 10_000;
 export const DEFAULT_DAILY_GOAL_MINUTES = 60;
-export const DEFAULT_ICONS: Record<TrackerKind, string> = { skill: '🎯', habit: '🌱' };
+export const DEFAULT_ICONS: Record<TrackerKind, string> = {
+  skill: '🎯',
+  habit: '🌱',
+  project: '🛠️',
+};
 
 /** Emoji offered when creating a skill or habit. */
 export const ICON_CHOICES = [

@@ -7,10 +7,17 @@ interface WeekStripProps {
   /** Days with any time logged. A Set or a Map keyed by day both work. */
   activeDays: { has(day: DayKey): boolean };
   today: DayKey;
+  /** Read out for a full day. Projects have no goal, so they say "worked on". */
+  doneLabel?: string;
 }
 
 /** The last seven days: goal reached, some time logged, or nothing. */
-export function WeekStrip({ completedDays, activeDays, today }: WeekStripProps) {
+export function WeekStrip({
+  completedDays,
+  activeDays,
+  today,
+  doneLabel = 'goal reached',
+}: WeekStripProps) {
   const week = Array.from({ length: 7 }, (_, index) => addDays(today, index - 6));
 
   return (
@@ -22,7 +29,7 @@ export function WeekStrip({ completedDays, activeDays, today }: WeekStripProps) 
           <li key={day} className={styles.day} data-state={state}>
             <span className="visually-hidden">
               {weekday}:{' '}
-              {state === 'done' ? 'goal reached' : state === 'partial' ? 'below goal' : 'nothing'}
+              {state === 'done' ? doneLabel : state === 'partial' ? 'below goal' : 'nothing'}
             </span>
           </li>
         );

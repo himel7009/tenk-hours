@@ -62,6 +62,12 @@ describe('summarizeDashboard', () => {
     ]);
   });
 
+  it('never reports a project as the best streak', () => {
+    const project = { ...skill('app'), kind: 'project' as const };
+    const days = ['2026-11-14', '2026-11-15', today].map((day) => session('app', day, 120));
+    expect(summarizeDashboard([project], days, today).bestStreak).toBeNull();
+  });
+
   it('reports the longest streak currently running', () => {
     expect(dashboard.bestStreak).toMatchObject({ days: 2, skill: { id: 'ml' } });
     expect(summarizeDashboard([skill('ml')], [], today).bestStreak).toBeNull();

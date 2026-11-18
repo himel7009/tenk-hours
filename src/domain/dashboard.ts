@@ -1,6 +1,6 @@
 import { addDays, type DayKey } from './dates';
 import { summarizeProgress, type Progress } from './progress';
-import type { Session, Skill, SkillId } from './types';
+import { hasDailyGoal, type Session, type Skill, type SkillId } from './types';
 
 export interface TrackerSummary {
   skill: Skill;
@@ -62,7 +62,7 @@ export function summarizeDashboard(
 
   const week = span(0);
   const running = trackers
-    .filter(({ progress }) => progress.streak.current > 0)
+    .filter(({ skill, progress }) => hasDailyGoal(skill.kind) && progress.streak.current > 0)
     .sort((a, b) => b.progress.streak.current - a.progress.streak.current)[0];
 
   return {

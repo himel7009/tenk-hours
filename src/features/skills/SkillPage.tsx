@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { Button } from '../../components/Button';
-import { formatDuration, formatHours, formatMonthYear } from '../../domain/format';
+import type { DayKey } from '../../domain/dates';
+import { formatDay, formatDuration, formatHours, formatMonthYear } from '../../domain/format';
+import { projectStats } from '../../domain/projectStats';
 import { hourMilestones, streakMilestones } from '../../domain/milestones';
 import type { Progress } from '../../domain/progress';
 import type { Skill } from '../../domain/types';
@@ -46,16 +48,17 @@ function SkillDetail({ skill }: { skill: Skill }) {
     state.domains.find((candidate) => candidate.id === skill.domainId),
   );
   const isHabit = skill.kind === 'habit';
+  const isProject = skill.kind === 'project';
+  // Projects have no daily goal; an hour is just the scale for the calendar shading.
+  const shadingMinutes = isProject ? 60 : skill.dailyGoalMinutes;
 
-  const heatmap = (
-    <Heatmap byDay={progress.byDay} goalMinutes={skill.dailyGoalMinutes} today={today} />
-  );
+  const heatmap = <Heatmap byDay={progress.byDay} goalMinutes={shadingMinutes} today={today} />;
 
   return (
     <div data-color={skill.color}>
       <header className={styles.header}>
         <Link to="/" className={styles.back}>
-          All skills and habits
+          Home
         </Link>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>
@@ -65,7 +68,7 @@ function SkillDetail({ skill }: { skill: Skill }) {
             {skill.name}
           </h1>
           <Button variant="quiet" onClick={() => setEditing(true)}>
-            Edit {isHabit ? 'habit' : 'skill'}
+            Edit {skill.kind}
           </Button>
         </div>
         {domain && (
@@ -74,7 +77,11 @@ function SkillDetail({ skill }: { skill: Skill }) {
           </p>
         )}
         <p className={`tabular ${styles.total}`}>
-          {isHabit ? (
+          {isProject ? (
+            <>
+              <strong>{formatDuration(progress.loggedMinutes)}</strong> spent on it so far
+            </>
+          ) : isHabit ? (
             <>
               <strong>{days(progress.streak.current)}</strong> streak, {progress.completedDays.size}{' '}
               completed in all
@@ -89,7 +96,14 @@ function SkillDetail({ skill }: { skill: Skill }) {
       </header>
 
       <div className={styles.columns}>
-        {isHabit ? (
+        {isProject ? (
+          <figure className={styles.habitCalendar}>
+            {heatmap}
+            <figcaption>
+              The days you worked on it over the last 26 weeks. Darker squares are longer days.
+            </figcaption>
+          </figure>
+        ) : isHabit ? (
           <figure className={styles.habitCalendar}>
             {heatmap}
             <figcaption>
@@ -103,7 +117,16 @@ function SkillDetail({ skill }: { skill: Skill }) {
 
         <div className={styles.side}>
           <section className={styles.panel} aria-label="Today's goal">
-            <TodayGoal minutesToday={progress.minutesToday} goalMinutes={skill.dailyGoalMinutes} />
+            {isProject ? (
+              <p className={`tabular ${styles.projectToday}`}>
+                <strong>{formatDuration(progress.minutesToday)}</strong> today
+              </p>
+            ) : (
+              <TodayGoal
+                minutesToday={progress.minutesToday}
+                goalMinutes={skill.dailyGoalMinutes}
+              />
+            )}
           </section>
 
           <section className={styles.panel} aria-label="Timer">
@@ -115,22 +138,28 @@ function SkillDetail({ skill }: { skill: Skill }) {
             <LogTimeForm skill={skill} />
           </section>
 
-          <ProgressFacts skill={skill} progress={progress} />
+          {isProject ? (
+            <ProjectFacts progress={progress} today={today} />
+          ) : (
+            <ProgressFacts skill={skill} progress={progress} />
+          )}
         </div>
       </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>Milestones</h2>
-        <MilestoneTrack
-          milestones={
-            isHabit
-              ? streakMilestones(progress.streak.longest)
-              : hourMilestones(progress.loggedMinutes, skill.targetHours)
-          }
-        />
-      </section>
+      {!isProject && (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>Milestones</h2>
+          <MilestoneTrack
+            milestones={
+              isHabit
+                ? streakMilestones(progress.streak.longest)
+                : hourMilestones(progress.loggedMinutes, skill.targetHours)
+            }
+          />
+        </section>
+      )}
 
-      {!isHabit && (
+      {!isHabit && !isProject && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Last 26 weeks</h2>
           {heatmap}
@@ -176,6 +205,31 @@ function ProgressFacts({ skill, progress }: { skill: Skill; progress: Progress }
       ],
     );
   }
+
+  return (
+    <dl className={styles.facts}>
+      {facts.map(([label, value]) => (
+        <div key={label} className={styles.fact}>
+          <dt>{label}</dt>
+          <dd className="tabular">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function ProjectFacts({ progress, today }: { progress: Progress; today: DayKey }) {
+  const { weekMinutes, monthMinutes, daysWorked, firstDay, lastDay } = projectStats(
+    progress.byDay,
+    today,
+  );
+  const facts: [label: string, value: string][] = [
+    ['Last 7 days', formatDuration(weekMinutes)],
+    ['Last 30 days', formatDuration(monthMinutes)],
+    ['Days worked on', days(daysWorked)],
+    ['Started', firstDay ? formatDay(firstDay, today) : 'Not yet'],
+    ['Last worked on', lastDay ? formatDay(lastDay, today) : 'Not yet'],
+  ];
 
   return (
     <dl className={styles.facts}>

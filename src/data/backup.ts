@@ -86,7 +86,8 @@ function parseSkill(value: unknown): Skill {
     throw new BackupError('This backup contains a skill that cannot be read.');
   }
   // Backups from before habits existed have none of the newer fields.
-  const kind: TrackerKind = value.kind === 'habit' ? 'habit' : 'skill';
+  const kind: TrackerKind =
+    value.kind === 'habit' || value.kind === 'project' ? value.kind : 'skill';
   return {
     id: value.id,
     kind,
@@ -97,7 +98,7 @@ function parseSkill(value: unknown): Skill {
     dailyGoalMinutes: isPositive(value.dailyGoalMinutes)
       ? Math.round(value.dailyGoalMinutes)
       : DEFAULT_DAILY_GOAL_MINUTES,
-    domainId: isUuid(value.domainId) ? value.domainId : null,
+    domainId: isUuid(value.domainId) && kind !== 'habit' ? value.domainId : null,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

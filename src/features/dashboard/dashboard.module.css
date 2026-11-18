@@ -119,6 +119,12 @@
   background: var(--skill);
 }
 
+.todayNoGoal {
+  opacity: 0.6;
+  font-size: var(--text-xs);
+  text-align: right;
+}
+
 .todayList .todayMore {
   display: block;
   opacity: 0.7;

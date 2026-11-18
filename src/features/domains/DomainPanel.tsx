@@ -1,6 +1,7 @@
 import { Button } from '../../components/Button';
 import type { Domain } from '../../domain/domains';
-import { formatHours } from '../../domain/format';
+import { hasDailyGoal, type Skill } from '../../domain/types';
+import { formatDuration, formatHours } from '../../domain/format';
 import { StreakBadge } from '../progress/StreakBadge';
 import { useDomainProgress } from '../progress/useDashboard';
 import { useToday } from '../progress/useNow';
@@ -14,11 +15,22 @@ interface DomainPanelProps {
   onAddSkill: () => void;
 }
 
+/** "2 skills and 1 project", leaving out kinds there are none of. */
+function describeContents(skills: Skill[]): string {
+  const count = (kind: Skill['kind'], noun: string) => {
+    const n = skills.filter((skill) => skill.kind === kind).length;
+    return n === 0 ? null : `${n} ${noun}${n === 1 ? '' : 's'}`;
+  };
+  const parts = [count('skill', 'skill'), count('project', 'project')].filter(Boolean);
+  return parts.length === 0 ? '0 skills' : parts.join(' and ');
+}
+
 /** A domain with its combined hours and streak, and the skills inside it. */
 export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
   const today = useToday();
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
+  const hasGoals = skills.some((skill) => hasDailyGoal(skill.kind));
 
   return (
     <li className={styles.panel} data-color={domain.color}>
@@ -29,14 +41,24 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         <div className={styles.heading}>
           <h3 className={styles.name}>{domain.name}</h3>
           <p className={`tabular ${styles.total}`}>
-            <strong>{formatHours(progress.loggedMinutes)} hours</strong> across {skills.length}{' '}
-            skill{skills.length === 1 ? '' : 's'}
+            <strong>{formatHours(progress.loggedMinutes)} hours</strong> across{' '}
+            {describeContents(skills)}
           </p>
         </div>
         <div className={styles.streak}>
-          <StreakBadge streak={progress.streak} />
+          {/* A domain of only projects has no goals, so no streak: show today's time. */}
+          {hasGoals ? (
+            <StreakBadge streak={progress.streak} />
+          ) : (
+            <span className={`tabular ${styles.today}`}>
+              {progress.minutesToday > 0
+                ? `${formatDuration(progress.minutesToday)} today`
+                : 'Nothing today'}
+            </span>
+          )}
           <WeekStrip
-            completedDays={progress.completedDays}
+            completedDays={hasGoals ? progress.completedDays : progress.activeDays}
+            doneLabel={hasGoals ? undefined : 'worked on'}
             activeDays={progress.activeDays}
             today={today}
           />
@@ -46,7 +68,7 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
             Edit domain
           </Button>
           <Button size="sm" onClick={onAddSkill}>
-            Add skill
+            Add skill or project
           </Button>
         </div>
       </header>
@@ -76,7 +98,8 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
 
       {skills.length === 0 ? (
         <p className={styles.empty}>
-          No skills in this domain yet. Add one, or move an existing skill here by editing it.
+          Nothing in this domain yet. Add a skill or project, or move an existing one here by
+          editing it.
         </p>
       ) : (
         <ul className={styles.skills}>

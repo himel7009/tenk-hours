@@ -1,6 +1,7 @@
 import { fromDayKey, type DayKey } from '../../domain/dates';
 import type { Dashboard } from '../../domain/dashboard';
 import { formatDuration, formatHours } from '../../domain/format';
+import { hasDailyGoal } from '../../domain/types';
 import styles from './dashboard.module.css';
 
 const MAX_LISTED = 5;
@@ -13,7 +14,8 @@ interface TodayCardProps {
 /** The headline card: time put in today and which daily goals are done. */
 export function TodayCard({ dashboard, today }: TodayCardProps) {
   const { trackers, minutesToday, totalMinutes, bestStreak } = dashboard;
-  const reached = trackers.filter(({ progress }) => progress.goalMetToday).length;
+  const withGoals = trackers.filter(({ skill }) => hasDailyGoal(skill.kind));
+  const reached = withGoals.filter(({ progress }) => progress.goalMetToday).length;
   // Whatever has time today comes first; the card has room for a handful.
   const shown = [...trackers]
     .sort((a, b) => b.progress.minutesToday - a.progress.minutesToday)
@@ -34,7 +36,7 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
 
       <div className={styles.goals}>
         <ol className={styles.goalPills} aria-hidden="true">
-          {trackers.map(({ skill, progress }) => (
+          {withGoals.map(({ skill, progress }) => (
             <li
               key={skill.id}
               className={styles.goalPill}
@@ -45,7 +47,7 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
           ))}
         </ol>
         <p className={`tabular ${styles.cardNote}`}>
-          {reached} of {trackers.length} daily goal{trackers.length === 1 ? '' : 's'} reached
+          {reached} of {withGoals.length} daily goal{withGoals.length === 1 ? '' : 's'} reached
         </p>
       </div>
 
@@ -54,16 +56,25 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
           <li key={skill.id} data-color={skill.color}>
             <span aria-hidden="true">{skill.icon}</span>
             <span className={styles.todayName}>{skill.name}</span>
-            <span className={styles.todayBar} aria-hidden="true">
-              <span
-                style={{
-                  width: `${Math.min(1, progress.minutesToday / skill.dailyGoalMinutes) * 100}%`,
-                }}
-              />
-            </span>
-            <span className="tabular">
-              {formatDuration(progress.minutesToday)} / {formatDuration(skill.dailyGoalMinutes)}
-            </span>
+            {hasDailyGoal(skill.kind) ? (
+              <>
+                <span className={styles.todayBar} aria-hidden="true">
+                  <span
+                    style={{
+                      width: `${Math.min(1, progress.minutesToday / skill.dailyGoalMinutes) * 100}%`,
+                    }}
+                  />
+                </span>
+                <span className="tabular">
+                  {formatDuration(progress.minutesToday)} / {formatDuration(skill.dailyGoalMinutes)}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className={styles.todayNoGoal}>project</span>
+                <span className="tabular">{formatDuration(progress.minutesToday)}</span>
+              </>
+            )}
           </li>
         ))}
         {trackers.length > shown.length && (

@@ -8,6 +8,8 @@ import {
   DEFAULT_DAILY_GOAL_MINUTES,
   DEFAULT_ICONS,
   DEFAULT_TARGET_HOURS,
+  canJoinDomain,
+  hasDailyGoal,
   ICON_CHOICES,
   SKILL_COLORS,
   type Skill,
@@ -23,7 +25,14 @@ const MAX_DAILY_GOAL_MINUTES = 24 * 60;
 const COPY: Record<TrackerKind, { noun: string; add: string; placeholder: string }> = {
   skill: { noun: 'skill', add: 'Add a skill', placeholder: 'Python, drawing, deep learning' },
   habit: { noun: 'habit', add: 'Add a habit', placeholder: 'Reading, exercise, meditation' },
+  project: { noun: 'project', add: 'Add a project', placeholder: 'Thesis, portfolio site, an app' },
 };
+
+/** Skills and projects can be switched between; habits stay habits. */
+const TRACK_AS: { kind: 'skill' | 'project'; label: string; hint: string }[] = [
+  { kind: 'skill', label: 'Skill', hint: 'Hours towards a target, with a daily goal and streak' },
+  { kind: 'project', label: 'Project', hint: 'Just adds up the time you spend on it' },
+];
 
 type SkillFormDialogProps = { onClose: () => void } & (
   | { /** The skill or habit to edit. */ skill: Skill; kind?: never }
@@ -38,8 +47,14 @@ type SkillFormDialogProps = { onClose: () => void } & (
 
 export function SkillFormDialog(props: SkillFormDialogProps) {
   const { skill, onClose } = props;
-  const kind = props.skill ? props.skill.kind : props.kind;
+  const [kind, setKind] = useState<TrackerKind>(props.skill ? props.skill.kind : props.kind);
   const { noun, add, placeholder } = COPY[kind];
+
+  const changeKind = (next: TrackerKind) => {
+    // An icon left at the old kind's default follows the switch.
+    if (icon === DEFAULT_ICONS[kind]) setIcon(DEFAULT_ICONS[next]);
+    setKind(next);
+  };
 
   const navigate = useNavigate();
   const addSkill = useTrackerStore((state) => state.addSkill);
@@ -90,25 +105,29 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
       return;
     }
     if (
-      !Number.isInteger(dailyGoalMinutes) ||
-      dailyGoalMinutes < 1 ||
-      dailyGoalMinutes > MAX_DAILY_GOAL_MINUTES
+      hasDailyGoal(kind) &&
+      (!Number.isInteger(dailyGoalMinutes) ||
+        dailyGoalMinutes < 1 ||
+        dailyGoalMinutes > MAX_DAILY_GOAL_MINUTES)
     ) {
       setError('Set a daily goal between 1 and 1,440 minutes.');
       return;
     }
 
+    // Fields a kind does not use keep their last valid value, so switching a
+    // project back to a skill restores its target and daily goal.
     const input = {
       name: trimmed,
       icon,
       color,
-      targetHours,
-      dailyGoalMinutes,
-      // Only skills can sit in a domain.
-      domainId: kind === 'skill' ? domainId : null,
+      targetHours: kind === 'skill' ? targetHours : (skill?.targetHours ?? DEFAULT_TARGET_HOURS),
+      dailyGoalMinutes: hasDailyGoal(kind)
+        ? dailyGoalMinutes
+        : (skill?.dailyGoalMinutes ?? DEFAULT_DAILY_GOAL_MINUTES),
+      domainId: canJoinDomain(kind) ? domainId : null,
     };
     if (skill) {
-      updateSkill(skill.id, input);
+      updateSkill(skill.id, { ...input, kind });
       toast('Changes saved');
     } else {
       void navigate(`/skills/${addSkill(kind, input)}`);
@@ -125,7 +144,26 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
 
   return (
     <Dialog title={skill ? `Edit ${noun}` : add} onClose={onClose}>
-      <form onSubmit={handleSubmit} className={styles.form} noValidate>
+      <form onSubmit={handleSubmit} className={styles.form} data-color={color} noValidate>
+        {kind !== 'habit' && (
+          <fieldset className={styles.trackAs}>
+            <legend>Track as</legend>
+            {TRACK_AS.map((option) => (
+              <label key={option.kind} className={styles.trackOption}>
+                <input
+                  type="radio"
+                  name="track-as"
+                  className="visually-hidden"
+                  checked={kind === option.kind}
+                  onChange={() => changeKind(option.kind)}
+                />
+                <strong>{option.label}</strong>
+                <span>{option.hint}</span>
+              </label>
+            ))}
+          </fieldset>
+        )}
+
         <Field label="Name">
           {(id) => (
             <Input
@@ -173,7 +211,7 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
           ))}
         </fieldset>
 
-        {kind === 'skill' && domains.length > 0 && (
+        {canJoinDomain(kind) && domains.length > 0 && (
           <Field label="Domain" hint="Its hours count towards the domain's total.">
             {(id) => (
               <Select
@@ -181,7 +219,7 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
                 value={domainId ?? ''}
                 onChange={(event) => setDomainId(event.target.value || null)}
               >
-                <option value="">No domain, a skill of its own</option>
+                <option value="">No domain, on its own</option>
                 {domains.map((domain) => (
                   <option key={domain.id} value={domain.id}>
                     {domain.icon} {domain.name}
@@ -192,40 +230,42 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
           </Field>
         )}
 
-        <div className={styles.numbers}>
-          <Field
-            label="Daily goal, minutes"
-            hint="A day counts towards your streak once you reach this."
-          >
-            {(id) => (
-              <Input
-                id={id}
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={MAX_DAILY_GOAL_MINUTES}
-                value={dailyGoal}
-                onChange={(event) => setDailyGoal(event.target.value)}
-              />
-            )}
-          </Field>
-
-          {kind === 'skill' && (
-            <Field label="Target hours" hint="10,000 is the classic figure.">
+        {hasDailyGoal(kind) && (
+          <div className={styles.numbers}>
+            <Field
+              label="Daily goal, minutes"
+              hint="A day counts towards your streak once you reach this."
+            >
               {(id) => (
                 <Input
                   id={id}
                   type="number"
                   inputMode="numeric"
                   min={1}
-                  max={MAX_TARGET_HOURS}
-                  value={target}
-                  onChange={(event) => setTarget(event.target.value)}
+                  max={MAX_DAILY_GOAL_MINUTES}
+                  value={dailyGoal}
+                  onChange={(event) => setDailyGoal(event.target.value)}
                 />
               )}
             </Field>
-          )}
-        </div>
+
+            {kind === 'skill' && (
+              <Field label="Target hours" hint="10,000 is the classic figure.">
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={MAX_TARGET_HOURS}
+                    value={target}
+                    onChange={(event) => setTarget(event.target.value)}
+                  />
+                )}
+              </Field>
+            )}
+          </div>
+        )}
 
         {error && (
           <p className={styles.error} role="alert">

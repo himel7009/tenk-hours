@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { Button } from '../../components/Button';
-import { formatDuration, formatHours } from '../../domain/format';
+import type { DayKey } from '../../domain/dates';
+import { formatDay, formatDuration, formatHours } from '../../domain/format';
+import { projectStats } from '../../domain/projectStats';
 import type { Progress } from '../../domain/progress';
 import type { Skill } from '../../domain/types';
 import { StreakBadge } from '../progress/StreakBadge';
@@ -20,7 +22,8 @@ interface SkillCardProps {
 
 interface CardSummary {
   headline: string;
-  fraction: number;
+  /** How full the bar is, or null for no bar. */
+  fraction: number | null;
   caption: string;
 }
 
@@ -50,6 +53,24 @@ function summarizeHabit(skill: Skill, progress: Progress): CardSummary {
 }
 
 /** One skill or habit on the home page: where it stands and a way to start. */
+/** Projects just add up time: no target, no goal, so no bar. */
+function summarizeProject(progress: Progress, today: DayKey): CardSummary {
+  const { weekMinutes, lastDay } = projectStats(progress.byDay, today);
+  const last =
+    lastDay === null
+      ? 'Not started yet'
+      : lastDay === today
+        ? 'Worked on today'
+        : `Last worked on ${formatDay(lastDay, today)}`;
+  return {
+    headline: `${formatDuration(progress.loggedMinutes)} in all`,
+    fraction: null,
+    caption: weekMinutes > 0 ? `${formatDuration(weekMinutes)} this week. ${last}.` : `${last}.`,
+  };
+}
+
+const NOUNS = { skill: 'skill', habit: 'habit', project: 'project' } as const;
+
 export function SkillCard({ skill }: SkillCardProps) {
   const today = useToday();
   const progress = useSkillProgress(skill);
@@ -62,14 +83,19 @@ export function SkillCard({ skill }: SkillCardProps) {
   const toast = useToastStore((state) => state.show);
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const noun = skill.kind === 'habit' ? 'habit' : 'skill';
+  const noun = NOUNS[skill.kind];
+  const isProject = skill.kind === 'project';
 
   const handleDelete = () => {
     deleteSkill(skill.id);
     toast(`Deleted ${skill.name}`);
   };
   const { headline, fraction, caption } =
-    skill.kind === 'habit' ? summarizeHabit(skill, progress) : summarizeSkill(skill, progress);
+    skill.kind === 'habit'
+      ? summarizeHabit(skill, progress)
+      : isProject
+        ? summarizeProject(progress, today)
+        : summarizeSkill(skill, progress);
 
   return (
     <li className={styles.card} data-color={skill.color}>
@@ -81,9 +107,11 @@ export function SkillCard({ skill }: SkillCardProps) {
           <span className={styles.name}>{skill.name}</span>
           <span className={`tabular ${styles.headline}`}>{headline}</span>
         </span>
-        <span className={styles.bar} aria-hidden="true">
-          <span className={styles.barFill} style={{ width: `${fraction * 100}%` }} />
-        </span>
+        {fraction !== null && (
+          <span className={styles.bar} aria-hidden="true">
+            <span className={styles.barFill} style={{ width: `${fraction * 100}%` }} />
+          </span>
+        )}
         <span className={`tabular ${styles.caption}`}>{caption}</span>
       </Link>
 
@@ -131,19 +159,33 @@ export function SkillCard({ skill }: SkillCardProps) {
       ) : (
         <div className={styles.footer}>
           <div className={styles.streak}>
-            <StreakBadge streak={progress.streak} />
+            {isProject ? (
+              <span className={`tabular ${styles.today}`}>
+                {progress.minutesToday > 0
+                  ? `${formatDuration(progress.minutesToday)} today`
+                  : 'Nothing today'}
+              </span>
+            ) : (
+              <StreakBadge streak={progress.streak} />
+            )}
             <WeekStrip
-              completedDays={progress.completedDays}
+              // A project has no goal, so any time at all fills its day.
+              completedDays={isProject ? new Set(progress.byDay.keys()) : progress.completedDays}
+              doneLabel={isProject ? 'worked on' : undefined}
               activeDays={progress.byDay}
               today={today}
             />
           </div>
           <Button
             size="sm"
-            onClick={() => start(skill.id, skill.dailyGoalMinutes * 60)}
+            onClick={() => start(skill.id, isProject ? null : skill.dailyGoalMinutes * 60)}
             disabled={Boolean(activeTimer)}
           >
-            {running ? 'Timer running' : `Start ${formatDuration(skill.dailyGoalMinutes)}`}
+            {running
+              ? 'Timer running'
+              : isProject
+                ? 'Start timer'
+                : `Start ${formatDuration(skill.dailyGoalMinutes)}`}
           </Button>
         </div>
       )}

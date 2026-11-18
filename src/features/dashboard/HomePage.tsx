@@ -31,6 +31,7 @@ export function HomePage() {
     setDialog({ type: 'tracker', kind, domainId });
 
   const standalone = skills.filter((skill) => skill.kind === 'skill' && skill.domainId === null);
+  const projects = skills.filter((skill) => skill.kind === 'project' && skill.domainId === null);
   const habits = skills.filter((skill) => skill.kind === 'habit');
   const isEmpty = skills.length === 0 && domains.length === 0;
 
@@ -40,14 +41,16 @@ export function HomePage() {
         <section className={styles.welcome}>
           <h1 className={styles.welcomeTitle}>Ten thousand hours, counted one at a time.</h1>
           <p className={styles.lede}>
-            Track a skill you want to master, group related skills under a domain, or keep a habit
-            every day. Set a timer, put in the time, and keep your streak alive.
+            Track a skill you want to master, time the projects you work on, group them under a
+            domain, or keep a habit every day. Set a timer, put in the time, and keep your streak
+            alive.
           </p>
           <div className={styles.welcomeActions}>
             <Button variant="primary" onClick={() => addTracker('skill')}>
               Add a skill
             </Button>
             <Button onClick={() => setDialog({ type: 'domain' })}>Add a domain</Button>
+            <Button onClick={() => addTracker('project')}>Add a project</Button>
             <Button onClick={() => addTracker('habit')}>Add a habit</Button>
           </div>
         </section>
@@ -67,7 +70,8 @@ export function HomePage() {
               <div>
                 <h2 className={styles.sectionTitle}>Domains</h2>
                 <p className={styles.sectionNote}>
-                  Fields that group several skills. A domain's hours are the total of its skills.
+                  Fields that group skills and projects. A domain's hours are the total of
+                  everything in it.
                 </p>
               </div>
               <Button onClick={() => setDialog({ type: 'domain' })}>Add domain</Button>
@@ -104,6 +108,27 @@ export function HomePage() {
             ) : (
               <ul className={styles.cards}>
                 {standalone.map((skill) => (
+                  <SkillCard key={skill.id} skill={skill} />
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className={styles.section}>
+            <div className={styles.sectionHead}>
+              <div>
+                <h2 className={styles.sectionTitle}>Projects</h2>
+                <p className={styles.sectionNote}>
+                  Work you just want to time. No target or streak, only the hours you put in.
+                </p>
+              </div>
+              <Button onClick={() => addTracker('project')}>Add project</Button>
+            </div>
+            {projects.length === 0 ? (
+              <p className={styles.empty}>No projects outside a domain yet.</p>
+            ) : (
+              <ul className={styles.cards}>
+                {projects.map((skill) => (
                   <SkillCard key={skill.id} skill={skill} />
                 ))}
               </ul>

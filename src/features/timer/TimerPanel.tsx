@@ -69,8 +69,12 @@ interface TimerSetupProps {
 
 function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
   // The daily goal is always offered, since finishing it keeps the streak.
-  const presets = [...new Set([...PRESET_MINUTES, skill.dailyGoalMinutes])].sort((a, b) => a - b);
-  const [choice, setChoice] = useState<Choice>(skill.dailyGoalMinutes);
+  // Projects have no goal and start as a stopwatch: work until you stop.
+  const isProject = skill.kind === 'project';
+  const presets = isProject
+    ? PRESET_MINUTES
+    : [...new Set([...PRESET_MINUTES, skill.dailyGoalMinutes])].sort((a, b) => a - b);
+  const [choice, setChoice] = useState<Choice>(isProject ? 'open' : skill.dailyGoalMinutes);
   const [customHours, setCustomHours] = useState('');
   const [customMinutes, setCustomMinutes] = useState('');
   const [customSeconds, setCustomSeconds] = useState('');

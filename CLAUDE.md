@@ -45,8 +45,11 @@ failure blocks the deploy.
 
 ## Skills and habits
 
-A row in `skills` (type `Skill`) is either a skill or a habit, told apart by
-`kind`. Both share sessions, timers, streaks and sync. The name `Skill` is
+A row in `skills` (type `Skill`) is a skill, a habit or a project, told apart
+by `kind`. All three share sessions, timers and sync. A project only adds up
+time: it has no target, daily goal or streak (`hasDailyGoal`), and its unused
+`targetHours` and `dailyGoalMinutes` are kept so it can switch back to a
+skill. Skills and projects can join a domain; habits cannot (`canJoinDomain`). The name `Skill` is
 historical; do not rename the table or type without a data migration plan.
 
 - Streaks are per skill or habit, never app-wide. A day counts only when that
@@ -63,8 +66,8 @@ learning and deep learning. A skill has at most one domain (`Skill.domainId`,
 nullable); habits never have one.
 
 - A domain stores no progress. `summarizeDomain` derives its hours (the sum
-  of its skills) and its streak (a day counts when any one of its skills
-  reached that skill's own daily goal).
+  of its skills and projects) and its streak (a day counts when any one of
+  its skills reached that skill's own daily goal; projects never count).
 - Deleting a domain keeps its skills and sets their `domainId` to null.
 - Push order matters: domains, then skills, then sessions.
 
@@ -98,8 +101,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All five migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-16.
+All six migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-18.
 
 ## Releases
 

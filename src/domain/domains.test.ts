@@ -59,6 +59,14 @@ describe('summarizeDomain', () => {
     expect(summary.activeDays.has(today)).toBe(true);
   });
 
+  it("counts a project's time in the total but not towards the streak", () => {
+    const app = { ...skill('app'), kind: 'project' as const };
+    const summary = summarizeDomain([ml, app], [session('app', today, 300)], today);
+    expect(summary.loggedMinutes).toBe(300);
+    expect(summary.streak.current).toBe(0);
+    expect(summary.activeDays.has(today)).toBe(true);
+  });
+
   it('ignores sessions of skills outside the domain', () => {
     const summary = summarizeDomain([ml], [session('swimming', today, 500)], today);
     expect(summary.loggedMinutes).toBe(0);

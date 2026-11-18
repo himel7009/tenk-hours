@@ -23,25 +23,62 @@
   gap: var(--space-2);
 }
 
-.section {
-  margin-top: var(--space-7);
+.welcomeTime {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-4);
 }
 
-.sectionHead {
+/*
+ * Two panes on wide screens: a fixed overview rail and the tracker list.
+ * On narrow screens the rail dissolves (display: contents) so its parts can be
+ * reordered around the list: Today first, then the tabs, then the rest.
+ */
+.workspace {
+  display: grid;
+  grid-template-columns: 21.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-6);
+}
+
+.rail {
+  position: sticky;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-height: calc(100vh - 2 * var(--space-4));
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.insights {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.timePair {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.trackers {
+  min-width: 0;
+}
+
+.panelHead {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: var(--space-4);
 }
 
-.sectionTitle {
-  font-size: var(--text-xl);
-}
-
-.sectionNote {
-  margin-top: var(--space-1);
+.note {
+  max-width: 34rem;
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }
@@ -57,4 +94,33 @@
   border: 1px dashed var(--line);
   border-radius: var(--radius-panel);
   color: var(--ink-soft);
+}
+
+@media (max-width: 62rem) {
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rail {
+    display: contents;
+  }
+
+  .today {
+    order: 0;
+  }
+
+  .trackers {
+    order: 1;
+  }
+
+  .insights {
+    order: 2;
+  }
+
+  .timePair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  }
 }

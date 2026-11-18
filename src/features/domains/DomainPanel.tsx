@@ -1,4 +1,5 @@
 import { Button } from '../../components/Button';
+import { usePersistentState } from '../../components/usePersistentState';
 import type { DailyPlan, Domain } from '../../domain/domains';
 import { hasDailyGoal, type Skill } from '../../domain/types';
 import { formatDuration, formatHours } from '../../domain/format';
@@ -79,6 +80,7 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
   const hasGoals = skills.some((skill) => hasDailyGoal(skill.kind));
+  const [open, setOpen] = usePersistentState<boolean>(`tenk:domain-open:${domain.id}`, true);
   const { plan } = progress;
 
   return (
@@ -155,17 +157,33 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         </div>
       )}
 
+      {skills.length > 0 && (
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M4 6l4 4 4-4" />
+          </svg>
+          {open ? 'Hide' : 'Show'} {describeContents(skills)}
+        </button>
+      )}
+
       {skills.length === 0 ? (
         <p className={styles.empty}>
           Nothing in this domain yet. Add a skill or project, or move an existing one here by
           editing it.
         </p>
       ) : (
-        <ul className={styles.skills}>
-          {skills.map((skill) => (
-            <SkillCard key={skill.id} skill={skill} />
-          ))}
-        </ul>
+        open && (
+          <ul className={styles.skills}>
+            {skills.map((skill) => (
+              <SkillCard key={skill.id} skill={skill} />
+            ))}
+          </ul>
+        )
       )}
     </li>
   );

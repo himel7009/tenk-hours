@@ -1,0 +1,70 @@
+.list {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius-control) + 4px);
+  background: var(--surface);
+  scrollbar-width: none;
+}
+
+.tab {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 0.55rem 0.9rem;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--ink);
+}
+
+.tab[aria-selected='true'] {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.count {
+  min-width: 1.4rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.panel {
+  margin-top: var(--space-4);
+}
+
+.panel:focus-visible {
+  outline-offset: 4px;
+}
+
+/* On phones all four tabs share the width, so none hide off the edge. */
+@media (max-width: 34rem) {
+  .list {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .tab {
+    flex: 1 1 0;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    padding: 0.45rem 0.25rem;
+    font-size: var(--text-xs);
+  }
+}

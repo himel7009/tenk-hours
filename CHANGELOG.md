@@ -4,6 +4,8 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-18
 
+- **New home layout.** On wide screens the overview stays on the left while your trackers sit on the right, in tabs for domains, skills, projects and habits. Domains can be collapsed. On phones the tabs come straight after today's summary.
+- **Up next in the library.** Each book and course shows the lesson, chapter or page to start on next.
 - **Daily plan for domains.** A domain adds up its skills' daily goals into one plan ("3h a day") and shows how much of it you have covered today. Domains also show their longest streak.
 - **Projects.** A third kind of tracker that just adds up the time you spend, with no target or streak. Projects can sit in a domain, and a skill can be switched to a project or back.
 - **Pause the timer.** Pause and resume a running timer; time spent paused does not count.

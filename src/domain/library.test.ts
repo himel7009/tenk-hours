@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isWebUrl, progressLabel, stepProgress, type LibraryItem } from './library';
+import { isWebUrl, nextUnitLabel, progressLabel, stepProgress, type LibraryItem } from './library';
 
 const book: LibraryItem = {
   id: 'b',
@@ -55,6 +55,30 @@ describe('progressLabel', () => {
     );
     expect(progressLabel({ ...book, totalUnits: null, doneUnits: 0 })).toBe('Not started');
     expect(progressLabel({ ...book, status: 'done' })).toBe('Finished');
+  });
+});
+
+describe('nextUnitLabel', () => {
+  const course: LibraryItem = {
+    ...book,
+    kind: 'course',
+    unit: 'lesson',
+    totalUnits: 23,
+    doneUnits: 7,
+  };
+
+  it('names the next lesson after the finished ones', () => {
+    expect(nextUnitLabel(course)).toBe('Lesson 8 of 23');
+    expect(nextUnitLabel({ ...course, doneUnits: 0 })).toBe('Lesson 1 of 23');
+    expect(nextUnitLabel({ ...book, doneUnits: 4 })).toBe('Chapter 5 of 20');
+    expect(nextUnitLabel({ ...book, unit: 'page', totalUnits: null, doneUnits: 120 })).toBe(
+      'Page 121',
+    );
+  });
+
+  it('has nothing next once finished', () => {
+    expect(nextUnitLabel({ ...course, doneUnits: 23 })).toBeNull();
+    expect(nextUnitLabel({ ...course, status: 'done' })).toBeNull();
   });
 });
 

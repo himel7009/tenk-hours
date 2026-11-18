@@ -41,7 +41,7 @@
 
   --radius-control: 8px;
   --radius-panel: 14px;
-  --page-width: 68rem;
+  --page-width: 78rem;
 }
 
 @media (prefers-color-scheme: dark) {

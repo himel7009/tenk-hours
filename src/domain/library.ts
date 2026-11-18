@@ -77,6 +77,20 @@ export function progressLabel(item: LibraryItem): string {
 }
 
 /**
+ * The lesson, chapter or page to start on next: "Lesson 8 of 23". Null once
+ * the item is finished. Pages read "Page 121", since one page is not a unit
+ * anyone starts on.
+ */
+export function nextUnitLabel(item: LibraryItem): string | null {
+  if (item.status === 'done') return null;
+  const next = item.doneUnits + 1;
+  if (item.totalUnits !== null && next > item.totalUnits) return null;
+  const name = item.unit.charAt(0).toUpperCase() + item.unit.slice(1);
+  const of = item.totalUnits === null ? '' : ` of ${item.totalUnits.toLocaleString()}`;
+  return `${name} ${next.toLocaleString()}${of}`;
+}
+
+/**
  * Moves progress by a number of units, staying within 0 and the total.
  * Reaching the total finishes the item; stepping back from it reopens it.
  * Making progress on something saved for later means it has been started.

@@ -87,6 +87,10 @@
 }
 
 .progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
   margin-top: var(--space-3);
   font-size: var(--text-sm);
   font-weight: 600;
@@ -225,4 +229,17 @@
   .rowActions {
     grid-column: 2;
   }
+}
+
+/* The lesson to start on next, the thing you look for when you sit down. */
+.next {
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--skill) 14%, var(--surface));
+  font-weight: 500;
+}
+
+.next strong {
+  color: var(--skill);
+  font-weight: 700;
 }

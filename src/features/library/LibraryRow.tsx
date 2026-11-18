@@ -1,5 +1,6 @@
 import { Button } from '../../components/Button';
 import {
+  nextUnitLabel,
   progressFraction,
   progressLabel,
   stepProgress,
@@ -23,6 +24,7 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
   const toast = useToastStore((state) => state.show);
 
   const fraction = progressFraction(item);
+  const next = nextUnitLabel(item);
   // Pages move too slowly one at a time.
   const stepSize = item.unit === 'page' ? 10 : 1;
   const { one, many } = UNIT_LABELS[item.unit];
@@ -59,7 +61,14 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
         )}
 
         {item.status !== 'planned' && (
-          <p className={`tabular ${styles.progress}`}>{progressLabel(item)}</p>
+          <p className={`tabular ${styles.progress}`}>
+            {progressLabel(item)}
+            {next && item.doneUnits > 0 && (
+              <span className={styles.next}>
+                Up next: <strong>{next}</strong>
+              </span>
+            )}
+          </p>
         )}
         {fraction !== null && item.status !== 'planned' && (
           <div className={styles.bar} aria-hidden="true">

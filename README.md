@@ -18,7 +18,7 @@ Tenk works without an account, storing everything in your browser. Sign in with 
 
 ### Dashboard
 
-Today's time against each daily goal, how much of the day and year has passed, a 7-day chart split by skill, and cards for every domain, skill and habit.
+An overview rail with today's time against each daily goal, day and year progress and a 7-day chart, next to your domains, skills, projects and habits in tabs.
 
 ![Tenk dashboard](docs/screenshots/dashboard.png)
 
@@ -30,7 +30,7 @@ The 10,000-hour grid, today's goal, a countdown timer, manual logging, streaks, 
 
 ### Library
 
-Books and courses in progress with a bookmark of where you are, and the ones saved for later.
+Books and courses in progress with the lesson or chapter up next, a bookmark of where you are, and the ones saved for later.
 
 ![Library](docs/screenshots/library.png)
 
@@ -54,14 +54,14 @@ Books and courses in progress with a bookmark of where you are, and the ones sav
 
 ### Seeing progress
 
-- **📈 Dashboard**: Today's time against each daily goal, a 7-day chart split by skill, and a comparison with the week before.
+- **📈 Dashboard**: Today's time against each daily goal, a 7-day chart split by skill, and a comparison with the week before, in an overview that stays beside your trackers.
 - **📅 Day and year progress**: How much of today and of the year has passed, and how much is left.
 - **⬛ 10,000-hour grid**: One square per hour on every skill page.
 - **🏁 Milestones and projections**: Hour milestones for skills, streak milestones for habits, a 26-week activity calendar and a projected date for reaching your target.
 
 ### Library
 
-- **📚 Books and courses**: Progress in chapters, pages or lessons, a free-text bookmark ("Video 12 at 34:10"), notes and a link to the course or playlist.
+- **📚 Books and courses**: Progress in chapters, pages or lessons, the one to start on next, a free-text bookmark ("Video 12 at 34:10"), notes and a link to the course or playlist.
 - **🔖 Saved for later**: Keep courses and books you have found but not started. Start one with a click when you are ready.
 
 ### Your data

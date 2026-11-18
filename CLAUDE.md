@@ -75,9 +75,13 @@ nullable); habits never have one.
 
 ## Home dashboard
 
-`features/dashboard/` is the home page: the Today card, day and year progress
-(`domain/timeProgress.ts`), the 7-day chart, then domains, standalone skills
-and habits as cards. All figures come from `summarizeDashboard`.
+`features/dashboard/` is the home page. Wide screens get two panes: a sticky
+overview rail (Today card, day and year progress from `domain/timeProgress.ts`,
+the 7-day chart) and the trackers in tabs (`TrackerTabs`: domains, skills,
+projects, habits). Below 62rem the rail dissolves with `display: contents` so
+the tabs come straight after the Today card. The open tab and each domain's
+collapsed state are remembered per browser (`usePersistentState`). All
+figures come from `summarizeDashboard`.
 
 ## Library
 

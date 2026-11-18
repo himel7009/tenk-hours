@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
+import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
 import {
   checkInId,
@@ -31,7 +32,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 7;
+const STORAGE_VERSION = 8;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -69,6 +70,11 @@ interface TrackerState {
   checkIns: CheckIn[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
+  /**
+   * Hides the bad habits behind a PIN on this device. Never synced: each
+   * device has its own lock, and signing out removes it.
+   */
+  badHabitLock: PinLock | null;
   sync: SyncState;
 }
 
@@ -116,6 +122,7 @@ interface TrackerActions {
   deleteLibraryItem: (id: LibraryItemId) => void;
 
   setTheme: (theme: Theme) => void;
+  setBadHabitLock: (lock: PinLock | null) => void;
   replaceData: (
     data: Pick<
       TrackerState,
@@ -147,6 +154,7 @@ const initialState: TrackerState = {
   checkIns: [],
   activeTimer: null,
   theme: 'system',
+  badHabitLock: null,
   sync: initialSyncState,
 };
 
@@ -384,6 +392,8 @@ export const useTrackerStore = create<TrackerStore>()(
 
       setTheme: (theme) => set({ theme }),
 
+      setBadHabitLock: (badHabitLock) => set({ badHabitLock }),
+
       replaceData: ({ skills, sessions, library, domains, badHabits, checkIns }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
@@ -428,6 +438,8 @@ export const useTrackerStore = create<TrackerStore>()(
               badHabits: [],
               checkIns: [],
               activeTimer: null,
+              // The lock belonged to whoever used the device before.
+              badHabitLock: null,
               sync: owned,
             };
           }
@@ -543,6 +555,7 @@ export const useTrackerStore = create<TrackerStore>()(
         activeTimer,
         theme,
         sync,
+        badHabitLock,
       }) => ({
         skills,
         sessions,
@@ -553,6 +566,7 @@ export const useTrackerStore = create<TrackerStore>()(
         activeTimer,
         theme,
         sync,
+        badHabitLock,
       }),
       migrate: (persisted, version) => {
         const state = persisted as Partial<TrackerState>;
@@ -612,6 +626,8 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingCheckIns: {},
           };
         }
+        // v7 predates the bad habits lock.
+        if (version < 8) state.badHabitLock = null;
         return state as TrackerState;
       },
     },

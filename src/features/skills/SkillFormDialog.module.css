@@ -146,3 +146,8 @@
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+.hint {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

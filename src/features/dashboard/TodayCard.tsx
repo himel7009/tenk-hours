@@ -34,22 +34,24 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
         {minutesToday > 0 ? `${formatDuration(minutesToday)} today` : 'Nothing logged yet today'}
       </h1>
 
-      <div className={styles.goals}>
-        <ol className={styles.goalPills} aria-hidden="true">
-          {withGoals.map(({ skill, progress }) => (
-            <li
-              key={skill.id}
-              className={styles.goalPill}
-              data-color={skill.color}
-              data-done={progress.goalMetToday}
-              title={`${skill.name}: ${formatDuration(progress.minutesToday)} of ${formatDuration(skill.dailyGoalMinutes)}`}
-            />
-          ))}
-        </ol>
-        <p className={`tabular ${styles.cardNote}`}>
-          {reached} of {withGoals.length} daily goal{withGoals.length === 1 ? '' : 's'} reached
-        </p>
-      </div>
+      {withGoals.length > 0 && (
+        <div className={styles.goals}>
+          <ol className={styles.goalPills} aria-hidden="true">
+            {withGoals.map(({ skill, progress }) => (
+              <li
+                key={skill.id}
+                className={styles.goalPill}
+                data-color={skill.color}
+                data-done={progress.goalMetToday}
+                title={`${skill.name}: ${formatDuration(progress.minutesToday)} of ${formatDuration(skill.dailyGoalMinutes)}`}
+              />
+            ))}
+          </ol>
+          <p className={`tabular ${styles.cardNote}`}>
+            {reached} of {withGoals.length} daily goal{withGoals.length === 1 ? '' : 's'} reached
+          </p>
+        </div>
+      )}
 
       <ul className={styles.todayList}>
         {shown.map(({ skill, progress }) => (

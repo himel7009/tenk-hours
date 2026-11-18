@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../components/Button';
 import { usePersistentState } from '../../components/usePersistentState';
 import type { Domain, DomainId } from '../../domain/domains';
@@ -6,6 +6,9 @@ import type { Skill, TrackerKind } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
 import { BadHabitCard } from '../badHabits/BadHabitCard';
 import { BadHabitFormDialog } from '../badHabits/BadHabitFormDialog';
+import { LockScreen } from '../badHabits/LockScreen';
+import { useBadHabitsLocked, useLockSession } from '../badHabits/lockSession';
+import { PinDialog } from '../badHabits/PinDialog';
 import { useUnansweredBadHabits } from '../badHabits/useBadHabitProgress';
 import { DomainFormDialog } from '../domains/DomainFormDialog';
 import { DomainPanel } from '../domains/DomainPanel';
@@ -23,6 +26,7 @@ type DialogState =
   | { type: 'tracker'; kind: TrackerKind; domainId: DomainId | null }
   | { type: 'domain'; domain?: Domain }
   | { type: 'bad' }
+  | { type: 'pin' }
   | null;
 
 type TabId = 'domains' | 'skills' | 'projects' | 'habits' | 'bad';
@@ -73,9 +77,28 @@ export function HomePage() {
   const domains = useTrackerStore((state) => state.domains);
   const badHabits = useTrackerStore((state) => state.badHabits);
   const unanswered = useUnansweredBadHabits();
+  const hasLock = useTrackerStore((state) => state.badHabitLock !== null);
+  const locked = useBadHabitsLocked();
+  const lockNow = useLockSession((state) => state.lock);
   const dashboard = useDashboard();
   const [dialog, setDialog] = useState<DialogState>(null);
   const [tab, setTab] = usePersistentState<TabId>('tenk:home-tab', 'domains');
+
+  // Unlocked bad habits lock again on leaving their tab or this page, and
+  // whenever the app goes to the background.
+  useEffect(() => {
+    if (tab !== 'bad') lockNow();
+  }, [tab, lockNow]);
+  useEffect(() => {
+    const lockWhenHidden = () => {
+      if (document.visibilityState === 'hidden') lockNow();
+    };
+    document.addEventListener('visibilitychange', lockWhenHidden);
+    return () => {
+      document.removeEventListener('visibilitychange', lockWhenHidden);
+      lockNow();
+    };
+  }, [lockNow]);
 
   const addTracker = (kind: TrackerKind, domainId: DomainId | null = null) =>
     setDialog({ type: 'tracker', kind, domainId });
@@ -101,6 +124,7 @@ export function HomePage() {
         <DomainFormDialog domain={dialog.domain} onClose={() => setDialog(null)} />
       )}
       {dialog?.type === 'bad' && <BadHabitFormDialog onClose={() => setDialog(null)} />}
+      {dialog?.type === 'pin' && <PinDialog mode="set" onClose={() => setDialog(null)} />}
     </>
   );
 
@@ -160,9 +184,10 @@ export function HomePage() {
               {
                 id: 'bad',
                 label: 'Bad habits',
-                count: badHabits.length,
+                // While locked, not even how many there are is shown.
+                count: locked ? null : badHabits.length,
                 // Shown on the tab so a missing answer is hard to miss.
-                alert: unanswered > 0 ? `${unanswered} to answer today` : undefined,
+                alert: !locked && unanswered > 0 ? `${unanswered} to answer today` : undefined,
               },
             ]}
             selected={tab}
@@ -170,21 +195,33 @@ export function HomePage() {
           >
             <div className={styles.panelHead}>
               <p className={styles.note}>{copy.note}</p>
-              <Button
-                onClick={() =>
-                  tab === 'domains'
-                    ? setDialog({ type: 'domain' })
-                    : tab === 'bad'
-                      ? setDialog({ type: 'bad' })
-                      : addTracker(TAB_KIND[tab])
-                }
-              >
-                {copy.add}
-              </Button>
+              {tab === 'bad' && !locked && (
+                <Button
+                  variant="quiet"
+                  onClick={hasLock ? lockNow : () => setDialog({ type: 'pin' })}
+                >
+                  {hasLock ? 'Lock now' : 'Lock with a PIN'}
+                </Button>
+              )}
+              {!(tab === 'bad' && locked) && (
+                <Button
+                  onClick={() =>
+                    tab === 'domains'
+                      ? setDialog({ type: 'domain' })
+                      : tab === 'bad'
+                        ? setDialog({ type: 'bad' })
+                        : addTracker(TAB_KIND[tab])
+                  }
+                >
+                  {copy.add}
+                </Button>
+              )}
             </div>
 
             {tab === 'bad' ? (
-              badHabits.length === 0 ? (
+              locked ? (
+                <LockScreen />
+              ) : badHabits.length === 0 ? (
                 <p className={styles.empty}>{copy.empty}</p>
               ) : (
                 <ul className={styles.cards}>

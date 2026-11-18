@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-18
 
+- **PIN lock for bad habits.** Hide your bad habits behind a 4 to 8 digit PIN on each device. They lock again when you leave the tab, put the app in the background or reload.
 - **Bad habits.** Track habits you want to quit with one question a day: did you stay away from it? Clean days build a streak; the last week can be filled in or corrected with a tap.
 - **New home layout.** On wide screens the overview stays on the left while your trackers sit on the right, in tabs for domains, skills, projects and habits. Domains can be collapsed. On phones the tabs come straight after today's summary.
 - **Up next in the library.** Each book and course shows the lesson, chapter or page to start on next.

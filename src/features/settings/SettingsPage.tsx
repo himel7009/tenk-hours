@@ -8,6 +8,7 @@ import { useAccountStore } from '../../store/accountStore';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
 import { AccountSection } from '../account/AccountSection';
+import { PinDialog, type PinDialogMode } from '../badHabits/PinDialog';
 import styles from './SettingsPage.module.css';
 
 const THEMES: { value: Theme; label: string }[] = [
@@ -22,6 +23,8 @@ export function SettingsPage() {
   const replaceData = useTrackerStore((state) => state.replaceData);
   const toast = useToastStore((state) => state.show);
   const signedIn = useAccountStore((state) => state.user !== null);
+  const hasLock = useTrackerStore((state) => state.badHabitLock !== null);
+  const [pinMode, setPinMode] = useState<PinDialogMode | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
@@ -89,6 +92,27 @@ export function SettingsPage() {
       )}
 
       <section className={styles.section}>
+        <h2>Bad habits lock</h2>
+        <p className={styles.help}>
+          {hasLock
+            ? 'Bad habits on this device are hidden until your PIN is entered. They lock again when you leave them.'
+            : 'Hide your bad habits behind a PIN on this device. Each device has its own PIN.'}
+        </p>
+        <div className={styles.actions}>
+          {hasLock ? (
+            <>
+              <Button onClick={() => setPinMode('change')}>Change PIN</Button>
+              <Button variant="danger" onClick={() => setPinMode('remove')}>
+                Remove PIN
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setPinMode('set')}>Set a PIN</Button>
+          )}
+        </div>
+      </section>
+
+      <section className={styles.section}>
         <h2>Your data</h2>
         <p className={styles.help}>
           {signedIn
@@ -114,6 +138,7 @@ export function SettingsPage() {
           </p>
         )}
       </section>
+      {pinMode && <PinDialog mode={pinMode} onClose={() => setPinMode(null)} />}
     </div>
   );
 }

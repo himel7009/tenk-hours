@@ -74,3 +74,14 @@
   background: var(--streak);
   color: var(--on-ink);
 }
+
+.lockIcon {
+  display: block;
+  width: 0.8rem;
+  height: 1.2rem;
+  margin: 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}

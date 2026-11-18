@@ -84,6 +84,12 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
   give a check-in a random id.
 - The streak is clean days in a row; a slip or a day with no answer ends it.
 - Both tables share one sync cursor (`sync.badHabitCursor`).
+- An optional PIN (`badHabitLock`, `domain/pin.ts`) hides them per device. It
+  is stored only as a salted PBKDF2 hash, never synced, and cleared on sign
+  out. Unlocked state lives in memory (`lockSession.ts`) and is dropped on
+  leaving the tab or page, on the app going to the background, and on reload.
+  It is a privacy screen, not encryption: backups and storage still hold the
+  data.
 
 ## Home dashboard
 

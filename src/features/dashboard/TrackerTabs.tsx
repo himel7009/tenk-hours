@@ -4,7 +4,8 @@ import styles from './TrackerTabs.module.css';
 export interface TabDefinition<Id extends string> {
   id: Id;
   label: string;
-  count: number;
+  /** Null hides the count behind a lock icon. */
+  count: number | null;
   /** Marks the tab as needing attention; read out after the label. */
   alert?: string;
 }
@@ -62,9 +63,19 @@ export function TrackerTabs<Id extends string>({
             onKeyDown={(event) => handleKeyDown(event, index)}
           >
             {tab.label}
-            <span className={`tabular ${styles.count}`} data-alert={tab.alert !== undefined}>
-              {tab.count}
-            </span>
+            {tab.count === null ? (
+              <span className={styles.count}>
+                <svg viewBox="0 0 24 24" className={styles.lockIcon} aria-hidden="true">
+                  <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
+                  <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
+                </svg>
+                <span className="visually-hidden">, locked</span>
+              </span>
+            ) : (
+              <span className={`tabular ${styles.count}`} data-alert={tab.alert !== undefined}>
+                {tab.count}
+              </span>
+            )}
             {tab.alert && <span className="visually-hidden">, {tab.alert}</span>}
           </button>
         ))}

@@ -100,7 +100,9 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
             <span className={styles.streakLine}>
               <StreakBadge streak={progress.streak} />
               {progress.streak.longest > progress.streak.current && (
-                <span className={`tabular ${styles.longest}`}>best {progress.streak.longest}</span>
+                <span className={`tabular ${styles.longest}`}>
+                  longest {progress.streak.longest}
+                </span>
               )}
             </span>
           ) : (

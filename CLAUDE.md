@@ -68,6 +68,8 @@ nullable); habits never have one.
 - A domain stores no progress. `summarizeDomain` derives its hours (the sum
   of its skills and projects) and its streak (a day counts when any one of
   its skills reached that skill's own daily goal; projects never count).
+- A domain's daily plan (`DomainProgress.plan`) is the sum of its skills'
+  daily goals. Today's covered time counts each skill only up to its own goal.
 - Deleting a domain keeps its skills and sets their `domainId` to null.
 - Push order matters: domains, then skills, then sessions.
 

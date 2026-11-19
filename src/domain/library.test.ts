@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { isWebUrl, nextUnitLabel, progressLabel, stepProgress, type LibraryItem } from './library';
+import {
+  isWebUrl,
+  libraryProgress,
+  nextUnitLabel,
+  progressLabel,
+  remainingLabel,
+  stepProgress,
+  summarizeLibrary,
+  type LibraryItem,
+} from './library';
 
 const book: LibraryItem = {
   id: 'b',
@@ -90,5 +99,62 @@ describe('isWebUrl', () => {
     expect(isWebUrl('data:text/html,hi')).toBe(false);
     expect(isWebUrl('youtube.com')).toBe(false);
     expect(isWebUrl('https://')).toBe(false);
+  });
+});
+
+describe('libraryProgress', () => {
+  const course: LibraryItem = {
+    ...book,
+    kind: 'course',
+    unit: 'lesson',
+    totalUnits: 23,
+    doneUnits: 7,
+  };
+
+  it('gives the percent done and what is left', () => {
+    expect(libraryProgress(course)).toEqual({ percent: 30, done: 7, total: 23, remaining: 16 });
+    expect(remainingLabel(course)).toBe('16 lessons left');
+    expect(remainingLabel({ ...course, doneUnits: 22 })).toBe('1 lesson left');
+  });
+
+  it('never rounds up to 100 before the end', () => {
+    expect(libraryProgress({ ...course, doneUnits: 22 })?.percent).toBe(95);
+    expect(libraryProgress({ ...course, totalUnits: 1000, doneUnits: 999 })?.percent).toBe(99);
+    expect(libraryProgress({ ...course, doneUnits: 23, status: 'done' })?.percent).toBe(100);
+  });
+
+  it('has no percent without a total', () => {
+    expect(libraryProgress({ ...course, totalUnits: null })).toBeNull();
+    expect(remainingLabel({ ...course, totalUnits: null })).toBeNull();
+  });
+});
+
+describe('summarizeLibrary', () => {
+  const item = (id: string, extra: Partial<LibraryItem>): LibraryItem => ({
+    ...book,
+    id,
+    title: id,
+    ...extra,
+  });
+
+  it('counts each status and averages the ones in progress', () => {
+    const summary = summarizeLibrary([
+      item('a', { status: 'active', totalUnits: 10, doneUnits: 8 }),
+      item('b', { status: 'active', totalUnits: 10, doneUnits: 2 }),
+      item('c', { status: 'paused', totalUnits: 10, doneUnits: 9 }),
+      item('d', { status: 'active', totalUnits: null, doneUnits: 40 }),
+      item('e', { status: 'planned' }),
+      item('f', { status: 'done', totalUnits: 10, doneUnits: 10 }),
+    ]);
+    expect(summary.inProgress.map(({ item }) => item.id)).toEqual(['a', 'b', 'd', 'c']);
+    expect(summary).toMatchObject({ active: 3, paused: 1, planned: 1, finished: 1 });
+    expect(summary.averagePercent).toBe(63);
+    expect(summary.almostDone).toBe(2);
+  });
+
+  it('has no average when nothing has a known total', () => {
+    expect(
+      summarizeLibrary([item('a', { status: 'active', totalUnits: null })]).averagePercent,
+    ).toBeNull();
   });
 });

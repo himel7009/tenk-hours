@@ -323,13 +323,74 @@
   grid-column: span 8;
 }
 
-.grid:not(:has(.badCard)) .breakdown {
+.grid:not(:has(.side > *)) .breakdown {
   grid-column: 1 / -1;
 }
 
-.badCard {
+.side {
+  display: flex;
   grid-column: span 4;
-  align-self: start;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.side:empty {
+  display: none;
+}
+
+.libraryHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.libraryAverage {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.libraryRows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.libraryRows li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.libraryTitle {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.libraryName {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.libraryPercent {
+  color: var(--skill);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.libraryFoot {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
 }
 
 .sectionTitle {
@@ -477,7 +538,7 @@
   .dailyCard,
   .trendCard,
   .breakdown,
-  .badCard {
+  .side {
     grid-column: 1 / -1;
   }
 }

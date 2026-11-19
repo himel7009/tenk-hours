@@ -11,6 +11,14 @@ import {
   type Report,
   type TrackerReport,
 } from '../../domain/report';
+import {
+  ALMOST_DONE_PERCENT,
+  nextUnitLabel,
+  progressLabel,
+  remainingLabel,
+  summarizeLibrary,
+} from '../../domain/library';
+import { useTrackerStore } from '../../store/trackerStore';
 import { useBadHabitsLocked } from '../badHabits/lockSession';
 import { useToday } from '../progress/useNow';
 import { useReport, useTrend } from '../progress/useReport';
@@ -127,7 +135,10 @@ export function ReportPage() {
         </section>
 
         <Breakdown report={report} noun={noun} />
-        <BadHabitsSection report={report} />
+        <div className={styles.side}>
+          <BadHabitsSection report={report} />
+          <LibrarySection />
+        </div>
       </div>
     </div>
   );
@@ -366,6 +377,77 @@ function BadHabitsSection({ report }: { report: Report }) {
           })}
         </ul>
       )}
+    </section>
+  );
+}
+
+const LIBRARY_ICONS = { book: '📖', course: '🎓' } as const;
+const LIBRARY_COLORS = { book: 'teal', course: 'plum' } as const;
+
+/**
+ * Where each book and course stands now. The library keeps no history of
+ * when progress was made, so this is today's picture, not the period's.
+ */
+function LibrarySection() {
+  const library = useTrackerStore((state) => state.library);
+  const summary = useMemo(() => summarizeLibrary(library), [library]);
+  if (summary.inProgress.length === 0 && summary.finished === 0) return null;
+
+  return (
+    <section className={`${styles.card} ${styles.libraryCard}`} aria-labelledby="report-library">
+      <div className={styles.libraryHead}>
+        <h2 id="report-library" className={styles.sectionTitle}>
+          Library
+        </h2>
+        <p className={styles.meta}>Where you are now</p>
+      </div>
+      {summary.averagePercent !== null && (
+        <p className={styles.libraryAverage}>
+          <span className={`tabular ${styles.cardFigure}`}>{summary.averagePercent}%</span>
+          <span className={styles.meta}>
+            done on average across{' '}
+            {plural(summary.inProgress.filter(({ progress }) => progress).length, 'item')} in
+            progress
+          </span>
+        </p>
+      )}
+      <ul className={styles.libraryRows}>
+        {summary.inProgress.map(({ item, progress }) => {
+          const next = nextUnitLabel(item);
+          const left = remainingLabel(item);
+          return (
+            <li key={item.id} data-color={LIBRARY_COLORS[item.kind]}>
+              <div className={styles.libraryTitle}>
+                <span aria-hidden="true">{LIBRARY_ICONS[item.kind]}</span>
+                <span className={styles.libraryName}>{item.title}</span>
+                {progress && (
+                  <span className={`tabular ${styles.libraryPercent}`}>{progress.percent}%</span>
+                )}
+              </div>
+              {progress && (
+                <span className={styles.bar} aria-hidden="true">
+                  <span style={{ width: `${progress.percent}%` }} />
+                </span>
+              )}
+              <span className={styles.meta}>
+                {progressLabel(item)}
+                {left && `, ${left}`}
+                {item.status === 'paused'
+                  ? '. Paused'
+                  : progress && progress.percent >= ALMOST_DONE_PERCENT
+                    ? '. Almost there'
+                    : ''}
+                {next && item.status !== 'paused' && `. Up next: ${next}`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <p className={styles.libraryFoot}>
+        {summary.finished} finished
+        {summary.planned > 0 && `, ${summary.planned} saved for later`}.{' '}
+        <Link to="/library">Open library</Link>
+      </p>
     </section>
   );
 }

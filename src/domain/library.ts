@@ -59,12 +59,6 @@ export function isWebUrl(value: string): boolean {
   }
 }
 
-/** Progress from 0 to 1, or null when the total is unknown. */
-export function progressFraction(item: LibraryItem): number | null {
-  if (item.totalUnits === null) return null;
-  return Math.min(1, item.doneUnits / item.totalUnits);
-}
-
 /** "Chapter 5 of 12", "Page 120", or "Not started". */
 export function progressLabel(item: LibraryItem): string {
   const { one, many } = UNIT_LABELS[item.unit];
@@ -102,4 +96,69 @@ export function stepProgress(item: LibraryItem, by: number): LibraryItem {
   const started = item.status === 'planned' && doneUnits > item.doneUnits;
   const status = finished ? 'done' : item.status === 'done' || started ? 'active' : item.status;
   return { ...item, doneUnits, status };
+}
+
+export interface LibraryProgress {
+  /** Whole percent done. Shows 100 only once the item is finished. */
+  percent: number;
+  done: number;
+  total: number;
+  remaining: number;
+}
+
+/** How far along an item is, or null when its total is unknown. */
+export function libraryProgress(item: LibraryItem): LibraryProgress | null {
+  if (item.totalUnits === null || item.totalUnits <= 0) return null;
+  const done = Math.min(item.doneUnits, item.totalUnits);
+  const finished = item.status === 'done' || done >= item.totalUnits;
+  // Floor, so 22 of 23 reads 95% and not a premature 100%.
+  const percent = finished ? 100 : Math.floor((done / item.totalUnits) * 100);
+  return { percent, done, total: item.totalUnits, remaining: item.totalUnits - done };
+}
+
+/** "16 lessons left", or null when the total is unknown or it is finished. */
+export function remainingLabel(item: LibraryItem): string | null {
+  const progress = libraryProgress(item);
+  if (!progress || progress.remaining === 0 || item.status === 'done') return null;
+  const { one, many } = UNIT_LABELS[item.unit];
+  return `${progress.remaining.toLocaleString()} ${progress.remaining === 1 ? one : many} left`;
+}
+
+/** At or past this share, an item counts as almost finished. */
+export const ALMOST_DONE_PERCENT = 75;
+
+export interface LibrarySummary {
+  /** Active items first, then paused, each furthest along first. */
+  inProgress: { item: LibraryItem; progress: LibraryProgress | null }[];
+  active: number;
+  paused: number;
+  planned: number;
+  finished: number;
+  /** Mean percent over in-progress items with a known total, or null. */
+  averagePercent: number | null;
+  almostDone: number;
+}
+
+export function summarizeLibrary(items: readonly LibraryItem[]): LibrarySummary {
+  const count = (status: LibraryStatus) => items.filter((item) => item.status === status).length;
+  const inProgress = items
+    .filter((item) => item.status === 'active' || item.status === 'paused')
+    .map((item) => ({ item, progress: libraryProgress(item) }))
+    .sort(
+      (a, b) =>
+        Number(a.item.status === 'paused') - Number(b.item.status === 'paused') ||
+        (b.progress?.percent ?? -1) - (a.progress?.percent ?? -1) ||
+        a.item.title.localeCompare(b.item.title),
+    );
+  const known = inProgress.flatMap(({ progress }) => (progress ? [progress.percent] : []));
+  return {
+    inProgress,
+    active: count('active'),
+    paused: count('paused'),
+    planned: count('planned'),
+    finished: count('done'),
+    averagePercent:
+      known.length > 0 ? Math.round(known.reduce((a, b) => a + b, 0) / known.length) : null,
+    almostDone: known.filter((percent) => percent >= ALMOST_DONE_PERCENT).length,
+  };
 }

@@ -115,7 +115,9 @@ or calendar month, from `domain/report.ts`. `buildReport` derives everything
 from sessions and check-ins; nothing is stored. While a period is still
 running it is compared with the same number of days of the one before, so a
 Thursday is set against last Thursday. Daily goals count only from the day a
-tracker was created. Bad habits stay hidden while the PIN lock is on.
+tracker was created. Bad habits stay hidden while the PIN lock is on. The Library card
+shows where each book and course stands now (`summarizeLibrary`), not
+progress made in the period, since the library keeps no history.
 
 ## Library
 

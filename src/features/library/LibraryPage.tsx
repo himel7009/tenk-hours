@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '../../components/Button';
-import type { LibraryItem, LibraryKind, LibraryStatus } from '../../domain/library';
+import {
+  summarizeLibrary,
+  type LibraryItem,
+  type LibraryKind,
+  type LibraryStatus,
+} from '../../domain/library';
 import { useTrackerStore } from '../../store/trackerStore';
 import styles from './library.module.css';
 import { LibraryItemDialog } from './LibraryItemDialog';
@@ -22,6 +27,7 @@ type DialogState = { kind: LibraryKind; status?: LibraryStatus } | { item: Libra
 export function LibraryPage() {
   const library = useTrackerStore((state) => state.library);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const summary = useMemo(() => summarizeLibrary(library), [library]);
 
   return (
     <>
@@ -41,6 +47,29 @@ export function LibraryPage() {
           </Button>
         </div>
       </header>
+
+      {summary.active + summary.paused + summary.finished > 0 && (
+        <dl className={styles.overview}>
+          <div>
+            <dt>Started</dt>
+            <dd className="tabular">{summary.active + summary.paused}</dd>
+          </div>
+          {summary.averagePercent !== null && (
+            <div>
+              <dt>Done on average</dt>
+              <dd className="tabular">{summary.averagePercent}%</dd>
+            </div>
+          )}
+          <div>
+            <dt>Almost finished</dt>
+            <dd className="tabular">{summary.almostDone}</dd>
+          </div>
+          <div>
+            <dt>Finished</dt>
+            <dd className="tabular">{summary.finished}</dd>
+          </div>
+        </dl>
+      )}
 
       {library.length === 0 ? (
         <p className={styles.empty}>

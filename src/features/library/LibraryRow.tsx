@@ -1,8 +1,9 @@
 import { Button } from '../../components/Button';
 import {
+  libraryProgress,
   nextUnitLabel,
-  progressFraction,
   progressLabel,
+  remainingLabel,
   stepProgress,
   UNIT_LABELS,
   type LibraryItem,
@@ -23,7 +24,8 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
   const updateLibraryItem = useTrackerStore((state) => state.updateLibraryItem);
   const toast = useToastStore((state) => state.show);
 
-  const fraction = progressFraction(item);
+  const progress = libraryProgress(item);
+  const left = remainingLabel(item);
   const next = nextUnitLabel(item);
   // Pages move too slowly one at a time.
   const stepSize = item.unit === 'page' ? 10 : 1;
@@ -63,6 +65,7 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
         {item.status !== 'planned' && (
           <p className={`tabular ${styles.progress}`}>
             {progressLabel(item)}
+            {left && <span className={styles.left}>{left}</span>}
             {next && item.doneUnits > 0 && (
               <span className={styles.next}>
                 Up next: <strong>{next}</strong>
@@ -70,9 +73,19 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
             )}
           </p>
         )}
-        {fraction !== null && item.status !== 'planned' && (
-          <div className={styles.bar} aria-hidden="true">
-            <div className={styles.barFill} style={{ width: `${fraction * 100}%` }} />
+        {progress && item.status !== 'planned' && (
+          <div className={styles.meter}>
+            <div
+              className={styles.bar}
+              role="progressbar"
+              aria-label={`${item.title} progress`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progress.percent}
+            >
+              <div className={styles.barFill} style={{ width: `${progress.percent}%` }} />
+            </div>
+            <span className={`tabular ${styles.percent}`}>{progress.percent}%</span>
           </div>
         )}
 

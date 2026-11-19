@@ -96,6 +96,64 @@
   font-weight: 600;
 }
 
+.meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-width: 32rem;
+  margin-top: var(--space-2);
+}
+
+.meter .bar {
+  flex: 1;
+  margin-top: 0;
+}
+
+.percent {
+  min-width: 3.25rem;
+  color: var(--skill);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: right;
+}
+
+.left {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+/* The shelf at a glance, above the sections. */
+.overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin-bottom: var(--space-6);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.overview div {
+  display: flex;
+  flex-direction: column;
+}
+
+.overview dt {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.overview dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
 .bar {
   max-width: 28rem;
   height: 6px;

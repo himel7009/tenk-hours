@@ -30,7 +30,7 @@ The 10,000-hour grid, today's goal, a countdown timer, manual logging, streaks, 
 
 ### Library
 
-Books and courses in progress with the lesson or chapter up next, a bookmark of where you are, and the ones saved for later.
+Books and courses in progress with the percent done, what is left, the lesson or chapter up next, a bookmark of where you are, and the ones saved for later.
 
 ![Library](docs/screenshots/library.png)
 
@@ -56,7 +56,7 @@ How a week or month went, against the one before, with a day-by-day chart and a 
 - **🛠️ Projects**: Time the work you do on a project, with no target or streak, just the hours you put in. Switch any skill to a project or back.
 - **🚫 Bad habits**: Habits you want to quit, with a daily yes or no check-in, a streak of clean days and your clean rate over the last 30 days, optionally hidden behind a PIN.
 - **🧭 Domains**: Group related skills and projects under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of everything in it, a daily plan made of its skills' daily goals with today's progress against it, and a streak of its own.
-- **📊 Weekly and monthly report**: Total time against the same point last week or month, daily average, days you showed up, goals reached, a day-by-day chart, a trend of recent weeks or months, and a breakdown by skill, project and domain.
+- **📊 Weekly and monthly report**: Total time against the same point last week or month, daily average, days you showed up, goals reached, a day-by-day chart, a trend of recent weeks or months, and a breakdown by skill, project and domain, and where each book and course stands.
 - **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length down to the second, and pause it when you step away. Turn on rounds to split long stretches Pomodoro style (25 + 5 or 50 + 10); only focus time is saved, never the breaks. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
 - **🔥 Streaks with daily goals**: Every skill, habit and domain has its own streak. A day only counts once its daily goal is reached (one hour by default).
 
@@ -69,7 +69,7 @@ How a week or month went, against the one before, with a day-by-day chart and a 
 
 ### Library
 
-- **📚 Books and courses**: Progress in chapters, pages or lessons, the one to start on next, a free-text bookmark ("Video 12 at 34:10"), notes and a link to the course or playlist.
+- **📚 Books and courses**: Progress in chapters, pages or lessons with the percent done and what is left, the one to start on next, a free-text bookmark ("Video 12 at 34:10"), notes and a link to the course or playlist.
 - **🔖 Saved for later**: Keep courses and books you have found but not started. Start one with a click when you are ready.
 
 ### Your data

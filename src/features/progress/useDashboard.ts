@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { combineByDay } from '../../domain/activity';
+import type { DayKey } from '../../domain/dates';
 import { summarizeDashboard, type Dashboard } from '../../domain/dashboard';
 import { summarizeDomain, type Domain, type DomainProgress } from '../../domain/domains';
 import type { Skill } from '../../domain/types';
@@ -26,4 +28,12 @@ export function useDomainProgress(domain: Domain): { skills: Skill[]; progress: 
     const skills = allSkills.filter((skill) => skill.domainId === domain.id);
     return { skills, progress: summarizeDomain(skills, sessions, today, domain.routineDays) };
   }, [allSkills, sessions, today, domain.id, domain.routineDays]);
+}
+
+/** Minutes across every skill, habit and project, by day. */
+export function useOverallActivity(dashboard: Dashboard): Map<DayKey, number> {
+  return useMemo(
+    () => combineByDay(dashboard.trackers.map(({ progress }) => progress.byDay)),
+    [dashboard.trackers],
+  );
 }

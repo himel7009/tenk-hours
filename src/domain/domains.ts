@@ -70,6 +70,8 @@ export interface DomainProgress {
   completedDays: Set<DayKey>;
   /** Days with any time logged in the domain. */
   activeDays: Set<DayKey>;
+  /** Minutes across the domain on each day. */
+  byDay: Map<DayKey, number>;
   streak: Streak;
   /** Whether any skill in it keeps a streak. Without one the domain shows none. */
   keepsStreak: boolean;
@@ -96,6 +98,7 @@ export function summarizeDomain(
 
   const completedDays = new Set<DayKey>();
   const activeDays = new Set<DayKey>();
+  const byDay = new Map<DayKey, number>();
   let minutesToday = 0;
   const planItems: PlanItem[] = [];
 
@@ -110,7 +113,10 @@ export function summarizeDomain(
     if (hasDailyGoal(skill) && keepsStreak(skill)) {
       for (const day of progress.completedDays) completedDays.add(day);
     }
-    for (const day of progress.byDay.keys()) activeDays.add(day);
+    for (const [day, minutes] of progress.byDay) {
+      activeDays.add(day);
+      byDay.set(day, (byDay.get(day) ?? 0) + minutes);
+    }
     minutesToday += progress.minutesToday;
     if (hasDailyGoal(skill) && plannedToday) {
       planItems.push({
@@ -129,6 +135,7 @@ export function summarizeDomain(
     shares,
     completedDays,
     activeDays,
+    byDay,
     streak: computeStreak(completedDays, today, (day) => !isPlannedOn(routine, day)),
     keepsStreak: skills.some((skill) => hasDailyGoal(skill) && keepsStreak(skill)),
     plannedToday,

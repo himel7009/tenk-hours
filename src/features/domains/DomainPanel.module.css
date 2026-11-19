@@ -272,3 +272,10 @@
 .routine[data-today='true'] {
   color: var(--skill);
 }
+
+.activity {
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+}

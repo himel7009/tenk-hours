@@ -125,3 +125,21 @@
     grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
   }
 }
+
+/* The year at a glance, above the tabs. */
+.activityCard {
+  margin-bottom: var(--space-5);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.activityTitle {
+  margin-bottom: var(--space-2);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+}

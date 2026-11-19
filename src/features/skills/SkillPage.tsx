@@ -9,7 +9,7 @@ import type { Progress } from '../../domain/progress';
 import { plannedPhrase, routineOf } from '../../domain/routine';
 import { hasDailyGoal, keepsStreak, type Skill } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
-import { Heatmap } from '../progress/Heatmap';
+import { ActivityCalendar } from '../progress/ActivityCalendar';
 import { HourField } from '../progress/HourField';
 import { MilestoneTrack } from '../progress/MilestoneTrack';
 import { TodayGoal } from '../progress/TodayGoal';
@@ -52,10 +52,14 @@ function SkillDetail({ skill }: { skill: Skill }) {
   const withGoal = hasDailyGoal(skill);
   const streakOn = withGoal && keepsStreak(skill);
   const routine = routineOf(skill, domains);
-  // Without a daily goal, an hour is just the scale for the calendar shading.
-  const shadingMinutes = withGoal ? skill.dailyGoalMinutes : 60;
 
-  const heatmap = <Heatmap byDay={progress.byDay} goalMinutes={shadingMinutes} today={today} />;
+  const activity = (
+    <ActivityCalendar
+      byDay={progress.byDay}
+      today={today}
+      goalMinutes={withGoal ? skill.dailyGoalMinutes : null}
+    />
+  );
 
   return (
     <div data-color={skill.color}>
@@ -110,17 +114,15 @@ function SkillDetail({ skill }: { skill: Skill }) {
       <div className={styles.columns}>
         {isProject ? (
           <figure className={styles.habitCalendar}>
-            {heatmap}
-            <figcaption>
-              The days you worked on it over the last 26 weeks. Darker squares are longer days.
-            </figcaption>
+            {activity}
+            <figcaption>Every day you worked on it. Darker squares are longer days.</figcaption>
           </figure>
         ) : isHabit ? (
           <figure className={styles.habitCalendar}>
-            {heatmap}
+            {activity}
             <figcaption>
-              The last 26 weeks. Full colour marks a day that reached the{' '}
-              {formatDuration(skill.dailyGoalMinutes)} goal; a faint square fell short.
+              The third shade marks a day that reached the {formatDuration(skill.dailyGoalMinutes)}{' '}
+              goal, the darkest twice that; lighter ones fell short.
             </figcaption>
           </figure>
         ) : (
@@ -175,8 +177,8 @@ function SkillDetail({ skill }: { skill: Skill }) {
 
       {!isHabit && !isProject && (
         <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>Last 26 weeks</h2>
-          {heatmap}
+          <h2 className={styles.sectionTitle}>Activity</h2>
+          {activity}
         </section>
       )}
 

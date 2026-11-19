@@ -12,7 +12,8 @@ import { PinDialog } from '../badHabits/PinDialog';
 import { useUnansweredBadHabits } from '../badHabits/useBadHabitProgress';
 import { DomainFormDialog } from '../domains/DomainFormDialog';
 import { DomainPanel } from '../domains/DomainPanel';
-import { useDashboard } from '../progress/useDashboard';
+import { ActivityCalendar } from '../progress/ActivityCalendar';
+import { useDashboard, useOverallActivity } from '../progress/useDashboard';
 import { useToday } from '../progress/useNow';
 import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
@@ -82,6 +83,7 @@ export function HomePage() {
   const locked = useBadHabitsLocked();
   const lockNow = useLockSession((state) => state.lock);
   const dashboard = useDashboard();
+  const overallActivity = useOverallActivity(dashboard);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [tab, setTab] = usePersistentState<TabId>('tenk:home-tab', 'domains');
 
@@ -177,6 +179,12 @@ export function HomePage() {
         </aside>
 
         <section className={styles.trackers} aria-label="Your trackers">
+          <section className={styles.activityCard} aria-labelledby="activity-title">
+            <h2 id="activity-title" className={styles.activityTitle}>
+              Activity across everything
+            </h2>
+            <ActivityCalendar byDay={overallActivity} today={today} />
+          </section>
           <TrackerTabs
             tabs={[
               { id: 'domains', label: 'Domains', count: domains.length },

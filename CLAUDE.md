@@ -118,6 +118,15 @@ the tabs come straight after the Today card. The open tab and each domain's
 collapsed state are remembered per browser (`usePersistentState`). All
 figures come from `summarizeDashboard`.
 
+## Activity calendar
+
+`ActivityCalendar` (`features/progress/`, logic in `domain/activity.ts`) is the
+GitHub-style year of days: week columns, Sunday on top, five shades. With a
+daily goal the shades are fixed fractions of it; without one they are
+quartiles of the days shown. It is on the home page (all trackers combined
+with `combineByDay`), on each domain (`DomainProgress.byDay`) and on each
+tracker's page. It is separate from the 10,000-hour grid (`HourField`).
+
 ## Report
 
 `features/report/` is the Report page (`/report`): a week (Monday to Sunday)

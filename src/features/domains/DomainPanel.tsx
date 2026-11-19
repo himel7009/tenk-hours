@@ -4,6 +4,7 @@ import type { DailyPlan, Domain } from '../../domain/domains';
 import { describeRoutine } from '../../domain/routine';
 import { hasDailyGoal, type Skill } from '../../domain/types';
 import { formatDuration, formatHours } from '../../domain/format';
+import { ActivityCalendar } from '../progress/ActivityCalendar';
 import { StreakBadge } from '../progress/StreakBadge';
 import { useDomainProgress } from '../progress/useDashboard';
 import { useToday } from '../progress/useNow';
@@ -164,6 +165,12 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {progress.byDay.size > 0 && (
+        <div className={styles.activity}>
+          <ActivityCalendar byDay={progress.byDay} today={today} />
         </div>
       )}
 

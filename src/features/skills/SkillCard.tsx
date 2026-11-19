@@ -81,6 +81,18 @@ export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
   const { plan } = usePomodoroPlan();
   const running = activeTimer?.skillId === skill.id;
   const deleteSkill = useTrackerStore((state) => state.deleteSkill);
+  const setKeepStreak = useTrackerStore((state) => state.setKeepStreak);
+  const toggleStreak = () => {
+    const on = !skill.keepStreak;
+    setKeepStreak(skill.id, on);
+    useToastStore
+      .getState()
+      .show(
+        on
+          ? `Keeping a streak on ${skill.name}.`
+          : `Streak off for ${skill.name}. Its hours and activity stay.`,
+      );
+  };
   const domain = useTrackerStore((state) =>
     showDomain ? state.domains.find((candidate) => candidate.id === skill.domainId) : undefined,
   );
@@ -129,6 +141,21 @@ export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
       </Link>
 
       <div className={styles.shortcuts}>
+        <button
+          type="button"
+          className={styles.shortcut}
+          data-on={skill.keepStreak}
+          onClick={toggleStreak}
+          aria-pressed={skill.keepStreak}
+          aria-label={`Keep a streak on ${skill.name}`}
+          title={
+            skill.keepStreak ? 'Streak on. Click to turn it off' : 'Streak off. Click to keep one'
+          }
+        >
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8.3 1.5c.4 2.2-.6 3.3-1.6 4.4C5.6 7.1 4.5 8.3 4.5 10.3a3.5 3.5 0 0 0 7 0c0-1.2-.4-2.1-1-2.9-.3.8-.7 1.3-1.3 1.6.4-2.6.3-5.4-.9-7.5Z" />
+          </svg>
+        </button>
         <button
           type="button"
           className={styles.shortcut}

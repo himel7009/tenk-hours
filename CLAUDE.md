@@ -163,7 +163,22 @@ domains do (`sync.domainCursor`).
   import and rows pulled from the server. Keep `rel="noopener noreferrer"`.
 - Adding another synced table means: a migration with RLS and a test case, a
   pending map and cursor in `SyncState`, entries in `PushBatch` and
-  `RemoteChanges`, and a storage `migrate` step.
+  `RemoteChanges`, a storage `migrate` step, and live updates (the
+  `supabase_realtime` publication and `LIVE_TABLES`).
+
+## Sync timing
+
+A local change is pushed about a second after it is made (`PUSH_DEBOUNCE_MS`).
+Other signed-in devices hear about it through Supabase Realtime
+(`postgres_changes` on every synced table, filtered by `user_id`) and pull at
+once; the notice carries no data the sync relies on. A 60-second poll and a
+pull on focus or reconnect catch anything missed. A new synced table must be
+added to the `supabase_realtime` publication and to `LIVE_TABLES` in
+`useCloudSync.ts`.
+
+New app versions: the service worker uses `registerType: 'prompt'`.
+`useAppUpdates` checks every 30 minutes and on focus, and shows a toast with a
+Reload button rather than reloading by itself.
 
 ## Deploying changes that touch the database
 
@@ -174,7 +189,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All nine migrations in `supabase/migrations/` are applied to the live project
+All ten migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-19.
 
 ## Releases

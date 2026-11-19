@@ -93,6 +93,8 @@ interface TrackerActions {
   addSkill: (kind: TrackerKind, input: SkillInput) => SkillId;
   /** Changes a skill. Passing a kind switches a skill to a project or back. */
   updateSkill: (id: SkillId, input: SkillInput & { kind?: TrackerKind }) => void;
+  /** Turns a tracker's streak on or off. */
+  setKeepStreak: (id: SkillId, keepStreak: boolean) => void;
   /** Removes the skill and every session logged against it. */
   deleteSkill: (id: SkillId) => void;
 
@@ -229,6 +231,12 @@ export const useTrackerStore = create<TrackerStore>()(
         }));
         return skill.id;
       },
+
+      setKeepStreak: (id, keepStreak) =>
+        set((state) => ({
+          skills: state.skills.map((skill) => (skill.id === id ? { ...skill, keepStreak } : skill)),
+          sync: markPending(state.sync, 'pendingSkills', [id], 'upsert'),
+        })),
 
       updateSkill: (id, input) =>
         set((state) => ({

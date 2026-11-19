@@ -127,3 +127,17 @@ describe('timer', () => {
     expect(store().activeTimer?.pomodoro).toBeNull();
   });
 });
+
+describe('streak switch', () => {
+  it('turns a streak off and on and queues the change for sync', () => {
+    store().adoptAccount('user-1');
+    const id = newSkill();
+    const rev = store().sync.rev;
+    store().setKeepStreak(id, false);
+    expect(store().skills.find((skill) => skill.id === id)?.keepStreak).toBe(false);
+    expect(store().sync.pendingSkills[id]).toBeDefined();
+    expect(store().sync.rev).toBeGreaterThan(rev);
+    store().setKeepStreak(id, true);
+    expect(store().skills.find((skill) => skill.id === id)?.keepStreak).toBe(true);
+  });
+});

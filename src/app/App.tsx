@@ -1,3 +1,4 @@
+import { useAppUpdates } from './useAppUpdates';
 import { useEffect } from 'react';
 import { HashRouter, Route, Routes, useNavigate } from 'react-router';
 import { ResetPasswordPage } from '../features/account/ResetPasswordPage';
@@ -16,6 +17,7 @@ import { useApplyTheme } from './useApplyTheme';
 export function App() {
   useApplyTheme();
   useCloudSync();
+  useAppUpdates();
 
   // Hash routing keeps deep links working on static hosts such as GitHub Pages.
   return (

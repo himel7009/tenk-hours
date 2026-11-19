@@ -4,6 +4,9 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-19
 
+- **Streak switch on every card.** A flame next to edit and delete turns a skill's, habit's or project's streak on or off in one click.
+- **Live sync.** A change made on one device now shows on your other open devices within a second or two, instead of on their next check a minute later.
+- **App updates.** An open or installed app now checks for a new version every half hour and when you come back to it, and offers a Reload button when one is ready.
 - **Projects come first.** The Projects tab lists every project, in a domain or not, each tagged with its domain, so there is no need for a "Projects" domain to find them. The Today tab shows today's projects in their own section right after the to-dos, and the domain panels below leave them out. New projects start with a streak, which can still be switched off.
 - **Today tab.** The home page opens on Today: your to-do list, a reminder if a bad habit is still unanswered, and only the domains and trackers your weekly routine plans for today. It changes by itself from day to day, and says which domains are resting.
 - **To-do list.** Write a task, tick it off, click it to fix a typo. Done items fold away until you clear them. It syncs with your account like everything else.

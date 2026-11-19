@@ -38,8 +38,8 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  /* Room for the edit and delete shortcuts in the corner. */
-  padding-right: 3.75rem;
+  /* Room for the streak, edit and delete shortcuts in the corner. */
+  padding-right: 6rem;
 }
 
 .name {
@@ -128,6 +128,15 @@
 .shortcut:hover {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
+}
+
+.shortcut[data-on='true'] {
+  color: var(--streak, var(--persimmon));
+}
+
+.shortcut[data-on='true'] svg {
+  fill: currentColor;
+  fill-opacity: 0.25;
 }
 
 .shortcutDanger:hover {

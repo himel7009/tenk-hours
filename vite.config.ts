@@ -9,7 +9,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // The app offers a reload when a new version is ready (useAppUpdates).
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['favicon.svg'],
       workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] },
       manifest: {

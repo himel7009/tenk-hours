@@ -8,8 +8,24 @@ import { createSyncController, type SyncController } from './syncController';
 
 /** Wait for a burst of edits to finish before pushing. */
 const PUSH_DEBOUNCE_MS = 1000;
-/** How often an open tab checks for changes made on other devices. */
+/**
+ * How often an open tab checks for changes made on other devices. Live
+ * updates usually get there first; this catches anything they miss, such as
+ * changes made while the connection was down.
+ */
 const POLL_INTERVAL_MS = 60_000;
+/** A burst of row changes from another device becomes one pull. */
+const LIVE_DEBOUNCE_MS = 400;
+/** Every synced table, watched for live updates. */
+const LIVE_TABLES = [
+  'skills',
+  'sessions',
+  'domains',
+  'library_items',
+  'bad_habits',
+  'bad_habit_checkins',
+  'todos',
+] as const;
 
 let activeController: SyncController | null = null;
 
@@ -46,7 +62,8 @@ function useAuthSession(): void {
 
 /**
  * Mount once. While someone is signed in this syncs on sign-in, after local
- * changes, when the tab regains focus or the network, and on a slow poll.
+ * changes, as soon as another device changes something (live updates), when
+ * the tab regains focus or the network, and on a slow poll.
  */
 export function useCloudSync(): void {
   useAuthSession();
@@ -66,6 +83,22 @@ export function useCloudSync(): void {
     const unsubscribe = useTrackerStore.subscribe((state, previous) => {
       if (state.sync.rev !== previous.sync.rev) controller.request(PUSH_DEBOUNCE_MS);
     });
+    // A change on another device pulls here within a second or two. The
+    // notice only says something changed; the sync fetches the rows.
+    const client = supabase;
+    const live = client.channel(`tenk-sync-${userId}`);
+    for (const table of LIVE_TABLES) {
+      live.on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table, filter: `user_id=eq.${userId}` },
+        () => controller.request(LIVE_DEBOUNCE_MS),
+      );
+    }
+    live.subscribe((status) => {
+      // Catch up on anything missed while the connection was down.
+      if (status === 'SUBSCRIBED') controller.request();
+    });
+
     const syncIfVisible = () => {
       if (document.visibilityState === 'visible') controller.request();
     };
@@ -75,6 +108,7 @@ export function useCloudSync(): void {
 
     return () => {
       unsubscribe();
+      void client.removeChannel(live);
       window.clearInterval(interval);
       document.removeEventListener('visibilitychange', syncIfVisible);
       window.removeEventListener('online', syncIfVisible);

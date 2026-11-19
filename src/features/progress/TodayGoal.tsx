@@ -4,13 +4,22 @@ import styles from './TodayGoal.module.css';
 interface TodayGoalProps {
   minutesToday: number;
   goalMinutes: number;
+  /** Whether the day counts towards a streak. */
+  keepsStreak?: boolean;
+  /** Whether today is on the routine. */
+  plannedToday?: boolean;
 }
 
 const RADIUS = 20;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 /** Today's time against the daily goal that keeps the streak going. */
-export function TodayGoal({ minutesToday, goalMinutes }: TodayGoalProps) {
+export function TodayGoal({
+  minutesToday,
+  goalMinutes,
+  keepsStreak = true,
+  plannedToday = true,
+}: TodayGoalProps) {
   const fraction = Math.min(1, minutesToday / goalMinutes);
   const reached = minutesToday >= goalMinutes;
 
@@ -34,8 +43,16 @@ export function TodayGoal({ minutesToday, goalMinutes }: TodayGoalProps) {
         </strong>
         <span className={styles.hint}>
           {reached
-            ? 'Daily goal reached. Today counts towards your streak.'
-            : `${formatDuration(goalMinutes - minutesToday)} more for today to count towards your streak.`}
+            ? keepsStreak
+              ? 'Daily goal reached. Today counts towards your streak.'
+              : 'Daily goal reached.'
+            : !plannedToday
+              ? keepsStreak
+                ? 'Day off today, so your streak is safe. Time you put in still counts.'
+                : 'Day off today. Time you put in still counts.'
+              : keepsStreak
+                ? `${formatDuration(goalMinutes - minutesToday)} more for today to count towards your streak.`
+                : `${formatDuration(goalMinutes - minutesToday)} more to reach today's goal.`}
         </span>
       </p>
     </div>

@@ -9,8 +9,12 @@ import { useToday } from './useNow';
 export function useDashboard(): Dashboard {
   const skills = useTrackerStore((state) => state.skills);
   const sessions = useTrackerStore((state) => state.sessions);
+  const domains = useTrackerStore((state) => state.domains);
   const today = useToday();
-  return useMemo(() => summarizeDashboard(skills, sessions, today), [skills, sessions, today]);
+  return useMemo(
+    () => summarizeDashboard(skills, sessions, today, domains),
+    [skills, sessions, today, domains],
+  );
 }
 
 /** A domain's skills and the hours and streak they add up to. */
@@ -20,6 +24,6 @@ export function useDomainProgress(domain: Domain): { skills: Skill[]; progress: 
   const today = useToday();
   return useMemo(() => {
     const skills = allSkills.filter((skill) => skill.domainId === domain.id);
-    return { skills, progress: summarizeDomain(skills, sessions, today) };
-  }, [allSkills, sessions, today, domain.id]);
+    return { skills, progress: summarizeDomain(skills, sessions, today, domain.routineDays) };
+  }, [allSkills, sessions, today, domain.id, domain.routineDays]);
 }

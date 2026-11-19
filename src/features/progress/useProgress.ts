@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { summarizeProgress, type Progress } from '../../domain/progress';
+import { routineOf } from '../../domain/routine';
 import type { Session, Skill } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from './useNow';
@@ -12,10 +13,12 @@ export function useSkillSessions(skillId: string): Session[] {
 /** Progress for one skill or habit. Streaks are always per tracker. */
 export function useSkillProgress(skill: Skill): Progress {
   const sessions = useSkillSessions(skill.id);
+  const domains = useTrackerStore((state) => state.domains);
+  const routine = routineOf(skill, domains);
   const today = useToday();
   return useMemo(
-    () => summarizeProgress(sessions, skill.targetHours, skill.dailyGoalMinutes, today),
-    [sessions, skill.targetHours, skill.dailyGoalMinutes, today],
+    () => summarizeProgress(sessions, skill.targetHours, skill.dailyGoalMinutes, today, routine),
+    [sessions, skill.targetHours, skill.dailyGoalMinutes, today, routine],
   );
 }
 

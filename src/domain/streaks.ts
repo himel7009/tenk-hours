@@ -7,23 +7,39 @@ export interface Streak {
   loggedToday: boolean;
 }
 
-export function computeStreak(activeDays: ReadonlySet<DayKey>, today: DayKey): Streak {
+/**
+ * Counts the days in a row that reached the goal. A planned day off
+ * (`isDayOff`) neither counts nor breaks the run, unless time was put in
+ * anyway, in which case it counts like any other day.
+ */
+export function computeStreak(
+  activeDays: ReadonlySet<DayKey>,
+  today: DayKey,
+  isDayOff: (day: DayKey) => boolean = () => false,
+): Streak {
   const loggedToday = activeDays.has(today);
+  const counts = (day: DayKey) => activeDays.has(day);
+  const skipped = (day: DayKey) => !counts(day) && isDayOff(day);
+  const earliest = [...activeDays].sort()[0];
 
   let current = 0;
   let cursor = loggedToday ? today : addDays(today, -1);
-  while (activeDays.has(cursor)) {
-    current += 1;
+  while (earliest !== undefined && cursor >= earliest) {
+    if (counts(cursor)) current += 1;
+    else if (!skipped(cursor)) break;
     cursor = addDays(cursor, -1);
   }
 
   let longest = 0;
   let run = 0;
-  let previous: DayKey | null = null;
-  for (const day of [...activeDays].sort()) {
-    run = previous !== null && daysBetween(previous, day) === 1 ? run + 1 : 1;
-    longest = Math.max(longest, run);
-    previous = day;
+  if (earliest !== undefined) {
+    const last = [...activeDays].sort().at(-1)!;
+    const length = daysBetween(earliest, last) + 1;
+    for (let index = 0; index < length; index += 1) {
+      const day = addDays(earliest, index);
+      if (counts(day)) longest = Math.max(longest, (run += 1));
+      else if (!skipped(day)) run = 0;
+    }
   }
 
   return { current, longest, loggedToday };

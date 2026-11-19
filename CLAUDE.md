@@ -46,13 +46,23 @@ failure blocks the deploy.
 ## Skills and habits
 
 A row in `skills` (type `Skill`) is a skill, a habit or a project, told apart
-by `kind`. All three share sessions, timers and sync. A project only adds up
-time: it has no target, daily goal or streak (`hasDailyGoal`), and its unused
-`targetHours` and `dailyGoalMinutes` are kept so it can switch back to a
-skill. Skills and projects can join a domain; habits cannot (`canJoinDomain`). The name `Skill` is
-historical; do not rename the table or type without a data migration plan.
+by `kind`. All three share sessions, timers and sync. A project adds up time
+with no target; its unused `targetHours` is kept so it can switch back to a
+skill. Skills and projects can join a domain; habits cannot (`canJoinDomain`).
+The name `Skill` is historical; do not rename the table or type without a data
+migration plan.
 
-- Streaks are per skill or habit, never app-wide. A day counts only when that
+- `keepStreak` makes the streak optional per tracker. Skills and habits always
+  have a daily goal (`hasDailyGoal(skill)`); a project has one only while it
+  keeps a streak. With the streak off, nothing shows or counts a streak
+  (`keepsStreak`), but hours, goals and the activity map stay.
+- `routineDays` (weekdays, 0 = Sunday, empty = every day, `domain/routine.ts`)
+  plans the week. A skill in a domain follows the domain's `routineDays`
+  (`routineOf`), never its own. A day off the routine neither counts nor breaks
+  a streak (`computeStreak`'s `isDayOff`); time put in on a day off counts.
+  Today's goals, a domain's daily plan and the report's goal days include only
+  planned days. Changing a routine reinterprets past days too.
+- Streaks are per tracker, never app-wide. A day counts only when that
   day's minutes reach the item's `dailyGoalMinutes` (default 60).
 - Timers are countdowns by default (`ActiveTimer.durationSeconds`), saved
   automatically when they end; `null` means an open-ended stopwatch. Timers
@@ -143,8 +153,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All seven migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-18.
+All eight migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-19.
 
 ## Releases
 

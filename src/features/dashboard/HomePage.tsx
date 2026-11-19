@@ -18,6 +18,7 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
+import { RoutineCard } from '../routine/RoutineCard';
 import { TodayCard } from './TodayCard';
 import { TrackerTabs } from './TrackerTabs';
 import { WeekChart } from './WeekChart';
@@ -165,6 +166,7 @@ export function HomePage() {
           <div className={styles.today}>
             <TodayCard dashboard={dashboard} today={today} />
           </div>
+          <RoutineCard />
           <div className={styles.insights}>
             <div className={styles.timePair}>
               <DayCard />

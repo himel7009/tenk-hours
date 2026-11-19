@@ -1,3 +1,4 @@
+import type { Weekday } from '../domain/routine';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -133,6 +134,8 @@ const skillInput = {
   color: 'moss',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  keepStreak: true,
+  routineDays: [] as Weekday[],
   domainId: null,
 } as const;
 const addSkill = (name = 'Python') =>
@@ -142,6 +145,8 @@ const addSkill = (name = 'Python') =>
     color: 'moss',
     targetHours: 10_000,
     dailyGoalMinutes: 60,
+    keepStreak: true,
+    routineDays: [] as Weekday[],
     domainId: null,
   });
 const log = (skillId: string, minutes: number) =>

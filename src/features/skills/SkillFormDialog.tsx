@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select } from '../../components/Field';
+import { Toggle } from '../../components/Toggle';
+import { WeekdayPicker } from '../../components/WeekdayPicker';
+import { plannedPhrase, type Weekday } from '../../domain/routine';
 import type { DomainId } from '../../domain/domains';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
@@ -30,8 +33,8 @@ const COPY: Record<TrackerKind, { noun: string; add: string; placeholder: string
 
 /** Skills and projects can be switched between; habits stay habits. */
 const TRACK_AS: { kind: 'skill' | 'project'; label: string; hint: string }[] = [
-  { kind: 'skill', label: 'Skill', hint: 'Hours towards a target, with a daily goal and streak' },
-  { kind: 'project', label: 'Project', hint: 'Just adds up the time you spend on it' },
+  { kind: 'skill', label: 'Skill', hint: 'Hours towards a target, with a daily goal' },
+  { kind: 'project', label: 'Project', hint: 'Adds up the time you spend on it' },
 ];
 
 type SkillFormDialogProps = { onClose: () => void } & (
@@ -53,6 +56,8 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const changeKind = (next: TrackerKind) => {
     // An icon left at the old kind's default follows the switch.
     if (icon === DEFAULT_ICONS[kind]) setIcon(DEFAULT_ICONS[next]);
+    // A new project starts without a streak, a new skill with one.
+    if (!skill) setKeepStreak(next !== 'project');
     setKind(next);
   };
 
@@ -79,8 +84,14 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const [domainId, setDomainId] = useState<DomainId | null>(
     props.skill ? props.skill.domainId : (props.domainId ?? null),
   );
+  const [keepStreak, setKeepStreak] = useState(skill?.keepStreak ?? kind !== 'project');
+  const [routineDays, setRoutineDays] = useState<Weekday[]>(skill?.routineDays ?? []);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const domainSelected = canJoinDomain(kind)
+    ? domains.find((domain) => domain.id === domainId)
+    : undefined;
 
   // An icon saved earlier may not be in today's list; keep it selectable.
   const icons = ICON_CHOICES.includes(icon as (typeof ICON_CHOICES)[number])
@@ -104,8 +115,9 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
       setError(`Set a target between 1 and ${MAX_TARGET_HOURS.toLocaleString()} hours.`);
       return;
     }
+    const withGoal = hasDailyGoal({ kind, keepStreak });
     if (
-      hasDailyGoal(kind) &&
+      withGoal &&
       (!Number.isInteger(dailyGoalMinutes) ||
         dailyGoalMinutes < 1 ||
         dailyGoalMinutes > MAX_DAILY_GOAL_MINUTES)
@@ -121,10 +133,12 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
       icon,
       color,
       targetHours: kind === 'skill' ? targetHours : (skill?.targetHours ?? DEFAULT_TARGET_HOURS),
-      dailyGoalMinutes: hasDailyGoal(kind)
+      dailyGoalMinutes: withGoal
         ? dailyGoalMinutes
         : (skill?.dailyGoalMinutes ?? DEFAULT_DAILY_GOAL_MINUTES),
       domainId: canJoinDomain(kind) ? domainId : null,
+      keepStreak,
+      routineDays,
     };
     if (skill) {
       updateSkill(skill.id, { ...input, kind });
@@ -230,24 +244,57 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
           </Field>
         )}
 
-        {hasDailyGoal(kind) && (
+        <Toggle
+          label="Keep a streak"
+          checked={keepStreak}
+          onChange={setKeepStreak}
+          hint={
+            keepStreak
+              ? 'Counts the days in a row you reach the daily goal. Days off your routine never break it.'
+              : kind === 'project'
+                ? 'Turn on to give the project a daily goal and a streak.'
+                : 'No streak to keep up. Your hours, activity map and daily goal stay.'
+          }
+        />
+
+        {domainSelected ? (
+          <p className={styles.routineNote}>
+            Planned with its domain, {domainSelected.icon} {domainSelected.name},{' '}
+            {plannedPhrase(domainSelected.routineDays)}. Change the days on the domain.
+          </p>
+        ) : (
+          <WeekdayPicker
+            legend="Days you plan to work on it"
+            hint="Days off never break a streak"
+            value={routineDays}
+            onChange={setRoutineDays}
+          />
+        )}
+
+        {(hasDailyGoal({ kind, keepStreak }) || kind === 'skill') && (
           <div className={styles.numbers}>
-            <Field
-              label="Daily goal, minutes"
-              hint="A day counts towards your streak once you reach this."
-            >
-              {(id) => (
-                <Input
-                  id={id}
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  max={MAX_DAILY_GOAL_MINUTES}
-                  value={dailyGoal}
-                  onChange={(event) => setDailyGoal(event.target.value)}
-                />
-              )}
-            </Field>
+            {hasDailyGoal({ kind, keepStreak }) && (
+              <Field
+                label="Daily goal, minutes"
+                hint={
+                  keepStreak
+                    ? 'A day counts towards your streak once you reach this.'
+                    : "Shown as today's target on the home page."
+                }
+              >
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={MAX_DAILY_GOAL_MINUTES}
+                    value={dailyGoal}
+                    onChange={(event) => setDailyGoal(event.target.value)}
+                  />
+                )}
+              </Field>
+            )}
 
             {kind === 'skill' && (
               <Field label="Target hours" hint="10,000 is the classic figure.">

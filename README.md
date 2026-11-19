@@ -8,7 +8,7 @@
 
 **[✨ Open Tenk ✨](https://himel7009.github.io/tenk-hours/)**
 
-Tenk is a web app and installable PWA for getting seriously good at things. Add a skill, group related skills under a domain, keep daily habits, and time every session with a countdown timer. Each skill fills a grid of 10,000 squares hour by hour, and every skill, habit and domain keeps its own streak. A Library keeps your place in the books and courses you are working through, and the ones you want to take up next.
+Tenk is a web app and installable PWA for getting seriously good at things. Add a skill, group related skills under a domain, keep daily habits, and time every session with a countdown timer. Each skill fills a grid of 10,000 squares hour by hour, every skill, habit and domain can keep its own streak, and a weekly routine sets which days you work on what. A Library keeps your place in the books and courses you are working through, and the ones you want to take up next.
 
 Tenk works without an account, storing everything in your browser. Sign in with Google or an email and password and your data syncs across your devices.
 
@@ -53,12 +53,14 @@ How a week or month went, against the one before, with a day-by-day chart and a 
 ### Tracking
 
 - **🎯 Skills and habits**: Long-term skills count towards 10,000 hours; habits are about showing up every day. Each has its own emoji and colour.
-- **🛠️ Projects**: Time the work you do on a project, with no target or streak, just the hours you put in. Switch any skill to a project or back.
+- **🛠️ Projects**: Time the work you do on a project, with no target, just the hours you put in, and a streak if you want one. Switch any skill to a project or back.
 - **🚫 Bad habits**: Habits you want to quit, with a daily yes or no check-in, a streak of clean days and your clean rate over the last 30 days, optionally hidden behind a PIN.
 - **🧭 Domains**: Group related skills and projects under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of everything in it, a daily plan made of its skills' daily goals with today's progress against it, and a streak of its own.
+- **🗓 Weekly routine**: Plan which days you study each domain, so you can go deep on a few things a day instead of a little of everything. Days off never break a streak.
+- **🔥 Optional streaks**: Keep a streak on what you do every day and switch it off where it only adds pressure. Projects can keep one too.
 - **📊 Weekly and monthly report**: Total time against the same point last week or month, daily average, days you showed up, goals reached, a day-by-day chart, a trend of recent weeks or months, and a breakdown by skill, project and domain, and where each book and course stands.
 - **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length down to the second, and pause it when you step away. Turn on rounds to split long stretches Pomodoro style (25 + 5 or 50 + 10); only focus time is saved, never the breaks. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
-- **🔥 Streaks with daily goals**: Every skill, habit and domain has its own streak. A day only counts once its daily goal is reached (one hour by default).
+- **🔥 Streaks with daily goals**: Every skill, habit and domain can keep its own streak. A day only counts once its daily goal is reached (one hour by default), and planned days off never break it.
 
 ### Seeing progress
 

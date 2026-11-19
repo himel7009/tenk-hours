@@ -1,6 +1,7 @@
 import { summarizeBadHabit, type BadHabit, type CheckIn } from './badHabits';
 import { addDays, daysBetween, fromDayKey, toDayKey, type DayKey } from './dates';
 import type { Domain } from './domains';
+import { isPlannedOn, routineOf } from './routine';
 import { hasDailyGoal, type Session, type Skill, type SkillId } from './types';
 
 export type PeriodKind = 'week' | 'month';
@@ -55,7 +56,10 @@ export interface TrackerReport {
   /** Over the same stretch of the period before. */
   previousMinutes: number;
   sessions: number;
-  /** Days the daily goal was reached, and the days it could have been. Null for projects. */
+  /**
+   * Days the daily goal was reached, and the planned days it could have been
+   * (plus any met on a day off). Null when there is no daily goal.
+   */
   goal: { met: number; possible: number } | null;
 }
 
@@ -150,14 +154,17 @@ export function buildReport(input: ReportInput, period: Period, today: DayKey): 
         inPrevious.filter((s) => s.skillId === skill.id).map((s) => s.minutes),
       );
       let goal: TrackerReport['goal'] = null;
-      if (hasDailyGoal(skill.kind)) {
-        const met = [...byDay].filter(
-          ([day, total]) => day <= today && total >= skill.dailyGoalMinutes,
-        ).length;
+      if (hasDailyGoal(skill)) {
+        const routine = routineOf(skill, input.domains);
+        const metDays = [...byDay]
+          .filter(([day, total]) => day <= today && total >= skill.dailyGoalMinutes)
+          .map(([day]) => day);
         const created = toDayKey(new Date(skill.createdAt));
-        const possible = elapsed.filter((day) => day >= created).length;
-        // Time logged before the skill was created still counts.
-        goal = { met, possible: Math.max(possible, met) };
+        const planned = elapsed.filter((day) => day >= created && isPlannedOn(routine, day));
+        // A goal met on a day off, or before the skill was created, is a bonus
+        // on top of the planned days.
+        const bonus = metDays.filter((day) => !planned.includes(day)).length;
+        goal = { met: metDays.length, possible: planned.length + bonus };
       }
       return {
         skill,

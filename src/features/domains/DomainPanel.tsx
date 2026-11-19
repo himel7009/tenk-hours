@@ -1,6 +1,7 @@
 import { Button } from '../../components/Button';
 import { usePersistentState } from '../../components/usePersistentState';
 import type { DailyPlan, Domain } from '../../domain/domains';
+import { describeRoutine } from '../../domain/routine';
 import { hasDailyGoal, type Skill } from '../../domain/types';
 import { formatDuration, formatHours } from '../../domain/format';
 import { StreakBadge } from '../progress/StreakBadge';
@@ -79,7 +80,8 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
   const today = useToday();
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
-  const hasGoals = skills.some((skill) => hasDailyGoal(skill.kind));
+  const hasGoals = skills.some((skill) => hasDailyGoal(skill));
+  const streakOn = progress.keepsStreak;
   const [open, setOpen] = usePersistentState<boolean>(`tenk:domain-open:${domain.id}`, true);
   const { plan } = progress;
 
@@ -91,16 +93,22 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         </span>
         <div className={styles.heading}>
           <h3 className={styles.name}>{domain.name}</h3>
+          {domain.routineDays.length > 0 && (
+            <p className={styles.routine} data-today={progress.plannedToday}>
+              {progress.plannedToday ? 'On today' : 'Not today'}, planned{' '}
+              {describeRoutine(domain.routineDays)}
+            </p>
+          )}
           <p className={`tabular ${styles.total}`}>
             <strong>{formatHours(progress.loggedMinutes)} hours</strong> across{' '}
             {describeContents(skills)}
           </p>
         </div>
         <div className={styles.streak}>
-          {/* A domain of only projects has no goals, so no streak: show today's time. */}
-          {hasGoals ? (
+          {/* Without a skill that keeps a streak, the domain shows today's time instead. */}
+          {streakOn ? (
             <span className={styles.streakLine}>
-              <StreakBadge streak={progress.streak} />
+              <StreakBadge streak={progress.streak} dayOff={!progress.plannedToday} />
               {progress.streak.longest > progress.streak.current && (
                 <span className={`tabular ${styles.longest}`}>
                   longest {progress.streak.longest}
@@ -111,7 +119,9 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
             <span className={`tabular ${styles.today}`}>
               {progress.minutesToday > 0
                 ? `${formatDuration(progress.minutesToday)} today`
-                : 'Nothing today'}
+                : progress.plannedToday
+                  ? 'Nothing today'
+                  : 'Day off today'}
             </span>
           )}
           <WeekStrip

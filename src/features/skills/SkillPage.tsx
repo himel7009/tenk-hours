@@ -6,7 +6,8 @@ import { formatDay, formatDuration, formatHours, formatMonthYear } from '../../d
 import { projectStats } from '../../domain/projectStats';
 import { hourMilestones, streakMilestones } from '../../domain/milestones';
 import type { Progress } from '../../domain/progress';
-import type { Skill } from '../../domain/types';
+import { plannedPhrase, routineOf } from '../../domain/routine';
+import { hasDailyGoal, keepsStreak, type Skill } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
 import { Heatmap } from '../progress/Heatmap';
 import { HourField } from '../progress/HourField';
@@ -44,13 +45,15 @@ function SkillDetail({ skill }: { skill: Skill }) {
   const sessions = useSkillSessions(skill.id);
   const progress = useSkillProgress(skill);
   const [editing, setEditing] = useState(false);
-  const domain = useTrackerStore((state) =>
-    state.domains.find((candidate) => candidate.id === skill.domainId),
-  );
+  const domains = useTrackerStore((state) => state.domains);
+  const domain = domains.find((candidate) => candidate.id === skill.domainId);
   const isHabit = skill.kind === 'habit';
   const isProject = skill.kind === 'project';
-  // Projects have no daily goal; an hour is just the scale for the calendar shading.
-  const shadingMinutes = isProject ? 60 : skill.dailyGoalMinutes;
+  const withGoal = hasDailyGoal(skill);
+  const streakOn = withGoal && keepsStreak(skill);
+  const routine = routineOf(skill, domains);
+  // Without a daily goal, an hour is just the scale for the calendar shading.
+  const shadingMinutes = withGoal ? skill.dailyGoalMinutes : 60;
 
   const heatmap = <Heatmap byDay={progress.byDay} goalMinutes={shadingMinutes} today={today} />;
 
@@ -71,20 +74,29 @@ function SkillDetail({ skill }: { skill: Skill }) {
             Edit {skill.kind}
           </Button>
         </div>
-        {domain && (
-          <p className={styles.domain}>
-            Part of {domain.icon} {domain.name}
-          </p>
-        )}
+        <p className={styles.domain}>
+          {domain && (
+            <>
+              Part of {domain.icon} {domain.name}.{' '}
+            </>
+          )}
+          Planned {plannedPhrase(routine)}
+          {streakOn ? '.' : '. No streak kept.'}
+        </p>
         <p className={`tabular ${styles.total}`}>
           {isProject ? (
             <>
               <strong>{formatDuration(progress.loggedMinutes)}</strong> spent on it so far
             </>
-          ) : isHabit ? (
+          ) : isHabit && streakOn ? (
             <>
               <strong>{days(progress.streak.current)}</strong> streak, {progress.completedDays.size}{' '}
               completed in all
+            </>
+          ) : isHabit ? (
+            <>
+              <strong>{progress.completedDays.size}</strong> days completed,{' '}
+              {formatDuration(progress.loggedMinutes)} in all
             </>
           ) : (
             <>
@@ -117,7 +129,7 @@ function SkillDetail({ skill }: { skill: Skill }) {
 
         <div className={styles.side}>
           <section className={styles.panel} aria-label="Today's goal">
-            {isProject ? (
+            {!withGoal ? (
               <p className={`tabular ${styles.projectToday}`}>
                 <strong>{formatDuration(progress.minutesToday)}</strong> today
               </p>
@@ -125,6 +137,8 @@ function SkillDetail({ skill }: { skill: Skill }) {
               <TodayGoal
                 minutesToday={progress.minutesToday}
                 goalMinutes={skill.dailyGoalMinutes}
+                keepsStreak={streakOn}
+                plannedToday={progress.plannedToday}
               />
             )}
           </section>
@@ -139,14 +153,14 @@ function SkillDetail({ skill }: { skill: Skill }) {
           </section>
 
           {isProject ? (
-            <ProjectFacts progress={progress} today={today} />
+            <ProjectFacts progress={progress} today={today} streakOn={streakOn} />
           ) : (
-            <ProgressFacts skill={skill} progress={progress} />
+            <ProgressFacts skill={skill} progress={progress} streakOn={streakOn} />
           )}
         </div>
       </div>
 
-      {!isProject && (
+      {!isProject && (!isHabit || streakOn) && (
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>Milestones</h2>
           <MilestoneTrack
@@ -176,12 +190,27 @@ function SkillDetail({ skill }: { skill: Skill }) {
   );
 }
 
-function ProgressFacts({ skill, progress }: { skill: Skill; progress: Progress }) {
+function ProgressFacts({
+  skill,
+  progress,
+  streakOn,
+}: {
+  skill: Skill;
+  progress: Progress;
+  streakOn: boolean;
+}) {
   const { streak, pace, finishDay, loggedMinutes, nextMilestoneHours } = progress;
 
   const facts: [label: string, value: string][] = [
-    ['Current streak', days(streak.current)],
-    ['Longest streak', days(streak.longest)],
+    ...(streakOn
+      ? ([
+          ['Current streak', days(streak.current)],
+          ['Longest streak', days(streak.longest)],
+        ] as [string, string][])
+      : ([['Days goal reached', progress.completedDays.size.toLocaleString()]] as [
+          string,
+          string,
+        ][])),
     ['Pace, last 30 days', pace > 0 ? `${formatDuration(pace)} a day` : 'No time logged'],
   ];
 
@@ -218,12 +247,26 @@ function ProgressFacts({ skill, progress }: { skill: Skill; progress: Progress }
   );
 }
 
-function ProjectFacts({ progress, today }: { progress: Progress; today: DayKey }) {
+function ProjectFacts({
+  progress,
+  today,
+  streakOn,
+}: {
+  progress: Progress;
+  today: DayKey;
+  streakOn: boolean;
+}) {
   const { weekMinutes, monthMinutes, daysWorked, firstDay, lastDay } = projectStats(
     progress.byDay,
     today,
   );
   const facts: [label: string, value: string][] = [
+    ...(streakOn
+      ? ([
+          ['Current streak', days(progress.streak.current)],
+          ['Longest streak', days(progress.streak.longest)],
+        ] as [string, string][])
+      : []),
     ['Last 7 days', formatDuration(weekMinutes)],
     ['Last 30 days', formatDuration(monthMinutes)],
     ['Days worked on', days(daysWorked)],

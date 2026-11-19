@@ -10,6 +10,8 @@ const skill = (id: string): Skill => ({
   color: 'cobalt',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  keepStreak: true,
+  routineDays: [],
   domainId: null,
   createdAt: 0,
 });
@@ -63,7 +65,7 @@ describe('summarizeDashboard', () => {
   });
 
   it('never reports a project as the best streak', () => {
-    const project = { ...skill('app'), kind: 'project' as const };
+    const project = { ...skill('app'), kind: 'project' as const, keepStreak: false };
     const days = ['2026-11-14', '2026-11-15', today].map((day) => session('app', day, 120));
     expect(summarizeDashboard([project], days, today).bestStreak).toBeNull();
   });

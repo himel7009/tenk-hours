@@ -14,11 +14,24 @@ interface TodayCardProps {
 /** The headline card: time put in today and which daily goals are done. */
 export function TodayCard({ dashboard, today }: TodayCardProps) {
   const { trackers, minutesToday, totalMinutes, bestStreak } = dashboard;
-  const withGoals = trackers.filter(({ skill }) => hasDailyGoal(skill.kind));
+  // Today's goals are the ones on today's routine, plus any met on a day off.
+  const withGoals = trackers.filter(
+    ({ skill, progress }) =>
+      hasDailyGoal(skill) && (progress.plannedToday || progress.goalMetToday),
+  );
   const reached = withGoals.filter(({ progress }) => progress.goalMetToday).length;
-  // Whatever has time today comes first; the card has room for a handful.
-  const shown = [...trackers]
-    .sort((a, b) => b.progress.minutesToday - a.progress.minutesToday)
+  // Whatever has time today comes first, then what is planned; the card has
+  // room for a handful.
+  // A day off with no time put in has nothing to say today.
+  const relevant = trackers.filter(
+    ({ progress }) => progress.plannedToday || progress.minutesToday > 0,
+  );
+  const shown = [...relevant]
+    .sort(
+      (a, b) =>
+        b.progress.minutesToday - a.progress.minutesToday ||
+        Number(b.progress.plannedToday) - Number(a.progress.plannedToday),
+    )
     .slice(0, MAX_LISTED);
 
   return (
@@ -58,7 +71,12 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
           <li key={skill.id} data-color={skill.color}>
             <span aria-hidden="true">{skill.icon}</span>
             <span className={styles.todayName}>{skill.name}</span>
-            {hasDailyGoal(skill.kind) ? (
+            {!progress.plannedToday && progress.minutesToday === 0 ? (
+              <>
+                <span className={styles.todayNoGoal}>day off</span>
+                <span className="tabular">0m</span>
+              </>
+            ) : hasDailyGoal(skill) ? (
               <>
                 <span className={styles.todayBar} aria-hidden="true">
                   <span
@@ -79,8 +97,13 @@ export function TodayCard({ dashboard, today }: TodayCardProps) {
             )}
           </li>
         ))}
-        {trackers.length > shown.length && (
-          <li className={styles.todayMore}>and {trackers.length - shown.length} more below</li>
+        {relevant.length > shown.length && (
+          <li className={styles.todayMore}>and {relevant.length - shown.length} more below</li>
+        )}
+        {trackers.length > relevant.length && (
+          <li className={styles.todayMore}>
+            {trackers.length - relevant.length} on a day off today
+          </li>
         )}
       </ul>
 

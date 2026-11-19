@@ -5,7 +5,7 @@ import type { DayKey } from '../../domain/dates';
 import { formatDay, formatDuration, formatHours } from '../../domain/format';
 import { projectStats } from '../../domain/projectStats';
 import type { Progress } from '../../domain/progress';
-import type { Skill } from '../../domain/types';
+import { hasDailyGoal, keepsStreak, type Skill } from '../../domain/types';
 import { StreakBadge } from '../progress/StreakBadge';
 import { useToday } from '../progress/useNow';
 import { useSkillProgress } from '../progress/useProgress';
@@ -86,7 +86,8 @@ export function SkillCard({ skill }: SkillCardProps) {
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const noun = NOUNS[skill.kind];
-  const isProject = skill.kind === 'project';
+  const withGoal = hasDailyGoal(skill);
+  const streakOn = withGoal && keepsStreak(skill);
 
   const handleDelete = () => {
     deleteSkill(skill.id);
@@ -95,7 +96,7 @@ export function SkillCard({ skill }: SkillCardProps) {
   const { headline, fraction, caption } =
     skill.kind === 'habit'
       ? summarizeHabit(skill, progress)
-      : isProject
+      : skill.kind === 'project'
         ? summarizeProject(progress, today)
         : summarizeSkill(skill, progress);
 
@@ -161,31 +162,33 @@ export function SkillCard({ skill }: SkillCardProps) {
       ) : (
         <div className={styles.footer}>
           <div className={styles.streak}>
-            {isProject ? (
+            {streakOn ? (
+              <StreakBadge streak={progress.streak} dayOff={!progress.plannedToday} />
+            ) : (
               <span className={`tabular ${styles.today}`}>
                 {progress.minutesToday > 0
                   ? `${formatDuration(progress.minutesToday)} today`
-                  : 'Nothing today'}
+                  : progress.plannedToday
+                    ? 'Nothing today'
+                    : 'Day off today'}
               </span>
-            ) : (
-              <StreakBadge streak={progress.streak} />
             )}
             <WeekStrip
-              // A project has no goal, so any time at all fills its day.
-              completedDays={isProject ? new Set(progress.byDay.keys()) : progress.completedDays}
-              doneLabel={isProject ? 'worked on' : undefined}
+              // Without a goal, any time at all fills the day.
+              completedDays={withGoal ? progress.completedDays : new Set(progress.byDay.keys())}
+              doneLabel={withGoal ? undefined : 'worked on'}
               activeDays={progress.byDay}
               today={today}
             />
           </div>
           <Button
             size="sm"
-            onClick={() => start(skill.id, isProject ? null : skill.dailyGoalMinutes * 60, plan)}
+            onClick={() => start(skill.id, withGoal ? skill.dailyGoalMinutes * 60 : null, plan)}
             disabled={Boolean(activeTimer)}
           >
             {running
               ? 'Timer running'
-              : isProject
+              : !withGoal
                 ? 'Start timer'
                 : `Start ${formatDuration(skill.dailyGoalMinutes)}`}
           </Button>

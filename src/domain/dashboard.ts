@@ -1,6 +1,8 @@
 import { addDays, type DayKey } from './dates';
 import { summarizeProgress, type Progress } from './progress';
-import { hasDailyGoal, type Session, type Skill, type SkillId } from './types';
+import type { Domain } from './domains';
+import { routineOf } from './routine';
+import { hasDailyGoal, keepsStreak, type Session, type Skill, type SkillId } from './types';
 
 export interface TrackerSummary {
   skill: Skill;
@@ -33,6 +35,7 @@ export function summarizeDashboard(
   skills: readonly Skill[],
   sessions: readonly Session[],
   today: DayKey,
+  domains: readonly Domain[] = [],
 ): Dashboard {
   const bySkill = new Map<SkillId, Session[]>(skills.map((skill) => [skill.id, []]));
   for (const session of sessions) bySkill.get(session.skillId)?.push(session);
@@ -44,6 +47,7 @@ export function summarizeDashboard(
       skill.targetHours,
       skill.dailyGoalMinutes,
       today,
+      routineOf(skill, domains),
     ),
   }));
 
@@ -62,7 +66,10 @@ export function summarizeDashboard(
 
   const week = span(0);
   const running = trackers
-    .filter(({ skill, progress }) => hasDailyGoal(skill.kind) && progress.streak.current > 0)
+    .filter(
+      ({ skill, progress }) =>
+        hasDailyGoal(skill) && keepsStreak(skill) && progress.streak.current > 0,
+    )
     .sort((a, b) => b.progress.streak.current - a.progress.streak.current)[0];
 
   return {

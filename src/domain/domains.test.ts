@@ -10,6 +10,8 @@ const skill = (id: string, dailyGoalMinutes = 60): Skill => ({
   color: 'cobalt',
   targetHours: 10_000,
   dailyGoalMinutes,
+  keepStreak: true,
+  routineDays: [],
   domainId: 'ai',
   createdAt: 0,
 });
@@ -60,7 +62,7 @@ describe('summarizeDomain', () => {
   });
 
   it("counts a project's time in the total but not towards the streak", () => {
-    const app = { ...skill('app'), kind: 'project' as const };
+    const app = { ...skill('app'), kind: 'project' as const, keepStreak: false };
     const summary = summarizeDomain([ml, app], [session('app', today, 300)], today);
     expect(summary.loggedMinutes).toBe(300);
     expect(summary.streak.current).toBe(0);
@@ -70,7 +72,7 @@ describe('summarizeDomain', () => {
   it('adds up the daily goals into a plan and measures today against it', () => {
     const nlp = skill('nlp', 30);
     const cv = skill('cv', 30);
-    const app = { ...skill('app'), kind: 'project' as const };
+    const app = { ...skill('app'), kind: 'project' as const, keepStreak: false };
     const { plan } = summarizeDomain(
       [ml, dl, nlp, cv, app],
       [session('ml', today, 150), session('nlp', today, 20), session('app', today, 300)],
@@ -108,5 +110,31 @@ describe('summarizeDomain', () => {
 
   it('is empty for a domain with no skills', () => {
     expect(summarizeDomain([], [], today)).toMatchObject({ loggedMinutes: 0, shares: [] });
+  });
+
+  it('carries its streak over days off its routine, with no plan on those days', () => {
+    // 2026-11-16 is a Monday. AI is studied on Sundays and Tuesdays.
+    const ml = skill('ml');
+    const sessions = [session('ml', '2026-11-10', 60), session('ml', '2026-11-15', 60)];
+    const summary = summarizeDomain([ml], sessions, today, [0, 2]);
+    expect(summary.plannedToday).toBe(false);
+    expect(summary.plan.items).toEqual([]);
+    expect(summary.streak.current).toBe(2);
+  });
+
+  it('has no streak when none of its skills keeps one', () => {
+    const relaxed = { ...skill('ml'), keepStreak: false };
+    const summary = summarizeDomain([relaxed], [session('ml', today, 90)], today);
+    expect(summary.keepsStreak).toBe(false);
+    expect(summary.streak.current).toBe(0);
+    // Its daily goal still makes up today's plan.
+    expect(summary.plan.items).toHaveLength(1);
+  });
+
+  it('gives a project that keeps a streak a daily goal', () => {
+    const app = { ...skill('app'), kind: 'project' as const, keepStreak: true };
+    const summary = summarizeDomain([app], [session('app', today, 60)], today);
+    expect(summary.streak.current).toBe(1);
+    expect(summary.plan.items).toHaveLength(1);
   });
 });

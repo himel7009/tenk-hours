@@ -151,3 +151,8 @@
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }
+
+.routineNote {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
+import { normalizeRoutine, type Weekday } from '../domain/routine';
 import {
   advancePomodoro as advancePomodoroPhase,
   startNextRound as startNextRoundOf,
@@ -38,7 +39,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 9;
+const STORAGE_VERSION = 10;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -53,6 +54,8 @@ export interface SkillInput {
   targetHours: number;
   dailyGoalMinutes: number;
   domainId: DomainId | null;
+  keepStreak: boolean;
+  routineDays: Weekday[];
 }
 
 export type DomainInput = Pick<Domain, 'name' | 'icon' | 'color'>;
@@ -122,6 +125,8 @@ interface TrackerActions {
 
   addDomain: (input: DomainInput) => DomainId;
   updateDomain: (id: DomainId, input: DomainInput) => void;
+  /** Sets the weekdays a domain, or a tracker outside a domain, is planned for. */
+  setRoutine: (target: { domainId: DomainId } | { skillId: SkillId }, days: Weekday[]) => void;
   /** Removes the domain. Its skills are kept and become standalone. */
   deleteDomain: (id: DomainId) => void;
 
@@ -329,7 +334,12 @@ export const useTrackerStore = create<TrackerStore>()(
       discardTimer: () => set({ activeTimer: null }),
 
       addDomain: (input) => {
-        const domain: Domain = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+        const domain: Domain = {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          routineDays: [],
+          ...input,
+        };
         set((state) => ({
           domains: [...state.domains, domain],
           sync: markPending(state.sync, 'pendingDomains', [domain.id], 'upsert'),
@@ -344,6 +354,25 @@ export const useTrackerStore = create<TrackerStore>()(
           ),
           sync: markPending(state.sync, 'pendingDomains', [id], 'upsert'),
         })),
+
+      setRoutine: (target, days) => {
+        const routineDays = normalizeRoutine(days);
+        if ('domainId' in target) {
+          set((state) => ({
+            domains: state.domains.map((domain) =>
+              domain.id === target.domainId ? { ...domain, routineDays } : domain,
+            ),
+            sync: markPending(state.sync, 'pendingDomains', [target.domainId], 'upsert'),
+          }));
+        } else {
+          set((state) => ({
+            skills: state.skills.map((skill) =>
+              skill.id === target.skillId ? { ...skill, routineDays } : skill,
+            ),
+            sync: markPending(state.sync, 'pendingSkills', [target.skillId], 'upsert'),
+          }));
+        }
+      },
 
       deleteDomain: (id) =>
         set((state) => {
@@ -663,6 +692,16 @@ export const useTrackerStore = create<TrackerStore>()(
         if (version < 8) state.badHabitLock = null;
         // v8 timers had no Pomodoro rounds.
         if (version < 9 && state.activeTimer) state.activeTimer.pomodoro = null;
+        // v9 predates optional streaks and routines. Nothing changes for
+        // anyone: skills and habits keep their streaks, projects stay without.
+        if (version < 10) {
+          state.skills = (state.skills ?? []).map((skill) => ({
+            ...skill,
+            keepStreak: skill.kind !== 'project',
+            routineDays: [],
+          }));
+          state.domains = (state.domains ?? []).map((domain) => ({ ...domain, routineDays: [] }));
+        }
         return state as TrackerState;
       },
     },

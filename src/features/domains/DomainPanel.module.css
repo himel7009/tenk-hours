@@ -262,3 +262,13 @@
 .toggle[aria-expanded='true'] svg {
   transform: none;
 }
+
+.routine {
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.routine[data-today='true'] {
+  color: var(--skill);
+}

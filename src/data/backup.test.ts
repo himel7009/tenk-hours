@@ -15,10 +15,19 @@ const skill: Skill = {
   color: 'moss',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  keepStreak: true,
+  routineDays: [],
   domainId: DOMAIN_ID,
   createdAt: 1,
 };
-const domain: Domain = { id: DOMAIN_ID, name: 'AI', icon: '🤖', color: 'cobalt', createdAt: 0 };
+const domain: Domain = {
+  id: DOMAIN_ID,
+  name: 'AI',
+  icon: '🤖',
+  color: 'cobalt',
+  routineDays: [],
+  createdAt: 0,
+};
 const session: Session = {
   id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
   skillId: SKILL_ID,
@@ -121,6 +130,8 @@ describe('backup', () => {
       kind: 'skill',
       icon: '🎯',
       dailyGoalMinutes: 60,
+      keepStreak: true,
+      routineDays: [],
     });
   });
 

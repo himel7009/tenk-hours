@@ -1,3 +1,4 @@
+import { normalizeRoutine } from '../domain/routine';
 import { isDayKey } from '../domain/dates';
 import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -111,6 +112,9 @@ function parseSkill(value: unknown): Skill {
       ? Math.round(value.dailyGoalMinutes)
       : DEFAULT_DAILY_GOAL_MINUTES,
     domainId: isUuid(value.domainId) && kind !== 'habit' ? value.domainId : null,
+    // Older backups have neither: keep what the app did before.
+    keepStreak: typeof value.keepStreak === 'boolean' ? value.keepStreak : kind !== 'project',
+    routineDays: normalizeRoutine(value.routineDays),
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }
@@ -177,6 +181,7 @@ function parseDomain(value: unknown): Domain {
     name: value.name,
     icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon : '🧭',
     color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
+    routineDays: normalizeRoutine(value.routineDays),
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

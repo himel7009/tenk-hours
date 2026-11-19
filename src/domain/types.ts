@@ -1,3 +1,4 @@
+import type { Weekday } from './routine';
 import type { PomodoroState } from './pomodoro';
 import type { DayKey } from './dates';
 
@@ -12,7 +13,15 @@ export type SessionId = string;
 export type TrackerKind = 'skill' | 'habit' | 'project';
 
 /** Whether this kind has a daily goal, and so a streak. Projects do not. */
-export const hasDailyGoal = (kind: TrackerKind): boolean => kind !== 'project';
+/**
+ * Whether a tracker has a daily goal. Skills and habits always do; a project
+ * gets one only when it keeps a streak.
+ */
+export const hasDailyGoal = (skill: Pick<Skill, 'kind' | 'keepStreak'>): boolean =>
+  skill.kind !== 'project' || skill.keepStreak;
+
+/** Whether a tracker shows and counts a streak. It is a choice per tracker. */
+export const keepsStreak = (skill: Pick<Skill, 'keepStreak'>): boolean => skill.keepStreak;
 
 /** Whether this kind can be grouped under a domain. Habits cannot. */
 export const canJoinDomain = (kind: TrackerKind): boolean => kind !== 'habit';
@@ -35,6 +44,17 @@ export interface Skill {
   dailyGoalMinutes: number;
   /** The domain this skill is grouped under, or null if it stands alone. */
   domainId: string | null;
+  /**
+   * Whether to count a streak. Off, the tracker still adds up time and keeps
+   * its daily goal, but shows no streak. On a project it also turns on the
+   * daily goal.
+   */
+  keepStreak: boolean;
+  /**
+   * Weekdays it is planned for; empty is every day. Ignored while it is in a
+   * domain, which plans for all its skills (`routineOf`).
+   */
+  routineDays: Weekday[];
   createdAt: number;
 }
 

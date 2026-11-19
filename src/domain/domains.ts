@@ -1,7 +1,15 @@
 import type { DayKey } from './dates';
 import { summarizeProgress } from './progress';
+import { isPlannedOn, type Weekday } from './routine';
 import { computeStreak, type Streak } from './streaks';
-import { hasDailyGoal, type Session, type Skill, type SkillColor, type SkillId } from './types';
+import {
+  hasDailyGoal,
+  keepsStreak,
+  type Session,
+  type Skill,
+  type SkillColor,
+  type SkillId,
+} from './types';
 
 export type DomainId = string;
 
@@ -15,6 +23,8 @@ export interface Domain {
   name: string;
   icon: string;
   color: SkillColor;
+  /** Weekdays the domain is studied on; empty is every day. Its skills follow it. */
+  routineDays: Weekday[];
   createdAt: number;
 }
 
@@ -61,18 +71,26 @@ export interface DomainProgress {
   /** Days with any time logged in the domain. */
   activeDays: Set<DayKey>;
   streak: Streak;
+  /** Whether any skill in it keeps a streak. Without one the domain shows none. */
+  keepsStreak: boolean;
+  /** Whether today is on the domain's routine. */
+  plannedToday: boolean;
   plan: DailyPlan;
 }
 
 /**
  * Rolls the skills of a domain up into one summary. A day counts towards the
- * domain's streak when any one of its skills reached its daily goal that day.
+ * domain's streak when any one of its streak-keeping skills reached its daily
+ * goal that day. Days off the domain's routine carry the streak over, and on
+ * those days its plan is empty.
  */
 export function summarizeDomain(
   skills: readonly Skill[],
   sessions: readonly Session[],
   today: DayKey,
+  routine: readonly Weekday[] = [],
 ): DomainProgress {
+  const plannedToday = isPlannedOn(routine, today);
   const bySkill = new Map<SkillId, Session[]>(skills.map((skill) => [skill.id, []]));
   for (const session of sessions) bySkill.get(session.skillId)?.push(session);
 
@@ -87,13 +105,14 @@ export function summarizeDomain(
       skill.targetHours,
       skill.dailyGoalMinutes,
       today,
+      routine,
     );
-    if (hasDailyGoal(skill.kind)) {
+    if (hasDailyGoal(skill) && keepsStreak(skill)) {
       for (const day of progress.completedDays) completedDays.add(day);
     }
     for (const day of progress.byDay.keys()) activeDays.add(day);
     minutesToday += progress.minutesToday;
-    if (hasDailyGoal(skill.kind)) {
+    if (hasDailyGoal(skill) && plannedToday) {
       planItems.push({
         skill,
         goalMinutes: skill.dailyGoalMinutes,
@@ -110,7 +129,9 @@ export function summarizeDomain(
     shares,
     completedDays,
     activeDays,
-    streak: computeStreak(completedDays, today),
+    streak: computeStreak(completedDays, today, (day) => !isPlannedOn(routine, day)),
+    keepsStreak: skills.some((skill) => hasDailyGoal(skill) && keepsStreak(skill)),
+    plannedToday,
     plan: {
       items: planItems,
       totalMinutes: planItems.reduce((sum, item) => sum + item.goalMinutes, 0),

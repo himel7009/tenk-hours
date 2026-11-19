@@ -37,3 +37,38 @@ describe('computeStreak', () => {
     expect(streak.current).toBe(3);
   });
 });
+
+describe('computeStreak with planned days off', () => {
+  // 2026-11-15 is a Sunday. Plan: Sunday and Tuesday only.
+  const offExceptSunTue = (day: string) =>
+    !['2026-11-15', '2026-11-17', '2026-11-22', '2026-11-24'].includes(day);
+
+  it('carries a streak over the days off', () => {
+    const streak = computeStreak(
+      days('2026-11-15', '2026-11-17', '2026-11-22'),
+      '2026-11-23',
+      offExceptSunTue,
+    );
+    expect(streak.current).toBe(3);
+    expect(streak.longest).toBe(3);
+  });
+
+  it('still breaks on a planned day that was missed', () => {
+    const streak = computeStreak(days('2026-11-15', '2026-11-22'), '2026-11-23', offExceptSunTue);
+    expect(streak.current).toBe(1);
+  });
+
+  it('counts time put in on a day off as a bonus day', () => {
+    const streak = computeStreak(
+      days('2026-11-15', '2026-11-16', '2026-11-17'),
+      '2026-11-17',
+      offExceptSunTue,
+    );
+    expect(streak.current).toBe(3);
+  });
+
+  it('waits for today if today is planned and not done yet', () => {
+    const streak = computeStreak(days('2026-11-15', '2026-11-17'), '2026-11-22', offExceptSunTue);
+    expect(streak).toMatchObject({ current: 2, loggedToday: false });
+  });
+});

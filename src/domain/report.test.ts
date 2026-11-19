@@ -13,6 +13,8 @@ const skill = (id: string, extra: Partial<Skill> = {}): Skill => ({
   color: 'cobalt',
   targetHours: 10_000,
   dailyGoalMinutes: 60,
+  keepStreak: true,
+  routineDays: [],
   domainId: null,
   createdAt: created,
   ...extra,
@@ -99,8 +101,15 @@ describe('buildReport', () => {
   });
 
   it('gives projects time but no goal, and groups time by domain', () => {
-    const domain: Domain = { id: 'd', name: 'AI', icon: '🤖', color: 'plum', createdAt: created };
-    const project = skill('p', { kind: 'project', domainId: 'd' });
+    const domain: Domain = {
+      id: 'd',
+      name: 'AI',
+      icon: '🤖',
+      color: 'plum',
+      routineDays: [],
+      createdAt: created,
+    };
+    const project = skill('p', { kind: 'project', keepStreak: false, domainId: 'd' });
     const ml = skill('ml', { domainId: 'd' });
     const sessions = [session('p', '2026-11-17', 120), session('ml', '2026-11-17', 30)];
     const report = buildReport(
@@ -143,6 +152,18 @@ describe('buildReport', () => {
       today,
     );
     expect(report.badHabits).toEqual([{ habit, clean: 2, slipped: 1, unanswered: 1 }]);
+  });
+});
+
+describe('buildReport with a routine', () => {
+  it('counts daily goals only on planned days, plus any met on a day off', () => {
+    const today = '2026-11-19'; // Thursday
+    const week = periodContaining('week', today);
+    // Planned Monday and Wednesday; also met on Tuesday, a day off.
+    const planned = skill('a', { routineDays: [1, 3] });
+    const sessions = [session('a', '2026-11-16', 60), session('a', '2026-11-17', 60)];
+    const report = buildReport({ skills: [planned], sessions, ...empty }, week, today);
+    expect(report.trackers[0]?.goal).toEqual({ met: 2, possible: 3 });
   });
 });
 

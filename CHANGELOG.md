@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-19
 
+- **Weekly and monthly report.** A new Report page shows how a week or month went: total time against the same point of the period before, daily average, days you showed up, daily goals reached and your best day. A chart breaks the time down by day, and another compares the last 8 weeks or 6 months; tap a bar to open that period. Below, every skill, habit, project and domain is listed with its time and change, plus clean days for bad habits (hidden while they are locked).
 - **Work in rounds (Pomodoro).** Split any timer into 25 minute rounds with 5 minute breaks (a longer break after every fourth), or 50 and 10. Set 2 hours or 5 and the rounds and breaks are worked out for you, with a preview of when you will finish. Breaks never count towards your time, and after each break the clock waits until you start the next round.
 
 ## 2026-11-18

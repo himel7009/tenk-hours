@@ -34,6 +34,12 @@ Books and courses in progress with the lesson or chapter up next, a bookmark of 
 
 ![Library](docs/screenshots/library.png)
 
+### Report
+
+How a week or month went, against the one before, with a day-by-day chart and a trend of recent weeks or months.
+
+![Weekly report](docs/screenshots/report.png)
+
 ### Mobile and dark theme
 
 <p align="center">
@@ -50,6 +56,7 @@ Books and courses in progress with the lesson or chapter up next, a bookmark of 
 - **🛠️ Projects**: Time the work you do on a project, with no target or streak, just the hours you put in. Switch any skill to a project or back.
 - **🚫 Bad habits**: Habits you want to quit, with a daily yes or no check-in, a streak of clean days and your clean rate over the last 30 days, optionally hidden behind a PIN.
 - **🧭 Domains**: Group related skills and projects under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of everything in it, a daily plan made of its skills' daily goals with today's progress against it, and a streak of its own.
+- **📊 Weekly and monthly report**: Total time against the same point last week or month, daily average, days you showed up, goals reached, a day-by-day chart, a trend of recent weeks or months, and a breakdown by skill, project and domain.
 - **⏱ Countdown timer**: Pick 25m, 50m, 1h, 2h or your own length down to the second, and pause it when you step away. Turn on rounds to split long stretches Pomodoro style (25 + 5 or 50 + 10); only focus time is saved, never the breaks. The session saves itself when the time is up, with a chime and a notification. There is a stopwatch and manual logging too, and every session can be edited afterwards.
 - **🔥 Streaks with daily goals**: Every skill, habit and domain has its own streak. A day only counts once its daily goal is reached (one hour by default).
 

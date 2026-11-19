@@ -108,6 +108,15 @@ the tabs come straight after the Today card. The open tab and each domain's
 collapsed state are remembered per browser (`usePersistentState`). All
 figures come from `summarizeDashboard`.
 
+## Report
+
+`features/report/` is the Report page (`/report`): a week (Monday to Sunday)
+or calendar month, from `domain/report.ts`. `buildReport` derives everything
+from sessions and check-ins; nothing is stored. While a period is still
+running it is compared with the same number of days of the one before, so a
+Thursday is set against last Thursday. Daily goals count only from the day a
+tracker was created. Bad habits stay hidden while the PIN lock is on.
+
 ## Library
 
 `LibraryItem` (table `library_items`) is a book or course with progress in

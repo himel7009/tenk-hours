@@ -1,4 +1,5 @@
 import { normalizeRoutine } from '../domain/routine';
+import { cleanTodoTitle, type Todo } from '../domain/todos';
 import { isDayKey } from '../domain/dates';
 import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -31,11 +32,12 @@ export interface Backup {
   domains: Domain[];
   badHabits: BadHabit[];
   checkIns: CheckIn[];
+  todos: Todo[];
 }
 
 export type BackupData = Pick<
   Backup,
-  'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns'
+  'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns' | 'todos'
 >;
 
 export class BackupError extends Error {}
@@ -86,7 +88,9 @@ export function parseBackup(json: string): BackupData {
   const checkIns = Array.isArray(raw.checkIns)
     ? raw.checkIns.map(parseCheckIn).filter((checkIn) => habitIds.has(checkIn.habitId))
     : [];
-  return { skills, sessions, library, domains, badHabits, checkIns };
+  // Backups from before to-dos existed have none.
+  const todos = Array.isArray(raw.todos) ? raw.todos.map(parseTodo) : [];
+  return { skills, sessions, library, domains, badHabits, checkIns, todos };
 }
 
 function parseSkill(value: unknown): Skill {
@@ -222,3 +226,19 @@ const isPositive = (value: unknown): value is number =>
 
 const isSkillColor = (value: unknown): value is SkillColor =>
   SKILL_COLORS.includes(value as SkillColor);
+
+function parseTodo(value: unknown): Todo {
+  const title =
+    isRecord(value) && typeof value.title === 'string' ? cleanTodoTitle(value.title) : null;
+  if (!isRecord(value) || !isUuid(value.id) || title === null) {
+    throw new BackupError('This backup contains a to-do that cannot be read.');
+  }
+  const done = value.done === true;
+  return {
+    id: value.id,
+    title,
+    done,
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+    doneAt: done && typeof value.doneAt === 'number' ? value.doneAt : null,
+  };
+}

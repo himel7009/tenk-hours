@@ -29,8 +29,9 @@ export function SettingsPage() {
   const [importError, setImportError] = useState<string | null>(null);
 
   const handleExport = () => {
-    const { skills, sessions, library, domains, badHabits, checkIns } = useTrackerStore.getState();
-    const backup = createBackup({ skills, sessions, library, domains, badHabits, checkIns });
+    const { skills, sessions, library, domains, badHabits, checkIns, todos } =
+      useTrackerStore.getState();
+    const backup = createBackup({ skills, sessions, library, domains, badHabits, checkIns, todos });
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',
     });

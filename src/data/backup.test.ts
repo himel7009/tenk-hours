@@ -79,6 +79,7 @@ describe('backup', () => {
         domains: [],
         badHabits: [],
         checkIns: [checkIn],
+        todos: [],
       }),
     );
     expect(parseBackup(json).checkIns).toEqual([]);
@@ -93,6 +94,7 @@ describe('backup', () => {
         domains: [],
         badHabits: [],
         checkIns: [],
+        todos: [],
       }),
     );
     expect(parseBackup(json).skills[0]?.domainId).toBeNull();
@@ -107,6 +109,7 @@ describe('backup', () => {
         domains: [],
         badHabits: [],
         checkIns: [],
+        todos: [],
       }),
     );
     expect(parseBackup(json).library[0]?.url).toBe('');
@@ -122,6 +125,7 @@ describe('backup', () => {
         domains: [],
         badHabits: [],
         checkIns: [],
+        todos: [],
       }),
       version: 1,
       skills: [oldSkill],
@@ -144,6 +148,7 @@ describe('backup', () => {
         domains: [domain],
         badHabits: [habit],
         checkIns: [checkIn],
+        todos: [],
       }),
     );
     expect(parseBackup(json)).toEqual({
@@ -153,6 +158,7 @@ describe('backup', () => {
       domains: [domain],
       badHabits: [habit],
       checkIns: [checkIn],
+      todos: [],
     });
   });
 
@@ -165,6 +171,7 @@ describe('backup', () => {
         domains: [],
         badHabits: [],
         checkIns: [],
+        todos: [],
       }),
     );
     expect(parseBackup(json).sessions).toEqual([]);
@@ -183,6 +190,7 @@ describe('backup', () => {
           domains: [],
           badHabits: [],
           checkIns: [],
+          todos: [],
         }),
       }),
       'session that cannot be read',

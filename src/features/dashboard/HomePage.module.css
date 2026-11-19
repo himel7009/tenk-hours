@@ -143,3 +143,32 @@
   font-weight: 600;
   letter-spacing: 0;
 }
+
+.todayTab {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.todayHeading {
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
+}
+
+.todayRest {
+  margin-top: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.todayNudge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  font-size: var(--text-sm);
+  font-weight: 600;
+}

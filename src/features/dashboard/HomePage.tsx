@@ -19,7 +19,9 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
+import { isPlannedOn } from '../../domain/routine';
 import { RoutineCard } from '../routine/RoutineCard';
+import { TodayTab } from './TodayTab';
 import { TodayCard } from './TodayCard';
 import { TrackerTabs } from './TrackerTabs';
 import { WeekChart } from './WeekChart';
@@ -31,9 +33,15 @@ type DialogState =
   | { type: 'pin' }
   | null;
 
-type TabId = 'domains' | 'skills' | 'projects' | 'habits' | 'bad';
+type TabId = 'today' | 'domains' | 'skills' | 'projects' | 'habits' | 'bad';
 
 const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add: string }> = {
+  today: {
+    label: 'Today',
+    note: 'Your to-dos, and what your weekly routine plans for today.',
+    empty: '',
+    add: '',
+  },
   domains: {
     label: 'Domains',
     note: 'Fields that group skills and projects, with all their hours added up.',
@@ -67,7 +75,7 @@ const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add:
   },
 };
 
-const TAB_KIND: Record<Exclude<TabId, 'domains' | 'bad'>, TrackerKind> = {
+const TAB_KIND: Record<Exclude<TabId, 'today' | 'domains' | 'bad'>, TrackerKind> = {
   skills: 'skill',
   projects: 'project',
   habits: 'habit',
@@ -85,7 +93,7 @@ export function HomePage() {
   const dashboard = useDashboard();
   const overallActivity = useOverallActivity(dashboard);
   const [dialog, setDialog] = useState<DialogState>(null);
-  const [tab, setTab] = usePersistentState<TabId>('tenk:home-tab', 'domains');
+  const [tab, setTab] = usePersistentState<TabId>('tenk:home-tab', 'today');
 
   // Unlocked bad habits lock again on leaving their tab or this page, and
   // whenever the app goes to the background.
@@ -106,11 +114,16 @@ export function HomePage() {
   const addTracker = (kind: TrackerKind, domainId: DomainId | null = null) =>
     setDialog({ type: 'tracker', kind, domainId });
 
-  const lists: Record<Exclude<TabId, 'domains' | 'bad'>, Skill[]> = {
+  const lists: Record<Exclude<TabId, 'today' | 'domains' | 'bad'>, Skill[]> = {
     skills: skills.filter((skill) => skill.kind === 'skill' && skill.domainId === null),
     projects: skills.filter((skill) => skill.kind === 'project' && skill.domainId === null),
     habits: skills.filter((skill) => skill.kind === 'habit'),
   };
+  // What the Today tab lists: domains, and trackers outside a domain, planned today.
+  const plannedCount =
+    domains.filter((domain) => isPlannedOn(domain.routineDays, today)).length +
+    skills.filter((skill) => skill.domainId === null && isPlannedOn(skill.routineDays, today))
+      .length;
   const isEmpty = skills.length === 0 && domains.length === 0 && badHabits.length === 0;
   const copy = TAB_COPY[tab];
 
@@ -187,6 +200,7 @@ export function HomePage() {
           </section>
           <TrackerTabs
             tabs={[
+              { id: 'today', label: 'Today', count: plannedCount },
               { id: 'domains', label: 'Domains', count: domains.length },
               { id: 'skills', label: 'Skills', count: lists.skills.length },
               { id: 'projects', label: 'Projects', count: lists.projects.length },
@@ -213,7 +227,7 @@ export function HomePage() {
                   {hasLock ? 'Lock now' : 'Lock with a PIN'}
                 </Button>
               )}
-              {!(tab === 'bad' && locked) && (
+              {tab !== 'today' && !(tab === 'bad' && locked) && (
                 <Button
                   onClick={() =>
                     tab === 'domains'
@@ -228,7 +242,15 @@ export function HomePage() {
               )}
             </div>
 
-            {tab === 'bad' ? (
+            {tab === 'today' ? (
+              <TodayTab
+                today={today}
+                unanswered={locked ? 0 : unanswered}
+                onEditDomain={(domain) => setDialog({ type: 'domain', domain })}
+                onAddSkill={(domainId) => addTracker('skill', domainId)}
+                onOpenBadHabits={() => setTab('bad')}
+              />
+            ) : tab === 'bad' ? (
               locked ? (
                 <LockScreen />
               ) : badHabits.length === 0 ? (

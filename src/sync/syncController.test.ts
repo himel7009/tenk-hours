@@ -10,7 +10,14 @@ const EMPTY: RemoteChanges = {
   domains: [],
   badHabits: [],
   checkIns: [],
-  cursors: { cursor: null, libraryCursor: null, domainCursor: null, badHabitCursor: null },
+  todos: [],
+  cursors: {
+    cursor: null,
+    libraryCursor: null,
+    domainCursor: null,
+    badHabitCursor: null,
+    todoCursor: null,
+  },
 };
 
 function slowRemote() {

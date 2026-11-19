@@ -57,6 +57,7 @@ How a week or month went, against the one before, with a day-by-day chart and a 
 - **🚫 Bad habits**: Habits you want to quit, with a daily yes or no check-in, a streak of clean days and your clean rate over the last 30 days, optionally hidden behind a PIN.
 - **🧭 Domains**: Group related skills and projects under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of everything in it, a daily plan made of its skills' daily goals with today's progress against it, and a streak of its own.
 - **🟩 Activity calendar**: A GitHub-style year of squares, one per day, shaded by the time you put in. For everything together, for each domain and for each skill, habit and project, with past years a click away.
+- **☀️ Today and to-dos**: The home page opens on today: a to-do list, then only the domains and trackers planned for today.
 - **🗓 Weekly routine**: Plan which days you study each domain, so you can go deep on a few things a day instead of a little of everything. Days off never break a streak.
 - **🔥 Optional streaks**: Keep a streak on what you do every day and switch it off where it only adds pressure. Projects can keep one too.
 - **📊 Weekly and monthly report**: Total time against the same point last week or month, daily average, days you showed up, goals reached, a day-by-day chart, a trend of recent weeks or months, and a breakdown by skill, project and domain, and where each book and course stands.

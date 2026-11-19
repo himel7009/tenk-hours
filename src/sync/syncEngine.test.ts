@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
+import type { Todo } from '../domain/todos';
 import type { Session, Skill } from '../domain/types';
 import { resetTrackerStore, useTrackerStore } from '../store/trackerStore';
 import { syncOnce } from './syncEngine';
@@ -17,6 +18,7 @@ class FakeRemote implements RemoteStore {
   domains = new Map<string, { row: Domain; deleted: boolean; at: number }>();
   badHabits = new Map<string, { row: BadHabit; deleted: boolean; at: number }>();
   checkIns = new Map<string, { row: CheckIn; deleted: boolean; at: number }>();
+  todos = new Map<string, { row: Todo; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -38,6 +40,8 @@ class FakeRemote implements RemoteStore {
     for (const row of batch.checkInUpserts) this.checkIns.set(row.id, { row, deleted: false, at });
     for (const id of batch.checkInDeletes) this.softDelete(this.checkIns, id, at);
     for (const id of batch.badHabitDeletes) this.softDelete(this.badHabits, id, at);
+    for (const row of batch.todoUpserts) this.todos.set(row.id, { row, deleted: false, at });
+    for (const id of batch.todoDeletes) this.softDelete(this.todos, id, at);
   }
 
   async pull({
@@ -45,6 +49,7 @@ class FakeRemote implements RemoteStore {
     libraryCursor,
     domainCursor,
     badHabitCursor,
+    todoCursor,
   }: SyncCursors): Promise<RemoteChanges> {
     const changed = <T>(
       rows: Map<string, { row: T; deleted: boolean; at: number }>,
@@ -59,6 +64,7 @@ class FakeRemote implements RemoteStore {
     const domains = changed(this.domains, domainCursor);
     const badHabits = changed(this.badHabits, badHabitCursor);
     const checkIns = changed(this.checkIns, badHabitCursor);
+    const todos = changed(this.todos, todoCursor);
     return {
       skills,
       sessions,
@@ -66,11 +72,13 @@ class FakeRemote implements RemoteStore {
       domains,
       badHabits,
       checkIns,
+      todos,
       cursors: {
         cursor: newest(cursor, [...skills, ...sessions]),
         libraryCursor: newest(libraryCursor, library),
         domainCursor: newest(domainCursor, domains),
         badHabitCursor: newest(badHabitCursor, [...badHabits, ...checkIns]),
+        todoCursor: newest(todoCursor, todos),
       },
     };
   }
@@ -316,6 +324,7 @@ describe('failures and races', () => {
       domains: [],
       badHabits: [],
       checkIns: [],
+      todos: [],
     });
     await sync(remote);
 
@@ -392,6 +401,7 @@ describe('library', () => {
         libraryCursor: null,
         domainCursor: null,
         badHabitCursor: null,
+        todoCursor: null,
       },
     }));
     await sync(remote);
@@ -510,5 +520,23 @@ describe('bad habits', () => {
       await sync(remote);
       expect(store()).toMatchObject({ badHabits: [], checkIns: [] });
     });
+  });
+
+  it('syncs to-dos between devices, including ticking off and clearing', async () => {
+    store().adoptAccount('user-1');
+    store().addTodo('Read chapter 4');
+    store().addTodo('Email supervisor');
+    await sync(remote);
+    expect(remote.todos.size).toBe(2);
+
+    const read = store().todos.find((todo) => todo.title === 'Read chapter 4')!;
+    store().toggleTodo(read.id);
+    await sync(remote);
+    expect(remote.todos.get(read.id)?.row.done).toBe(true);
+
+    store().clearDoneTodos();
+    await sync(remote);
+    expect(remote.todos.get(read.id)?.deleted).toBe(true);
+    expect(store().todos.map((todo) => todo.title)).toEqual(['Email supervisor']);
   });
 });

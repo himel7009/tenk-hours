@@ -111,10 +111,12 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
 ## Home dashboard
 
 `features/dashboard/` is the home page. Wide screens get two panes: a sticky
-overview rail (Today card, day and year progress from `domain/timeProgress.ts`,
-the 7-day chart) and the trackers in tabs (`TrackerTabs`: domains, skills,
-projects, habits, bad habits). Below 62rem the rail dissolves with `display: contents` so
-the tabs come straight after the Today card. The open tab and each domain's
+overview rail (Today card, the week from the routine, day and year progress
+from `domain/timeProgress.ts`, the 7-day chart) and the trackers in tabs
+(`TrackerTabs`: today, domains, skills, projects, habits, bad habits). The
+Today tab (`TodayTab`) shows the to-do list and only what `isPlannedOn` today.
+Below 62rem the rail dissolves with `display: contents` so the tabs come
+straight after the Today card. The open tab and each domain's
 collapsed state are remembered per browser (`usePersistentState`). All
 figures come from `summarizeDashboard`.
 
@@ -126,6 +128,12 @@ daily goal the shades are fixed fractions of it; without one they are
 quartiles of the days shown. It is on the home page (all trackers combined
 with `combineByDay`), on each domain (`DomainProgress.byDay`) and on each
 tracker's page. It is separate from the 10,000-hour grid (`HourField`).
+
+## To-dos
+
+`Todo` (table `todos`, `domain/todos.ts`) is a plain checklist item: a title,
+`done` and `doneAt`. No dates or history; "Clear done" soft-deletes done items.
+It has its own sync cursor (`sync.todoCursor`) and is in backups.
 
 ## Report
 
@@ -162,7 +170,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All eight migrations in `supabase/migrations/` are applied to the live project
+All nine migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-19.
 
 ## Releases

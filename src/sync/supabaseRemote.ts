@@ -1,3 +1,4 @@
+import { cleanTodoTitle, type Todo } from '../domain/todos';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BadHabit, CheckIn, CheckInStatus } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -101,8 +102,26 @@ interface CheckInRow {
   deleted_at: string | null;
 }
 
+interface TodoRow {
+  id: string;
+  title: string;
+  done: boolean;
+  done_at: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
 type Table =
-  'skills' | 'sessions' | 'library_items' | 'domains' | 'bad_habits' | 'bad_habit_checkins';
+  | 'skills'
+  | 'sessions'
+  | 'library_items'
+  | 'domains'
+  | 'bad_habits'
+  | 'bad_habit_checkins'
+  | 'todos';
+
+const TODO_COLUMNS = 'id,title,done,done_at,created_at,updated_at,deleted_at';
 
 const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
@@ -220,6 +239,30 @@ function fromCheckInRow(row: CheckInRow): RemoteRow<CheckIn> {
       habitId: row.habit_id,
       day: row.day,
       status: row.status,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+function toTodoRow(todo: Todo) {
+  return {
+    id: todo.id,
+    title: cleanTodoTitle(todo.title) ?? 'Untitled',
+    done: todo.done,
+    done_at: todo.done && todo.doneAt !== null ? new Date(todo.doneAt).toISOString() : null,
+    created_at: new Date(todo.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromTodoRow(row: TodoRow): RemoteRow<Todo> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      title: row.title,
+      done: row.done,
+      doneAt: row.done_at === null ? null : Date.parse(row.done_at),
       createdAt: Date.parse(row.created_at),
     },
   };
@@ -378,6 +421,8 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       await upsert('bad_habit_checkins', batch.checkInUpserts.map(toCheckInRow));
       await softDelete('bad_habit_checkins', batch.checkInDeletes);
       await softDelete('bad_habits', batch.badHabitDeletes);
+      await upsert('todos', batch.todoUpserts.map(toTodoRow));
+      await softDelete('todos', batch.todoDeletes);
     },
 
     async pull({
@@ -385,7 +430,9 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       libraryCursor,
       domainCursor,
       badHabitCursor,
+      todoCursor,
     }: SyncCursors): Promise<RemoteChanges> {
+      const todoRows = await fetchChanged<TodoRow>('todos', TODO_COLUMNS, todoCursor);
       const badHabitRows = await fetchChanged<BadHabitRow>(
         'bad_habits',
         BAD_HABIT_COLUMNS,
@@ -410,6 +457,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         libraryCursor: advance(libraryCursor, libraryRows),
         domainCursor: advance(domainCursor, domainRows),
         badHabitCursor: advance(badHabitCursor, [...badHabitRows, ...checkInRows]),
+        todoCursor: advance(todoCursor, todoRows),
       };
       // Nothing newer turned up, so later pulls from here can skip the overlap.
       if (next.cursor !== null && next.cursor === cursor) settled.add(cursor);
@@ -422,6 +470,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       if (next.badHabitCursor !== null && next.badHabitCursor === badHabitCursor) {
         settled.add(badHabitCursor);
       }
+      if (next.todoCursor !== null && next.todoCursor === todoCursor) settled.add(todoCursor);
 
       return {
         skills: skillRows.map(fromSkillRow),
@@ -430,6 +479,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         domains: domainRows.map(fromDomainRow),
         badHabits: badHabitRows.map(fromBadHabitRow),
         checkIns: checkInRows.map(fromCheckInRow),
+        todos: todoRows.map(fromTodoRow),
         cursors: next,
       };
     },

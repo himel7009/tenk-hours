@@ -1,3 +1,4 @@
+import type { Todo } from '../domain/todos';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
@@ -20,6 +21,7 @@ export interface SyncableStore {
     domains: Domain[];
     badHabits: BadHabit[];
     checkIns: CheckIn[];
+    todos: Todo[];
     sync: SyncState;
     acknowledgePush(pushed: PushedRevisions): void;
     applyRemoteChanges(changes: RemoteChanges): void;
@@ -39,6 +41,7 @@ export interface PushSource {
   domains: Domain[];
   badHabits: BadHabit[];
   checkIns: CheckIn[];
+  todos: Todo[];
   sync: SyncState;
 }
 
@@ -75,6 +78,7 @@ export function planPush(source: PushSource): PlannedPush {
     domains: {},
     badHabits: {},
     checkIns: {},
+    todos: {},
   };
   const skillIds = new Set(source.skills.map((skill) => skill.id));
   const habitIds = new Set(source.badHabits.map((habit) => habit.id));
@@ -91,6 +95,8 @@ export function planPush(source: PushSource): PlannedPush {
     habitIds.has(c.habitId),
   );
 
+  const todos = collect(sync.pendingTodos, source.todos, revisions.todos);
+
   return {
     batch: {
       skillUpserts: skills.upserts,
@@ -105,6 +111,8 @@ export function planPush(source: PushSource): PlannedPush {
       badHabitDeletes: badHabits.deletes,
       checkInUpserts: checkIns.upserts,
       checkInDeletes: checkIns.deletes,
+      todoUpserts: todos.upserts,
+      todoDeletes: todos.deletes,
     },
     revisions,
   };
@@ -125,7 +133,13 @@ export async function syncOnce(remote: RemoteStore, store: SyncableStore): Promi
   if (!isEmpty(batch)) await remote.push(batch);
   store.getState().acknowledgePush(revisions);
 
-  const { cursor, libraryCursor, domainCursor, badHabitCursor } = store.getState().sync;
-  const changes = await remote.pull({ cursor, libraryCursor, domainCursor, badHabitCursor });
+  const { cursor, libraryCursor, domainCursor, badHabitCursor, todoCursor } = store.getState().sync;
+  const changes = await remote.pull({
+    cursor,
+    libraryCursor,
+    domainCursor,
+    badHabitCursor,
+    todoCursor,
+  });
   store.getState().applyRemoteChanges(changes);
 }

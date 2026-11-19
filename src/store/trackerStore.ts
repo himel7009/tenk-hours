@@ -4,6 +4,7 @@ import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
 import { normalizeRoutine, type Weekday } from '../domain/routine';
+import { cleanTodoTitle, type Todo, type TodoId } from '../domain/todos';
 import {
   advancePomodoro as advancePomodoroPhase,
   startNextRound as startNextRoundOf,
@@ -39,7 +40,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 10;
+const STORAGE_VERSION = 11;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -77,6 +78,7 @@ interface TrackerState {
   domains: Domain[];
   badHabits: BadHabit[];
   checkIns: CheckIn[];
+  todos: Todo[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   /**
@@ -141,12 +143,20 @@ interface TrackerActions {
   updateLibraryItem: (id: LibraryItemId, input: LibraryInput) => void;
   deleteLibraryItem: (id: LibraryItemId) => void;
 
+  /** Adds a to-do; returns false if the title is empty. */
+  addTodo: (title: string) => boolean;
+  toggleTodo: (id: TodoId) => void;
+  renameTodo: (id: TodoId, title: string) => void;
+  deleteTodo: (id: TodoId) => void;
+  /** Removes every done to-do. */
+  clearDoneTodos: () => void;
+
   setTheme: (theme: Theme) => void;
   setBadHabitLock: (lock: PinLock | null) => void;
   replaceData: (
     data: Pick<
       TrackerState,
-      'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns'
+      'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns' | 'todos'
     >,
   ) => void;
 
@@ -172,6 +182,7 @@ const initialState: TrackerState = {
   domains: [],
   badHabits: [],
   checkIns: [],
+  todos: [],
   activeTimer: null,
   theme: 'system',
   badHabitLock: null,
@@ -184,7 +195,8 @@ type PendingKey =
   | 'pendingLibrary'
   | 'pendingDomains'
   | 'pendingBadHabits'
-  | 'pendingCheckIns';
+  | 'pendingCheckIns'
+  | 'pendingTodos';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
@@ -452,11 +464,62 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingLibrary', [id], 'delete'),
         })),
 
+      addTodo: (title) => {
+        const clean = cleanTodoTitle(title);
+        if (clean === null) return false;
+        const todo: Todo = {
+          id: crypto.randomUUID(),
+          title: clean,
+          done: false,
+          createdAt: Date.now(),
+          doneAt: null,
+        };
+        set((state) => ({
+          todos: [...state.todos, todo],
+          sync: markPending(state.sync, 'pendingTodos', [todo.id], 'upsert'),
+        }));
+        return true;
+      },
+
+      toggleTodo: (id) =>
+        set((state) => ({
+          todos: state.todos.map((todo) =>
+            todo.id === id
+              ? { ...todo, done: !todo.done, doneAt: todo.done ? null : Date.now() }
+              : todo,
+          ),
+          sync: markPending(state.sync, 'pendingTodos', [id], 'upsert'),
+        })),
+
+      renameTodo: (id, title) => {
+        const clean = cleanTodoTitle(title);
+        if (clean === null) return;
+        set((state) => ({
+          todos: state.todos.map((todo) => (todo.id === id ? { ...todo, title: clean } : todo)),
+          sync: markPending(state.sync, 'pendingTodos', [id], 'upsert'),
+        }));
+      },
+
+      deleteTodo: (id) =>
+        set((state) => ({
+          todos: state.todos.filter((todo) => todo.id !== id),
+          sync: markPending(state.sync, 'pendingTodos', [id], 'delete'),
+        })),
+
+      clearDoneTodos: () =>
+        set((state) => {
+          const done = state.todos.filter((todo) => todo.done).map((todo) => todo.id);
+          return {
+            todos: state.todos.filter((todo) => !todo.done),
+            sync: markPending(state.sync, 'pendingTodos', done, 'delete'),
+          };
+        }),
+
       setTheme: (theme) => set({ theme }),
 
       setBadHabitLock: (badHabitLock) => set({ badHabitLock }),
 
-      replaceData: ({ skills, sessions, library, domains, badHabits, checkIns }) =>
+      replaceData: ({ skills, sessions, library, domains, badHabits, checkIns, todos }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
           // that was here is deleted remotely, then the backup is uploaded.
@@ -467,12 +530,14 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingDomains', ids(state.domains), 'delete');
           sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'delete');
           sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'delete');
+          sync = markPending(sync, 'pendingTodos', ids(state.todos), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
           sync = markPending(sync, 'pendingDomains', ids(domains), 'upsert');
           sync = markPending(sync, 'pendingBadHabits', ids(badHabits), 'upsert');
           sync = markPending(sync, 'pendingCheckIns', ids(checkIns), 'upsert');
+          sync = markPending(sync, 'pendingTodos', ids(todos), 'upsert');
           return {
             skills,
             sessions,
@@ -480,6 +545,7 @@ export const useTrackerStore = create<TrackerStore>()(
             domains,
             badHabits,
             checkIns,
+            todos,
             activeTimer: null,
             sync,
           };
@@ -499,6 +565,7 @@ export const useTrackerStore = create<TrackerStore>()(
               domains: [],
               badHabits: [],
               checkIns: [],
+              todos: [],
               activeTimer: null,
               // The lock belonged to whoever used the device before.
               badHabitLock: null,
@@ -511,6 +578,7 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingDomains', ids(state.domains), 'upsert');
           sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'upsert');
           sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'upsert');
+          sync = markPending(sync, 'pendingTodos', ids(state.todos), 'upsert');
           return { sync };
         }),
 
@@ -523,6 +591,7 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingDomains,
             pendingBadHabits,
             pendingCheckIns,
+            pendingTodos,
           } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
@@ -567,6 +636,13 @@ export const useTrackerStore = create<TrackerStore>()(
             else checkIns.set(row.id, row);
           }
 
+          const todos = new Map(state.todos.map((todo) => [todo.id, todo]));
+          for (const { row, deleted } of changes.todos) {
+            if (pendingTodos[row.id]) continue;
+            if (deleted) todos.delete(row.id);
+            else todos.set(row.id, row);
+          }
+
           // A skill whose domain was deleted on another device stands alone.
           const ungrouped = [...skills.values()].map((skill) =>
             skill.domainId !== null && !domains.has(skill.domainId)
@@ -581,6 +657,7 @@ export const useTrackerStore = create<TrackerStore>()(
             badHabits: [...badHabits.values()],
             // A bad habit deleted on another device takes its answers with it.
             checkIns: [...checkIns.values()].filter((c) => badHabits.has(c.habitId)),
+            todos: [...todos.values()],
             skills: ungrouped,
             // A skill deleted on another device takes its sessions with it.
             sessions: [...sessions.values()].filter((session) => skills.has(session.skillId)),
@@ -599,6 +676,7 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingDomains: withoutAcknowledged(state.sync.pendingDomains, pushed.domains),
             pendingBadHabits: withoutAcknowledged(state.sync.pendingBadHabits, pushed.badHabits),
             pendingCheckIns: withoutAcknowledged(state.sync.pendingCheckIns, pushed.checkIns),
+            pendingTodos: withoutAcknowledged(state.sync.pendingTodos, pushed.todos),
           },
         })),
 
@@ -614,6 +692,7 @@ export const useTrackerStore = create<TrackerStore>()(
         domains,
         badHabits,
         checkIns,
+        todos,
         activeTimer,
         theme,
         sync,
@@ -625,6 +704,7 @@ export const useTrackerStore = create<TrackerStore>()(
         domains,
         badHabits,
         checkIns,
+        todos,
         activeTimer,
         theme,
         sync,
@@ -702,6 +782,15 @@ export const useTrackerStore = create<TrackerStore>()(
           }));
           state.domains = (state.domains ?? []).map((domain) => ({ ...domain, routineDays: [] }));
         }
+        // v10 predates to-dos.
+        if (version < 11) {
+          state.todos = [];
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            todoCursor: null,
+            pendingTodos: {},
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -718,6 +807,7 @@ export function hasPendingChanges(sync: SyncState): boolean {
     sync.pendingDomains,
     sync.pendingBadHabits,
     sync.pendingCheckIns,
+    sync.pendingTodos,
   ].some((pending) => Object.keys(pending).length > 0);
 }
 

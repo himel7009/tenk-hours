@@ -1,0 +1,200 @@
+.card {
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
+}
+
+.count {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.add {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.input,
+.edit {
+  flex: 1;
+  min-width: 0;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+}
+
+.input:focus-visible,
+.edit:focus-visible {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-3);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 2.75rem;
+  border-top: 1px solid var(--line);
+}
+
+.item:first-child {
+  border-top: 0;
+}
+
+/* A round box that fills in when ticked. */
+.check input {
+  display: grid;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  border: 1.5px solid var(--ink-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  appearance: none;
+}
+
+.check input:checked {
+  border-color: var(--moss);
+  background: var(--moss);
+}
+
+.check input:checked::after {
+  width: 0.45rem;
+  height: 0.25rem;
+  margin-top: -0.1rem;
+  border-bottom: 2px solid var(--surface);
+  border-left: 2px solid var(--surface);
+  content: '';
+  transform: rotate(-45deg);
+}
+
+.check input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.item[data-done='true'] .text {
+  color: var(--ink-soft);
+  text-decoration: line-through;
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.remove svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.item:hover .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.remove:hover {
+  color: var(--danger);
+}
+
+/* No hover on touch screens, so the delete button stays in view. */
+@media (hover: none) {
+  .remove {
+    opacity: 1;
+  }
+}
+
+.empty {
+  margin-top: var(--space-3);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.doneBlock {
+  margin-top: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line);
+}
+
+.doneHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.doneToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.doneToggle svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.doneToggle[aria-expanded='true'] svg {
+  transform: none;
+}

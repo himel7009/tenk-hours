@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-19
 
+- **Projects come first.** The Projects tab lists every project, in a domain or not, each tagged with its domain, so there is no need for a "Projects" domain to find them. The Today tab shows today's projects in their own section right after the to-dos, and the domain panels below leave them out. New projects start with a streak, which can still be switched off.
 - **Today tab.** The home page opens on Today: your to-do list, a reminder if a bad habit is still unanswered, and only the domains and trackers your weekly routine plans for today. It changes by itself from day to day, and says which domains are resting.
 - **To-do list.** Write a task, tick it off, click it to fix a typo. Done items fold away until you clear them. It syncs with your account like everything else.
 - **Activity calendar, like GitHub's.** One square per day for the last 12 months (or any past year), darker on the days you put in more time, with weekday and month labels, a Less to More legend, active days and your longest and current runs. Hover a square to see that day. It is on the home page for everything together, on every domain, and on every skill, habit and project page, where it replaces the old 26-week view. The 10,000-hour grid is unchanged.

@@ -16,6 +16,8 @@ interface DomainPanelProps {
   domain: Domain;
   onEdit: () => void;
   onAddSkill: () => void;
+  /** Leave projects out of the skill list, when they are listed elsewhere on the page. */
+  hideProjects?: boolean;
 }
 
 /** "2 skills and 1 project", leaving out kinds there are none of. */
@@ -77,10 +79,17 @@ function DailyPlanBar({ plan }: { plan: DailyPlan }) {
 }
 
 /** A domain with its combined hours and streak, and the skills inside it. */
-export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
+export function DomainPanel({
+  domain,
+  onEdit,
+  onAddSkill,
+  hideProjects = false,
+}: DomainPanelProps) {
   const today = useToday();
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
+  // The cards listed here; projects may be shown elsewhere on the page.
+  const listed = skills.filter((skill) => !(hideProjects && skill.kind === 'project'));
   const hasGoals = skills.some((skill) => hasDailyGoal(skill));
   const streakOn = progress.keepsStreak;
   const [open, setOpen] = usePersistentState<boolean>(`tenk:domain-open:${domain.id}`, true);
@@ -174,7 +183,7 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
         </div>
       )}
 
-      {skills.length > 0 && (
+      {listed.length > 0 && (
         <button
           type="button"
           className={styles.toggle}
@@ -184,8 +193,11 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
           <svg viewBox="0 0 16 16" aria-hidden="true">
             <path d="M4 6l4 4 4-4" />
           </svg>
-          {open ? 'Hide' : 'Show'} {describeContents(skills)}
+          {open ? 'Hide' : 'Show'} {describeContents(listed)}
         </button>
+      )}
+      {hideProjects && listed.length < skills.length && (
+        <p className={styles.listedAbove}>Its projects are listed above.</p>
       )}
 
       {skills.length === 0 ? (
@@ -196,7 +208,7 @@ export function DomainPanel({ domain, onEdit, onAddSkill }: DomainPanelProps) {
       ) : (
         open && (
           <ul className={styles.skills}>
-            {skills.map((skill) => (
+            {listed.map((skill) => (
               <SkillCard key={skill.id} skill={skill} />
             ))}
           </ul>

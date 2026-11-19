@@ -19,6 +19,8 @@ import { SkillFormDialog } from './SkillFormDialog';
 
 interface SkillCardProps {
   skill: Skill;
+  /** Name the domain on the card, for lists outside the domain's own panel. */
+  showDomain?: boolean;
 }
 
 interface CardSummary {
@@ -72,13 +74,16 @@ function summarizeProject(progress: Progress, today: DayKey): CardSummary {
 
 const NOUNS = { skill: 'skill', habit: 'habit', project: 'project' } as const;
 
-export function SkillCard({ skill }: SkillCardProps) {
+export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
   const today = useToday();
   const progress = useSkillProgress(skill);
   const { activeTimer, start } = useTimer();
   const { plan } = usePomodoroPlan();
   const running = activeTimer?.skillId === skill.id;
   const deleteSkill = useTrackerStore((state) => state.deleteSkill);
+  const domain = useTrackerStore((state) =>
+    showDomain ? state.domains.find((candidate) => candidate.id === skill.domainId) : undefined,
+  );
   const sessionCount = useTrackerStore(
     (state) => state.sessions.filter((session) => session.skillId === skill.id).length,
   );
@@ -108,6 +113,11 @@ export function SkillCard({ skill }: SkillCardProps) {
         </span>
         <span className={styles.heading}>
           <span className={styles.name}>{skill.name}</span>
+          {showDomain && domain && (
+            <span className={styles.domainTag}>
+              {domain.icon} {domain.name}
+            </span>
+          )}
           <span className={`tabular ${styles.headline}`}>{headline}</span>
         </span>
         {fraction !== null && (

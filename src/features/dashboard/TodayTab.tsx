@@ -1,5 +1,5 @@
 import { Button } from '../../components/Button';
-import { weekdayOf, isPlannedOn } from '../../domain/routine';
+import { isPlannedOn, routineOf, weekdayOf } from '../../domain/routine';
 import type { DayKey } from '../../domain/dates';
 import type { Domain, DomainId } from '../../domain/domains';
 import { useTrackerStore } from '../../store/trackerStore';
@@ -31,15 +31,26 @@ export function TodayTab({
   const domains = useTrackerStore((state) => state.domains);
   const skills = useTrackerStore((state) => state.skills);
 
-  const plannedDomains = domains.filter((domain) => isPlannedOn(domain.routineDays, today));
+  // A domain holding only projects has nothing left to show once they are listed above.
+  const holdsMoreThanProjects = (domain: Domain) =>
+    skills.some((skill) => skill.domainId === domain.id && skill.kind !== 'project');
+  const plannedDomains = domains.filter(
+    (domain) => isPlannedOn(domain.routineDays, today) && holdsMoreThanProjects(domain),
+  );
   const restingDomains = domains.filter((domain) => !isPlannedOn(domain.routineDays, today));
+  // Projects come first, wherever they sit: they are the daily work.
+  const plannedProjects = skills.filter(
+    (skill) => skill.kind === 'project' && isPlannedOn(routineOf(skill, domains), today),
+  );
   const plannedOwn = skills.filter(
-    (skill) => skill.domainId === null && isPlannedOn(skill.routineDays, today),
+    (skill) =>
+      skill.kind !== 'project' && skill.domainId === null && isPlannedOn(skill.routineDays, today),
   );
   const weekday = new Date(2023, 0, 1 + weekdayOf(today)).toLocaleDateString(undefined, {
     weekday: 'long',
   });
-  const nothingPlanned = plannedDomains.length === 0 && plannedOwn.length === 0;
+  const nothingPlanned =
+    plannedProjects.length === 0 && plannedDomains.length === 0 && plannedOwn.length === 0;
 
   return (
     <div className={styles.todayTab}>
@@ -70,6 +81,18 @@ export function TodayTab({
         </p>
       ) : (
         <>
+          {plannedProjects.length > 0 && (
+            <section aria-labelledby="today-projects">
+              <h3 id="today-projects" className={styles.todaySubheading}>
+                Projects
+              </h3>
+              <ul className={styles.cards}>
+                {plannedProjects.map((skill) => (
+                  <SkillCard key={skill.id} skill={skill} showDomain />
+                ))}
+              </ul>
+            </section>
+          )}
           {plannedDomains.length > 0 && (
             <ul>
               {plannedDomains.map((domain) => (
@@ -78,6 +101,7 @@ export function TodayTab({
                   domain={domain}
                   onEdit={() => onEditDomain(domain)}
                   onAddSkill={() => onAddSkill(domain.id)}
+                  hideProjects
                 />
               ))}
             </ul>

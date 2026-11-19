@@ -34,7 +34,7 @@ const COPY: Record<TrackerKind, { noun: string; add: string; placeholder: string
 /** Skills and projects can be switched between; habits stay habits. */
 const TRACK_AS: { kind: 'skill' | 'project'; label: string; hint: string }[] = [
   { kind: 'skill', label: 'Skill', hint: 'Hours towards a target, with a daily goal' },
-  { kind: 'project', label: 'Project', hint: 'Adds up the time you spend on it' },
+  { kind: 'project', label: 'Project', hint: 'Time spent on it, no target' },
 ];
 
 type SkillFormDialogProps = { onClose: () => void } & (
@@ -56,8 +56,6 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const changeKind = (next: TrackerKind) => {
     // An icon left at the old kind's default follows the switch.
     if (icon === DEFAULT_ICONS[kind]) setIcon(DEFAULT_ICONS[next]);
-    // A new project starts without a streak, a new skill with one.
-    if (!skill) setKeepStreak(next !== 'project');
     setKind(next);
   };
 
@@ -84,7 +82,8 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const [domainId, setDomainId] = useState<DomainId | null>(
     props.skill ? props.skill.domainId : (props.domainId ?? null),
   );
-  const [keepStreak, setKeepStreak] = useState(skill?.keepStreak ?? kind !== 'project');
+  // Everything new starts with a streak; it is one switch away from off.
+  const [keepStreak, setKeepStreak] = useState(skill?.keepStreak ?? true);
   const [routineDays, setRoutineDays] = useState<Weekday[]>(skill?.routineDays ?? []);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);

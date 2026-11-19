@@ -114,7 +114,11 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
 overview rail (Today card, the week from the routine, day and year progress
 from `domain/timeProgress.ts`, the 7-day chart) and the trackers in tabs
 (`TrackerTabs`: today, domains, skills, projects, habits, bad habits). The
-Today tab (`TodayTab`) shows the to-do list and only what `isPlannedOn` today.
+Today tab (`TodayTab`) shows the to-do list, then every project planned
+today (wherever it sits), then the planned domains without their projects
+(`hideProjects`); a domain holding only projects is left out. The Projects tab
+lists every project, tagged with its domain (`SkillCard`'s `showDomain`).
+New trackers, projects included, start with `keepStreak` on.
 Below 62rem the rail dissolves with `display: contents` so the tabs come
 straight after the Today card. The open tab and each domain's
 collapsed state are remembered per browser (`usePersistentState`). All

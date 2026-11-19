@@ -53,7 +53,7 @@ How a week or month went, against the one before, with a day-by-day chart and a 
 ### Tracking
 
 - **🎯 Skills and habits**: Long-term skills count towards 10,000 hours; habits are about showing up every day. Each has its own emoji and colour.
-- **🛠️ Projects**: Time the work you do on a project, with no target, just the hours you put in, and a streak if you want one. Switch any skill to a project or back.
+- **🛠️ Projects**: Time the work you do on a project, with no target, just the hours you put in and a daily streak. Every project is in the Projects tab and first on Today, whichever domain it sits in. Switch any skill to a project or back.
 - **🚫 Bad habits**: Habits you want to quit, with a daily yes or no check-in, a streak of clean days and your clean rate over the last 30 days, optionally hidden behind a PIN.
 - **🧭 Domains**: Group related skills and projects under a field, such as AI holding machine learning and deep learning. A domain shows the combined hours of everything in it, a daily plan made of its skills' daily goals with today's progress against it, and a streak of its own.
 - **🟩 Activity calendar**: A GitHub-style year of squares, one per day, shaded by the time you put in. For everything together, for each domain and for each skill, habit and project, with past years a click away.

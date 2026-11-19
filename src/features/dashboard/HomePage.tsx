@@ -19,7 +19,7 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
-import { isPlannedOn } from '../../domain/routine';
+import { isPlannedOn, routineOf } from '../../domain/routine';
 import { RoutineCard } from '../routine/RoutineCard';
 import { TodayTab } from './TodayTab';
 import { TodayCard } from './TodayCard';
@@ -57,8 +57,8 @@ const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add:
   },
   projects: {
     label: 'Projects',
-    note: 'Work you just want to time. No target or streak, only the hours you put in.',
-    empty: 'No projects outside a domain yet.',
+    note: 'Every project, in a domain or not. The work you show up for each day, with a streak if you want one.',
+    empty: 'No projects yet. Add the thing you are building, such as your thesis.',
     add: 'Add project',
   },
   habits: {
@@ -116,14 +116,18 @@ export function HomePage() {
 
   const lists: Record<Exclude<TabId, 'today' | 'domains' | 'bad'>, Skill[]> = {
     skills: skills.filter((skill) => skill.kind === 'skill' && skill.domainId === null),
-    projects: skills.filter((skill) => skill.kind === 'project' && skill.domainId === null),
+    // Every project, so none has to sit in a domain just to be found.
+    projects: skills.filter((skill) => skill.kind === 'project'),
     habits: skills.filter((skill) => skill.kind === 'habit'),
   };
   // What the Today tab lists: domains, and trackers outside a domain, planned today.
   const plannedCount =
     domains.filter((domain) => isPlannedOn(domain.routineDays, today)).length +
-    skills.filter((skill) => skill.domainId === null && isPlannedOn(skill.routineDays, today))
-      .length;
+    skills.filter(
+      (skill) =>
+        (skill.domainId === null || skill.kind === 'project') &&
+        isPlannedOn(routineOf(skill, domains), today),
+    ).length;
   const isEmpty = skills.length === 0 && domains.length === 0 && badHabits.length === 0;
   const copy = TAB_COPY[tab];
 
@@ -282,7 +286,7 @@ export function HomePage() {
             ) : (
               <ul className={styles.cards}>
                 {lists[tab].map((skill) => (
-                  <SkillCard key={skill.id} skill={skill} />
+                  <SkillCard key={skill.id} skill={skill} showDomain={tab === 'projects'} />
                 ))}
               </ul>
             )}

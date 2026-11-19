@@ -58,6 +58,13 @@ historical; do not rename the table or type without a data migration plan.
   automatically when they end; `null` means an open-ended stopwatch. Timers
   can be paused (`pausedAt`, `pausedMs`); paused time never counts. All timer
   maths lives in `domain/timer.ts`. Sessions are stored in whole minutes.
+- Pomodoro (`ActiveTimer.pomodoro`, `domain/pomodoro.ts`) splits a countdown's
+  focus time into rounds with breaks (`buildSchedule`). A break is the timer
+  paused at the exact end of the round, so breaks never count; after a break
+  the session waits in `ready` until the user starts the next round. The
+  schedule is derived from `durationSeconds` and the plan, never stored. The
+  per-browser choice of plan is `usePomodoroPlan`. Stopwatches never get
+  rounds.
 
 ## Domains
 

@@ -1,0 +1,49 @@
+.track {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+.slot {
+  display: flex;
+  flex-basis: 0;
+  align-items: center;
+  min-width: 0;
+}
+
+.round {
+  flex: 1;
+  min-width: 4px;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--cell-empty);
+}
+
+.round[data-current='true'] {
+  outline: 1.5px solid var(--skill);
+  outline-offset: 1.5px;
+}
+
+.fill {
+  height: 100%;
+  background: var(--skill);
+  transition: width 1s linear;
+}
+
+/* A break: a quiet dotted span between rounds, longer for a long break. */
+.break {
+  flex: none;
+  max-width: 2rem;
+  height: 2px;
+  margin-inline: 3px;
+  background-image: radial-gradient(circle, var(--ink-soft) 1px, transparent 1.2px);
+  background-size: 5px 2px;
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    transition: none;
+  }
+}

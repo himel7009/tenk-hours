@@ -1,4 +1,5 @@
 import { formatDuration } from '../../domain/format';
+import type { PomodoroPlan } from '../../domain/pomodoro';
 import type { Skill, SkillId } from '../../domain/types';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
@@ -13,6 +14,7 @@ export function useTimer() {
   const resumeTimer = useTrackerStore((state) => state.resumeTimer);
   const stopTimer = useTrackerStore((state) => state.stopTimer);
   const discardTimer = useTrackerStore((state) => state.discardTimer);
+  const startNextRound = useTrackerStore((state) => state.startNextRound);
   const toast = useToastStore((state) => state.show);
 
   const activeSkill: Skill | undefined = activeTimer
@@ -22,12 +24,18 @@ export function useTimer() {
   return {
     activeTimer,
     activeSkill,
-    paused: activeTimer?.pausedAt != null,
-    /** Starts a countdown of the given length in seconds, or a stopwatch if null. */
-    start: (skillId: SkillId, durationSeconds: number | null) => {
+    /** Paused by hand. A Pomodoro break is not a pause. */
+    paused: activeTimer?.pausedAt != null && (activeTimer.pomodoro?.phase ?? 'focus') === 'focus',
+    phase: activeTimer?.pomodoro?.phase ?? null,
+    /**
+     * Starts a countdown of the given length in seconds, or a stopwatch if
+     * null. With a plan, the countdown is focus time split into rounds.
+     */
+    start: (skillId: SkillId, durationSeconds: number | null, plan?: PomodoroPlan | null) => {
       if (durationSeconds !== null) requestNotificationPermission();
-      startTimer(skillId, durationSeconds);
+      startTimer(skillId, durationSeconds, plan);
     },
+    nextRound: startNextRound,
     pause: pauseTimer,
     resume: resumeTimer,
     stop: () => {

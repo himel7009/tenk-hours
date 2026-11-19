@@ -12,6 +12,7 @@ import { useSkillProgress } from '../progress/useProgress';
 import { WeekStrip } from '../progress/WeekStrip';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { usePomodoroPlan } from '../timer/usePomodoroPlan';
 import { useTimer } from '../timer/useTimer';
 import styles from './SkillCard.module.css';
 import { SkillFormDialog } from './SkillFormDialog';
@@ -75,6 +76,7 @@ export function SkillCard({ skill }: SkillCardProps) {
   const today = useToday();
   const progress = useSkillProgress(skill);
   const { activeTimer, start } = useTimer();
+  const { plan } = usePomodoroPlan();
   const running = activeTimer?.skillId === skill.id;
   const deleteSkill = useTrackerStore((state) => state.deleteSkill);
   const sessionCount = useTrackerStore(
@@ -178,7 +180,7 @@ export function SkillCard({ skill }: SkillCardProps) {
           </div>
           <Button
             size="sm"
-            onClick={() => start(skill.id, isProject ? null : skill.dailyGoalMinutes * 60)}
+            onClick={() => start(skill.id, isProject ? null : skill.dailyGoalMinutes * 60, plan)}
             disabled={Boolean(activeTimer)}
           >
             {running

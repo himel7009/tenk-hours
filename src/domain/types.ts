@@ -1,3 +1,4 @@
+import type { PomodoroState } from './pomodoro';
 import type { DayKey } from './dates';
 
 export type SkillId = string;
@@ -57,6 +58,8 @@ export interface ActiveTimer {
   pausedAt: number | null;
   /** Total length of earlier pauses, left out of the time spent. */
   pausedMs: number;
+  /** Rounds and breaks, when the countdown is split Pomodoro style. */
+  pomodoro: PomodoroState | null;
 }
 
 export type Theme = 'system' | 'light' | 'dark';

@@ -119,3 +119,26 @@
 .custom {
   flex-wrap: wrap;
 }
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+  max-width: 34rem;
+}
+
+.track {
+  flex-basis: 100%;
+}
+
+.phase {
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+}
+
+/* On a break the clock is the break's, so it steps back from the skill colour. */
+.panel[data-phase='break'] .clock,
+.panel[data-phase='ready'] .clock {
+  color: var(--ink-soft);
+}

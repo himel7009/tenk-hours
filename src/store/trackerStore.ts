@@ -4,6 +4,12 @@ import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
 import {
+  advancePomodoro as advancePomodoroPhase,
+  startNextRound as startNextRoundOf,
+  type PomodoroEvent,
+  type PomodoroPlan,
+} from '../domain/pomodoro';
+import {
   checkInId,
   type BadHabit,
   type BadHabitId,
@@ -32,7 +38,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 8;
+const STORAGE_VERSION = 9;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -93,7 +99,16 @@ interface TrackerActions {
    * Starts a timer, replacing any running one without saving it. Pass a
    * duration in seconds for a countdown, or null for an open-ended stopwatch.
    */
-  startTimer: (skillId: SkillId, durationSeconds: number | null) => void;
+  /** With a plan, the countdown is split into Pomodoro rounds and breaks. */
+  startTimer: (
+    skillId: SkillId,
+    durationSeconds: number | null,
+    plan?: PomodoroPlan | null,
+  ) => void;
+  /** Moves a Pomodoro session to its next phase if one is due. */
+  advancePomodoro: () => PomodoroEvent;
+  /** Skips the break, or starts the round waiting after it. */
+  startNextRound: () => void;
   /** Stops the clock without ending the session. */
   pauseTimer: () => void;
   resumeTimer: () => void;
@@ -244,7 +259,7 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingSessions', [id], 'delete'),
         })),
 
-      startTimer: (skillId, durationSeconds) =>
+      startTimer: (skillId, durationSeconds, plan = null) =>
         set({
           activeTimer: {
             skillId,
@@ -252,8 +267,26 @@ export const useTrackerStore = create<TrackerStore>()(
             durationSeconds,
             pausedAt: null,
             pausedMs: 0,
+            // Rounds need an end to split up, so a stopwatch never has them.
+            pomodoro:
+              plan && durationSeconds !== null
+                ? { plan, phase: 'focus', round: 0, breakEndsAt: null }
+                : null,
           },
         }),
+
+      advancePomodoro: () => {
+        const timer = get().activeTimer;
+        if (!timer?.pomodoro) return null;
+        const { timer: next, event } = advancePomodoroPhase(timer, Date.now());
+        if (next !== timer) set({ activeTimer: next });
+        return event;
+      },
+
+      startNextRound: () =>
+        set((state) => ({
+          activeTimer: state.activeTimer && startNextRoundOf(state.activeTimer, Date.now()),
+        })),
 
       pauseTimer: () =>
         set((state) => ({
@@ -628,6 +661,8 @@ export const useTrackerStore = create<TrackerStore>()(
         }
         // v7 predates the bad habits lock.
         if (version < 8) state.badHabitLock = null;
+        // v8 timers had no Pomodoro rounds.
+        if (version < 9 && state.activeTimer) state.activeTimer.pomodoro = null;
         return state as TrackerState;
       },
     },

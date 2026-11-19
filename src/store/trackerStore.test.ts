@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { POMODORO_PLANS } from '../domain/pomodoro';
 import { resetTrackerStore, useTrackerStore } from './trackerStore';
 
 const store = () => useTrackerStore.getState();
@@ -102,5 +103,25 @@ describe('timer', () => {
 
     expect(store().stopTimer()).toBeNull();
     expect(store().sessions).toEqual([]);
+  });
+  it('saves only focus time from a Pomodoro session, never the breaks', () => {
+    store().startTimer(newSkill(), 120 * 60, POMODORO_PLANS.classic);
+    for (let round = 1; round <= 4; round += 1) {
+      vi.advanceTimersByTime(25 * 60_000);
+      expect(store().advancePomodoro()).toBe('break');
+      vi.advanceTimersByTime((round === 4 ? 15 : 5) * 60_000);
+      expect(store().advancePomodoro()).toBe('ready');
+      vi.advanceTimersByTime(10 * 60_000); // slow to come back
+      store().startNextRound();
+    }
+    vi.advanceTimersByTime(20 * 60_000);
+    expect(store().advancePomodoro()).toBe('done');
+
+    expect(store().stopTimer()).toMatchObject({ minutes: 120 });
+  });
+
+  it('never gives a stopwatch Pomodoro rounds', () => {
+    store().startTimer(newSkill(), null, POMODORO_PLANS.classic);
+    expect(store().activeTimer?.pomodoro).toBeNull();
   });
 });

@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-19
+
+- **Work in rounds (Pomodoro).** Split any timer into 25 minute rounds with 5 minute breaks (a longer break after every fourth), or 50 and 10. Set 2 hours or 5 and the rounds and breaks are worked out for you, with a preview of when you will finish. Breaks never count towards your time, and after each break the clock waits until you start the next round.
+
 ## 2026-11-18
 
 - **PIN lock for bad habits.** Hide your bad habits behind a 4 to 8 digit PIN on each device. They lock again when you leave the tab, put the app in the background or reload.

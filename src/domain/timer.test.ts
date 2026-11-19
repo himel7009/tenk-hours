@@ -9,6 +9,7 @@ const countdown = (seconds: number): ActiveTimer => ({
   durationSeconds: seconds,
   pausedAt: null,
   pausedMs: 0,
+  pomodoro: null,
 });
 const stopwatch: ActiveTimer = { ...countdown(0), durationSeconds: null };
 

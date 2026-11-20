@@ -229,11 +229,16 @@ export function buildTodoHistory(
   return history;
 }
 
-/** Every place a to-do can go: General, then domains, then trackers outside a domain. */
-export function todoTargets(context: TodoContext): TodoTarget[] {
-  return [
+/**
+ * The places offered for a new to-do: General and every skill, habit and
+ * project. Domains are left out on purpose: a to-do is for one skill, and
+ * the skill still follows its domain's days. `keep` adds back the place an
+ * existing to-do already has, such as a domain, so editing never moves it.
+ */
+export function todoTargets(context: TodoContext, keep?: TodoTarget): TodoTarget[] {
+  const targets = [
     GENERAL,
-    ...context.domains.map((domain) => targetOf({ domainId: domain.id, skillId: null }, context)),
     ...context.skills.map((skill) => targetOf({ domainId: null, skillId: skill.id }, context)),
   ];
+  return keep && !targets.some((target) => target.key === keep.key) ? [...targets, keep] : targets;
 }

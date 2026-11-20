@@ -139,6 +139,8 @@ tracker's page. It is separate from the 10,000-hour grid (`HourField`).
 tracker (`skillId`) or neither (General), never both, and is planned for a
 `day`. It has its own sync cursor (`sync.todoCursor`) and is in backups.
 
+- New to-dos are offered General and every skill, habit and project
+  (`todoTargets`), not domains; a to-do already under a domain keeps it.
 - An undone to-do whose day has passed shows on the next working day of its
   domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
   moves to the next day. Only the first planned day is stored: where it shows
@@ -164,6 +166,13 @@ cursor (`sync.moneyCursor`) and are in backups and live updates.
 - `domain/moneyImport.ts` reads a monthly expense sheet saved as CSV. Imported
   lines get stable ids (`stableUuid`), so importing a month again replaces it.
   Never commit a real sheet: tests use made-up data.
+- Debts (`domain/debts.ts`, tables `money_debts` and `money_debt_payments`,
+  same cursor): `borrowed` (you owe) or `lent` (owed to you), with an optional
+  `dueDay`. Payments settle them in part or whole. A debt's `sectionId` and
+  each payment's say which section the money went through; `debtFlows` feeds
+  that into section balances (borrowed and paid back to you add, repaid and
+  lent take away), never into spending. Deleting a section keeps its debts
+  and clears their `sectionId`.
 - The bad habits PIN (`badHabitLock`) also hides money (`usePrivacyLocked`).
   Deleting a section deletes its entries and any moves into it.
 
@@ -217,7 +226,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All twelve migrations in `supabase/migrations/` are applied to the live project
+All thirteen migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-20.
 
 ## Releases

@@ -1,3 +1,4 @@
+import type { Debt, DebtPayment } from '../domain/debts';
 import type { MoneyEntry, MoneySection } from '../domain/money';
 import type { Todo } from '../domain/todos';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
@@ -25,6 +26,8 @@ export interface SyncableStore {
     todos: Todo[];
     moneySections: MoneySection[];
     moneyEntries: MoneyEntry[];
+    debts: Debt[];
+    debtPayments: DebtPayment[];
     sync: SyncState;
     acknowledgePush(pushed: PushedRevisions): void;
     applyRemoteChanges(changes: RemoteChanges): void;
@@ -47,6 +50,8 @@ export interface PushSource {
   todos: Todo[];
   moneySections: MoneySection[];
   moneyEntries: MoneyEntry[];
+  debts: Debt[];
+  debtPayments: DebtPayment[];
   sync: SyncState;
 }
 
@@ -86,6 +91,8 @@ export function planPush(source: PushSource): PlannedPush {
     todos: {},
     moneySections: {},
     moneyEntries: {},
+    debts: {},
+    debtPayments: {},
   };
   const skillIds = new Set(source.skills.map((skill) => skill.id));
   const habitIds = new Set(source.badHabits.map((habit) => habit.id));
@@ -113,6 +120,12 @@ export function planPush(source: PushSource): PlannedPush {
     source.moneyEntries,
     revisions.moneyEntries,
   );
+  const debts = collect(sync.pendingDebts, source.debts, revisions.debts);
+  const debtPayments = collect(
+    sync.pendingDebtPayments,
+    source.debtPayments,
+    revisions.debtPayments,
+  );
 
   return {
     batch: {
@@ -134,6 +147,10 @@ export function planPush(source: PushSource): PlannedPush {
       moneySectionDeletes: moneySections.deletes,
       moneyEntryUpserts: moneyEntries.upserts,
       moneyEntryDeletes: moneyEntries.deletes,
+      debtUpserts: debts.upserts,
+      debtDeletes: debts.deletes,
+      debtPaymentUpserts: debtPayments.upserts,
+      debtPaymentDeletes: debtPayments.deletes,
     },
     revisions,
   };

@@ -96,7 +96,7 @@ export function TodoList() {
                 </optgroup>
               )}
               {others.length > 0 && (
-                <optgroup label={plannedToday.length > 0 ? 'Other days' : 'Domains and skills'}>
+                <optgroup label={plannedToday.length > 0 ? 'Other days' : 'Skills'}>
                   {others.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.icon} {t.name}
@@ -131,7 +131,7 @@ export function TodoList() {
         <p className={styles.empty}>
           {board.doneToday.length > 0
             ? 'Everything for today is done.'
-            : 'Nothing for today. Write down what you want to get done, and pick its domain or skill.'}
+            : 'Nothing for today. Write down what you want to get done, and pick its skill.'}
         </p>
       ) : (
         board.today.map(({ target: group, items }) => (

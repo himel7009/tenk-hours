@@ -86,6 +86,30 @@ export function SectionCards({ month, onEdit }: SectionCardsProps) {
                   <dd className="tabular">{formatTaka(row.movedOut)}</dd>
                 </div>
               )}
+              {row.debt.borrowed > 0 && (
+                <div>
+                  <dt>Borrowed</dt>
+                  <dd className="tabular">{formatTaka(row.debt.borrowed)}</dd>
+                </div>
+              )}
+              {row.debt.repaid > 0 && (
+                <div>
+                  <dt>Paid back</dt>
+                  <dd className="tabular">{formatTaka(row.debt.repaid)}</dd>
+                </div>
+              )}
+              {row.debt.lent > 0 && (
+                <div>
+                  <dt>Lent</dt>
+                  <dd className="tabular">{formatTaka(row.debt.lent)}</dd>
+                </div>
+              )}
+              {row.debt.returned > 0 && (
+                <div>
+                  <dt>Paid back to you</dt>
+                  <dd className="tabular">{formatTaka(row.debt.returned)}</dd>
+                </div>
+              )}
             </dl>
 
             {(row.dailyAllowance !== null || row.runsOutOn || over) && (

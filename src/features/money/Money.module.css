@@ -871,3 +871,226 @@
     display: none;
   }
 }
+
+/* ---- Debts ---- */
+
+.urgent {
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.debts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.debtTotals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--space-4);
+}
+
+.debtTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  padding: var(--space-5);
+  border-radius: var(--radius-panel);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.debtTotal[data-direction='lent'] {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.debtTotal > p:first-child {
+  font-size: var(--text-sm);
+  opacity: 0.75;
+}
+
+.debtFigure {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.debtSub {
+  font-size: var(--text-sm);
+  opacity: 0.75;
+}
+
+.debtTotal button {
+  margin-top: var(--space-3);
+}
+
+.debtHeading {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-lg);
+}
+
+.debtList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.debtCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+}
+
+.debtCard[data-status='overdue'] {
+  border-color: var(--danger);
+}
+
+.debtCard[data-status='settled'] {
+  opacity: 0.75;
+}
+
+.debtTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.debtPerson {
+  font-size: var(--text-lg);
+}
+
+.debtCard .debtSub {
+  color: var(--ink-soft);
+  opacity: 1;
+}
+
+.due {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--cell-empty) 60%, transparent);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.due[data-status='due-soon'] {
+  background: color-mix(in srgb, var(--streak) 18%, var(--surface));
+}
+
+.due[data-status='overdue'] {
+  background: var(--danger);
+  color: #fff;
+}
+
+.due[data-status='settled'] {
+  background: color-mix(in srgb, var(--moss) 18%, var(--surface));
+}
+
+.dueDate {
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.debtLeft {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+
+.debtCard .meter span {
+  background: var(--moss);
+}
+
+.debtNote {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.debtActions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: auto;
+  padding-top: var(--space-2);
+}
+
+.directions {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.directions label {
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.directions label:has(input:checked) {
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+.directions label:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.paymentList h3 {
+  font-size: var(--text-sm);
+}
+
+.paymentList li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.foldToggle {
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* The button on the dark card reads against it. */
+.debtTotal[data-direction='borrowed'] button {
+  border-color: var(--on-ink);
+  background: var(--on-ink);
+  color: var(--ink);
+}

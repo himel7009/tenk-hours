@@ -1,3 +1,4 @@
+import { DEBT_PERSON_MAX, type Debt, type DebtPayment } from '../domain/debts';
 import { normalizeRoutine } from '../domain/routine';
 import { cleanNote, MONEY_AMOUNT_MAX, type MoneyEntry, type MoneySection } from '../domain/money';
 import { cleanTodoTitle, type Todo } from '../domain/todos';
@@ -36,6 +37,8 @@ export interface Backup {
   todos: Todo[];
   moneySections: MoneySection[];
   moneyEntries: MoneyEntry[];
+  debts: Debt[];
+  debtPayments: DebtPayment[];
 }
 
 export type BackupData = Pick<
@@ -49,6 +52,8 @@ export type BackupData = Pick<
   | 'todos'
   | 'moneySections'
   | 'moneyEntries'
+  | 'debts'
+  | 'debtPayments'
 >;
 
 export class BackupError extends Error {}
@@ -109,6 +114,12 @@ export function parseBackup(json: string): BackupData {
   const moneyEntries = Array.isArray(raw.moneyEntries)
     ? raw.moneyEntries.map((value) => parseMoneyEntry(value, sectionIds))
     : [];
+  // Backups from before debts existed have none.
+  const debts = Array.isArray(raw.debts) ? raw.debts.map(parseDebt) : [];
+  const debtIds = new Set(debts.map((debt) => debt.id));
+  const debtPayments = Array.isArray(raw.debtPayments)
+    ? raw.debtPayments.map((value) => parseDebtPayment(value, debtIds))
+    : [];
   return {
     skills,
     sessions,
@@ -119,6 +130,8 @@ export function parseBackup(json: string): BackupData {
     todos,
     moneySections,
     moneyEntries,
+    debts,
+    debtPayments,
   };
 }
 
@@ -329,6 +342,56 @@ function parseMoneyEntry(value: unknown, sections: ReadonlySet<string>): MoneyEn
     toSectionId,
     day: value.day,
     amount: value.amount,
+    note: typeof value.note === 'string' ? cleanNote(value.note) : '',
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+const isAmount = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= MONEY_AMOUNT_MAX;
+
+function parseDebt(value: unknown): Debt {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.id) ||
+    (value.direction !== 'borrowed' && value.direction !== 'lent') ||
+    typeof value.person !== 'string' ||
+    value.person.trim() === '' ||
+    !isAmount(value.amount) ||
+    !isDayKey(value.day)
+  ) {
+    throw new BackupError('This backup contains a debt that cannot be read.');
+  }
+  return {
+    id: value.id,
+    direction: value.direction,
+    person: value.person.trim().slice(0, DEBT_PERSON_MAX),
+    amount: value.amount,
+    day: value.day,
+    dueDay: isDayKey(value.dueDay) ? value.dueDay : null,
+    sectionId: isUuid(value.sectionId) ? value.sectionId : null,
+    note: typeof value.note === 'string' ? cleanNote(value.note) : '',
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+function parseDebtPayment(value: unknown, debts: ReadonlySet<string>): DebtPayment {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.id) ||
+    typeof value.debtId !== 'string' ||
+    !debts.has(value.debtId) ||
+    !isAmount(value.amount) ||
+    !isDayKey(value.day)
+  ) {
+    throw new BackupError('This backup contains a debt payment that cannot be read.');
+  }
+  return {
+    id: value.id,
+    debtId: value.debtId,
+    day: value.day,
+    amount: value.amount,
+    sectionId: isUuid(value.sectionId) ? value.sectionId : null,
     note: typeof value.note === 'string' ? cleanNote(value.note) : '',
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };

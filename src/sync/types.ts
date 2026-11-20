@@ -1,3 +1,4 @@
+import type { Debt, DebtId, DebtPayment } from '../domain/debts';
 import type { MoneyEntry, MoneyEntryId, MoneySection, MoneySectionId } from '../domain/money';
 import type { Todo, TodoId } from '../domain/todos';
 import type { BadHabit, BadHabitId, CheckIn } from '../domain/badHabits';
@@ -44,6 +45,8 @@ export interface SyncState {
   pendingTodos: Record<TodoId, PendingChange>;
   pendingMoneySections: Record<MoneySectionId, PendingChange>;
   pendingMoneyEntries: Record<MoneyEntryId, PendingChange>;
+  pendingDebts: Record<DebtId, PendingChange>;
+  pendingDebtPayments: Record<string, PendingChange>;
 }
 
 export const initialSyncState: SyncState = {
@@ -64,6 +67,8 @@ export const initialSyncState: SyncState = {
   pendingTodos: {},
   pendingMoneySections: {},
   pendingMoneyEntries: {},
+  pendingDebts: {},
+  pendingDebtPayments: {},
 };
 
 export interface RemoteRow<T> {
@@ -82,6 +87,8 @@ export interface RemoteChanges {
   todos: RemoteRow<Todo>[];
   moneySections: RemoteRow<MoneySection>[];
   moneyEntries: RemoteRow<MoneyEntry>[];
+  debts: RemoteRow<Debt>[];
+  debtPayments: RemoteRow<DebtPayment>[];
   /** Cursors to store for the next pull. */
   cursors: SyncCursors;
 }
@@ -114,6 +121,10 @@ export interface PushBatch {
   moneySectionDeletes: MoneySectionId[];
   moneyEntryUpserts: MoneyEntry[];
   moneyEntryDeletes: MoneyEntryId[];
+  debtUpserts: Debt[];
+  debtDeletes: DebtId[];
+  debtPaymentUpserts: DebtPayment[];
+  debtPaymentDeletes: string[];
 }
 
 /** The revisions a push covered, so only unchanged entries are cleared. */
@@ -127,6 +138,8 @@ export interface PushedRevisions {
   todos: Record<TodoId, number>;
   moneySections: Record<MoneySectionId, number>;
   moneyEntries: Record<MoneyEntryId, number>;
+  debts: Record<DebtId, number>;
+  debtPayments: Record<string, number>;
 }
 
 /**

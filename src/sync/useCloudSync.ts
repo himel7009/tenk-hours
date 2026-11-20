@@ -27,6 +27,8 @@ const LIVE_TABLES = [
   'todos',
   'money_sections',
   'money_entries',
+  'money_debts',
+  'money_debt_payments',
 ] as const;
 
 let activeController: SyncController | null = null;

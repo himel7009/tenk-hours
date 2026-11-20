@@ -4,6 +4,7 @@ import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
 import { normalizeRoutine, type Weekday } from '../domain/routine';
+import { DEBT_PERSON_MAX, type Debt, type DebtId, type DebtPayment } from '../domain/debts';
 import { stableUuid } from '../domain/ids';
 import {
   cleanNote,
@@ -55,7 +56,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 13;
+const STORAGE_VERSION = 14;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -96,6 +97,8 @@ interface TrackerState {
   todos: Todo[];
   moneySections: MoneySection[];
   moneyEntries: MoneyEntry[];
+  debts: Debt[];
+  debtPayments: DebtPayment[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   /**
@@ -180,6 +183,12 @@ interface TrackerActions {
    * Brings in a sheet: each of its sections goes into the matching existing
    * section, or a new one. Importing the same sheet again replaces its lines.
    */
+  addDebt: (input: DebtInput) => DebtId;
+  updateDebt: (id: DebtId, input: DebtInput) => void;
+  /** Removes a debt with its payments. */
+  deleteDebt: (id: DebtId) => void;
+  addDebtPayment: (input: DebtPaymentInput) => void;
+  deleteDebtPayment: (id: string) => void;
   importMoneySheet: (
     sheet: ImportedSheet,
     targets: Record<string, MoneySectionId | null>,
@@ -199,6 +208,8 @@ interface TrackerActions {
       | 'todos'
       | 'moneySections'
       | 'moneyEntries'
+      | 'debts'
+      | 'debtPayments'
     >,
   ) => void;
 
@@ -227,6 +238,8 @@ const initialState: TrackerState = {
   todos: [],
   moneySections: [],
   moneyEntries: [],
+  debts: [],
+  debtPayments: [],
   activeTimer: null,
   theme: 'system',
   badHabitLock: null,
@@ -242,7 +255,9 @@ type PendingKey =
   | 'pendingCheckIns'
   | 'pendingTodos'
   | 'pendingMoneySections'
-  | 'pendingMoneyEntries';
+  | 'pendingMoneyEntries'
+  | 'pendingDebts'
+  | 'pendingDebtPayments';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
 export type MoneySectionInput = Pick<MoneySection, 'name' | 'icon' | 'color' | 'carryOver'>;
@@ -256,6 +271,18 @@ export type TodoPlace = Pick<Todo, 'domainId' | 'skillId' | 'day'>;
 /** A to-do sits in a domain or a skill, never both. */
 function onePlace(place: TodoPlace): TodoPlace {
   return { ...place, skillId: place.domainId === null ? place.skillId : null };
+}
+
+export type DebtInput = Omit<Debt, 'id' | 'createdAt'>;
+export type DebtPaymentInput = Omit<DebtPayment, 'id' | 'createdAt'>;
+
+function cleanDebt(input: DebtInput): DebtInput {
+  return {
+    ...input,
+    person: input.person.replace(/\s+/g, ' ').trim().slice(0, DEBT_PERSON_MAX) || 'Someone',
+    amount: Math.max(1, Math.round(input.amount)),
+    note: cleanNote(input.note),
+  };
 }
 
 function normalizeEntry(input: MoneyEntryInput): MoneyEntryInput {
@@ -624,7 +651,18 @@ export const useTrackerStore = create<TrackerStore>()(
             .map((entry) => entry.id);
           let sync = markPending(state.sync, 'pendingMoneyEntries', gone, 'delete');
           sync = markPending(sync, 'pendingMoneySections', [id], 'delete');
+          // Debts outlive the section they touched; they just no longer name it.
+          const detachedDebts = state.debts.filter((debt) => debt.sectionId === id);
+          const detachedPayments = state.debtPayments.filter((p) => p.sectionId === id);
+          sync = markPending(sync, 'pendingDebts', ids(detachedDebts), 'upsert');
+          sync = markPending(sync, 'pendingDebtPayments', ids(detachedPayments), 'upsert');
           return {
+            debts: state.debts.map((debt) =>
+              debt.sectionId === id ? { ...debt, sectionId: null } : debt,
+            ),
+            debtPayments: state.debtPayments.map((payment) =>
+              payment.sectionId === id ? { ...payment, sectionId: null } : payment,
+            ),
             moneySections: state.moneySections.filter((section) => section.id !== id),
             moneyEntries: state.moneyEntries.filter(
               (entry) => entry.sectionId !== id && entry.toSectionId !== id,
@@ -658,6 +696,55 @@ export const useTrackerStore = create<TrackerStore>()(
         set((state) => ({
           moneyEntries: state.moneyEntries.filter((entry) => entry.id !== id),
           sync: markPending(state.sync, 'pendingMoneyEntries', [id], 'delete'),
+        })),
+
+      addDebt: (input) => {
+        const debt: Debt = { id: crypto.randomUUID(), createdAt: Date.now(), ...cleanDebt(input) };
+        set((state) => ({
+          debts: [...state.debts, debt],
+          sync: markPending(state.sync, 'pendingDebts', [debt.id], 'upsert'),
+        }));
+        return debt.id;
+      },
+
+      updateDebt: (id, input) =>
+        set((state) => ({
+          debts: state.debts.map((debt) =>
+            debt.id === id ? { ...debt, ...cleanDebt(input) } : debt,
+          ),
+          sync: markPending(state.sync, 'pendingDebts', [id], 'upsert'),
+        })),
+
+      deleteDebt: (id) =>
+        set((state) => {
+          const gone = state.debtPayments.filter((p) => p.debtId === id).map((p) => p.id);
+          let sync = markPending(state.sync, 'pendingDebtPayments', gone, 'delete');
+          sync = markPending(sync, 'pendingDebts', [id], 'delete');
+          return {
+            debts: state.debts.filter((debt) => debt.id !== id),
+            debtPayments: state.debtPayments.filter((p) => p.debtId !== id),
+            sync,
+          };
+        }),
+
+      addDebtPayment: (input) => {
+        const payment: DebtPayment = {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          ...input,
+          amount: Math.max(1, Math.round(input.amount)),
+          note: cleanNote(input.note),
+        };
+        set((state) => ({
+          debtPayments: [...state.debtPayments, payment],
+          sync: markPending(state.sync, 'pendingDebtPayments', [payment.id], 'upsert'),
+        }));
+      },
+
+      deleteDebtPayment: (id) =>
+        set((state) => ({
+          debtPayments: state.debtPayments.filter((p) => p.id !== id),
+          sync: markPending(state.sync, 'pendingDebtPayments', [id], 'delete'),
         })),
 
       importMoneySheet: (sheet, targets) => {
@@ -740,6 +827,8 @@ export const useTrackerStore = create<TrackerStore>()(
         todos,
         moneySections,
         moneyEntries,
+        debts,
+        debtPayments,
       }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
@@ -754,6 +843,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingTodos', ids(state.todos), 'delete');
           sync = markPending(sync, 'pendingMoneyEntries', ids(state.moneyEntries), 'delete');
           sync = markPending(sync, 'pendingMoneySections', ids(state.moneySections), 'delete');
+          sync = markPending(sync, 'pendingDebtPayments', ids(state.debtPayments), 'delete');
+          sync = markPending(sync, 'pendingDebts', ids(state.debts), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
@@ -763,6 +854,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingTodos', ids(todos), 'upsert');
           sync = markPending(sync, 'pendingMoneySections', ids(moneySections), 'upsert');
           sync = markPending(sync, 'pendingMoneyEntries', ids(moneyEntries), 'upsert');
+          sync = markPending(sync, 'pendingDebts', ids(debts), 'upsert');
+          sync = markPending(sync, 'pendingDebtPayments', ids(debtPayments), 'upsert');
           return {
             skills,
             sessions,
@@ -773,6 +866,8 @@ export const useTrackerStore = create<TrackerStore>()(
             todos,
             moneySections,
             moneyEntries,
+            debts,
+            debtPayments,
             activeTimer: null,
             sync,
           };
@@ -795,6 +890,8 @@ export const useTrackerStore = create<TrackerStore>()(
               todos: [],
               moneySections: [],
               moneyEntries: [],
+              debts: [],
+              debtPayments: [],
               activeTimer: null,
               // The lock belonged to whoever used the device before.
               badHabitLock: null,
@@ -810,6 +907,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingTodos', ids(state.todos), 'upsert');
           sync = markPending(sync, 'pendingMoneySections', ids(state.moneySections), 'upsert');
           sync = markPending(sync, 'pendingMoneyEntries', ids(state.moneyEntries), 'upsert');
+          sync = markPending(sync, 'pendingDebts', ids(state.debts), 'upsert');
+          sync = markPending(sync, 'pendingDebtPayments', ids(state.debtPayments), 'upsert');
           return { sync };
         }),
 
@@ -825,6 +924,8 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingTodos,
             pendingMoneySections,
             pendingMoneyEntries,
+            pendingDebts,
+            pendingDebtPayments,
           } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
@@ -889,6 +990,19 @@ export const useTrackerStore = create<TrackerStore>()(
             else moneyEntries.set(row.id, row);
           }
 
+          const debts = new Map(state.debts.map((d) => [d.id, d]));
+          for (const { row, deleted } of changes.debts) {
+            if (pendingDebts[row.id]) continue;
+            if (deleted) debts.delete(row.id);
+            else debts.set(row.id, row);
+          }
+          const debtPayments = new Map(state.debtPayments.map((p) => [p.id, p]));
+          for (const { row, deleted } of changes.debtPayments) {
+            if (pendingDebtPayments[row.id]) continue;
+            if (deleted) debtPayments.delete(row.id);
+            else debtPayments.set(row.id, row);
+          }
+
           // A skill whose domain was deleted on another device stands alone.
           const ungrouped = [...skills.values()].map((skill) =>
             skill.domainId !== null && !domains.has(skill.domainId)
@@ -905,6 +1019,9 @@ export const useTrackerStore = create<TrackerStore>()(
             checkIns: [...checkIns.values()].filter((c) => badHabits.has(c.habitId)),
             todos: [...todos.values()],
             moneySections: [...moneySections.values()],
+            debts: [...debts.values()],
+            // A debt deleted on another device takes its payments with it.
+            debtPayments: [...debtPayments.values()].filter((p) => debts.has(p.debtId)),
             // A section deleted on another device takes its entries with it.
             moneyEntries: [...moneyEntries.values()].filter(
               (entry) =>
@@ -938,6 +1055,11 @@ export const useTrackerStore = create<TrackerStore>()(
               state.sync.pendingMoneyEntries,
               pushed.moneyEntries,
             ),
+            pendingDebts: withoutAcknowledged(state.sync.pendingDebts, pushed.debts),
+            pendingDebtPayments: withoutAcknowledged(
+              state.sync.pendingDebtPayments,
+              pushed.debtPayments,
+            ),
           },
         })),
 
@@ -956,6 +1078,8 @@ export const useTrackerStore = create<TrackerStore>()(
         todos,
         moneySections,
         moneyEntries,
+        debts,
+        debtPayments,
         activeTimer,
         theme,
         sync,
@@ -970,6 +1094,8 @@ export const useTrackerStore = create<TrackerStore>()(
         todos,
         moneySections,
         moneyEntries,
+        debts,
+        debtPayments,
         activeTimer,
         theme,
         sync,
@@ -1065,6 +1191,16 @@ export const useTrackerStore = create<TrackerStore>()(
             day: todo.day ?? toDayKey(new Date(todo.createdAt)),
           }));
         }
+        // v13 predates debts.
+        if (version < 14) {
+          state.debts = [];
+          state.debtPayments = [];
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            pendingDebts: {},
+            pendingDebtPayments: {},
+          };
+        }
         // v11 predates money.
         if (version < 12) {
           state.moneySections = [];
@@ -1095,6 +1231,8 @@ export function hasPendingChanges(sync: SyncState): boolean {
     sync.pendingTodos,
     sync.pendingMoneySections,
     sync.pendingMoneyEntries,
+    sync.pendingDebts,
+    sync.pendingDebtPayments,
   ].some((pending) => Object.keys(pending).length > 0);
 }
 

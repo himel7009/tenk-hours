@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../../components/Button';
 import { usePersistentState } from '../../components/usePersistentState';
+import { describeDue } from '../../domain/debts';
 import {
   formatTaka,
   monthLabel,
@@ -14,7 +15,8 @@ import { LockScreen } from '../badHabits/LockScreen';
 import { PinDialog } from '../badHabits/PinDialog';
 import { useLockSession, usePrivacyLocked } from '../badHabits/lockSession';
 import { useToday } from '../progress/useNow';
-import { useMoneyMonth } from '../progress/useMoney';
+import { useDebtBook, useMoneyMonth } from '../progress/useMoney';
+import { DebtsView } from './DebtsView';
 import { DayList } from './DayList';
 import { EntryDialog } from './EntryDialog';
 import { ImportDialog } from './ImportDialog';
@@ -24,7 +26,7 @@ import { QuickAdd } from './QuickAdd';
 import { SectionCards } from './SectionCards';
 import { SectionDialog } from './SectionDialog';
 
-type View = 'month' | 'report';
+type View = 'month' | 'report' | 'debts';
 type DialogState =
   | { type: 'section'; section: MoneySection | null }
   | { type: 'entry'; entry: MoneyEntry }
@@ -50,6 +52,7 @@ export function MoneyPage() {
   const [month, setMonth] = useState(monthOf(today));
   const [dialog, setDialog] = useState<DialogState>(null);
   const summary = useMoneyMonth(month);
+  const debtBook = useDebtBook();
   const thisMonth = monthOf(today);
 
   // Unlocked money locks again on leaving this page or the app.
@@ -85,7 +88,7 @@ export function MoneyPage() {
           {sections.length > 0 && (
             <fieldset className={styles.switch}>
               <legend className="visually-hidden">View</legend>
-              {(['month', 'report'] as const).map((value) => (
+              {(['month', 'report', 'debts'] as const).map((value) => (
                 <label key={value}>
                   <input
                     type="radio"
@@ -94,7 +97,7 @@ export function MoneyPage() {
                     checked={view === value}
                     onChange={() => setView(value)}
                   />
-                  {value === 'month' ? 'Month' : 'Report'}
+                  {value === 'month' ? 'Month' : value === 'report' ? 'Report' : 'Debts'}
                 </label>
               ))}
             </fieldset>
@@ -137,8 +140,22 @@ export function MoneyPage() {
         </section>
       ) : view === 'report' ? (
         <MoneyReport today={today} />
+      ) : view === 'debts' ? (
+        <DebtsView today={today} />
       ) : (
         <>
+          {debtBook.urgent.length > 0 && (
+            <button type="button" className={styles.urgent} onClick={() => setView('debts')}>
+              {debtBook.urgent
+                .slice(0, 3)
+                .map(
+                  (s) =>
+                    `${s.debt.direction === 'borrowed' ? 'Pay' : 'Collect from'} ${s.debt.person} ${formatTaka(s.left)}: ${describeDue(s).toLowerCase()}`,
+                )
+                .join('. ')}
+              {debtBook.urgent.length > 3 && `. And ${debtBook.urgent.length - 3} more`}.
+            </button>
+          )}
           <QuickAdd today={today} />
 
           <div className={styles.monthBar}>

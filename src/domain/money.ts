@@ -1,4 +1,5 @@
 import { addDays, daysBetween, fromDayKey, toDayKey, type DayKey } from './dates';
+import { debtFlows, debtNet, type Debt, type DebtFlows, type DebtPayment } from './debts';
 import { periodDays, shiftPeriod, type Period } from './report';
 import type { SkillColor } from './types';
 
@@ -359,7 +360,9 @@ export interface SectionMonth {
   movedIn: number;
   movedOut: number;
   spent: number;
-  /** Opening plus everything that came in, less what was moved out. */
+  /** Money borrowed into, repaid from, lent from or paid back into the section. */
+  debt: DebtFlows;
+  /** Opening plus everything that came in, less what was moved, repaid or lent out. */
   budget: number;
   remaining: number;
   /** Fair share per day for the rest of the month, today included. Null when not useful. */
@@ -394,6 +397,8 @@ export function summarizeMoneyMonth(
   entries: readonly MoneyEntry[],
   month: MonthKey,
   today: DayKey,
+  debts: readonly Debt[] = [],
+  payments: readonly DebtPayment[] = [],
 ): MoneyMonth {
   const { start, end, days: length } = monthRange(month);
   const inMonth = entries.filter((entry) => entry.day >= start && entry.day <= end);
@@ -405,8 +410,10 @@ export function summarizeMoneyMonth(
 
   const summaries: SectionMonth[] = sections.map((section) => {
     const opening = section.carryOver
-      ? before.reduce((sum, entry) => sum + effect(entry, section.id), 0)
+      ? before.reduce((sum, entry) => sum + effect(entry, section.id), 0) +
+        debtNet(debtFlows(section.id, debts, payments, (day) => day < start))
       : 0;
+    const debt = debtFlows(section.id, debts, payments, (day) => day >= start && day <= end);
     let added = 0;
     let movedIn = 0;
     let movedOut = 0;
@@ -417,7 +424,7 @@ export function summarizeMoneyMonth(
       if (entry.kind === 'move' && entry.sectionId === section.id) movedOut += entry.amount;
       if (entry.kind === 'move' && entry.toSectionId === section.id) movedIn += entry.amount;
     }
-    const budget = opening + added + movedIn - movedOut;
+    const budget = opening + added + movedIn - movedOut + debtNet(debt);
     const remaining = budget - spent;
 
     let runsOutOn: DayKey | null = null;
@@ -433,6 +440,7 @@ export function summarizeMoneyMonth(
       movedIn,
       movedOut,
       spent,
+      debt,
       budget,
       remaining,
       // Whole taka: nobody budgets 128.81 a day.

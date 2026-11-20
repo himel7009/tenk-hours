@@ -13,7 +13,7 @@ import { placeOf } from './todoPlace';
 /** Rename a to-do, move it to another domain or skill, or plan it for another day. */
 export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: () => void }) {
   const today = useToday();
-  const targets = useTodoTargets();
+  const targets = useTodoTargets(item.target);
   const updateTodo = useTrackerStore((state) => state.updateTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
   const toast = useToastStore((state) => state.show);

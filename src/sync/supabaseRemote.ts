@@ -1,3 +1,4 @@
+import { DEBT_PERSON_MAX, type Debt, type DebtDirection, type DebtPayment } from '../domain/debts';
 import {
   cleanNote,
   type MoneyEntry,
@@ -130,7 +131,9 @@ type Table =
   | 'bad_habit_checkins'
   | 'todos'
   | 'money_sections'
-  | 'money_entries';
+  | 'money_entries'
+  | 'money_debts'
+  | 'money_debt_payments';
 
 const TODO_COLUMNS =
   'id,title,done,done_at,domain_id,skill_id,day,created_at,updated_at,deleted_at';
@@ -341,6 +344,97 @@ function fromMoneyEntryRow(row: MoneyEntryRow): RemoteRow<MoneyEntry> {
   };
 }
 
+interface DebtRow {
+  id: string;
+  direction: DebtDirection;
+  person: string;
+  amount: number;
+  day: string;
+  due_day: string | null;
+  section_id: string | null;
+  note: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface DebtPaymentRow {
+  id: string;
+  debt_id: string;
+  day: string;
+  amount: number;
+  section_id: string | null;
+  note: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+const DEBT_COLUMNS =
+  'id,direction,person,amount,day,due_day,section_id,note,created_at,updated_at,deleted_at';
+const DEBT_PAYMENT_COLUMNS =
+  'id,debt_id,day,amount,section_id,note,created_at,updated_at,deleted_at';
+
+function toDebtRow(debt: Debt) {
+  return {
+    id: debt.id,
+    direction: debt.direction,
+    person: debt.person.slice(0, DEBT_PERSON_MAX),
+    amount: debt.amount,
+    day: debt.day,
+    due_day: debt.dueDay,
+    section_id: debt.sectionId,
+    note: cleanNote(debt.note),
+    created_at: new Date(debt.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromDebtRow(row: DebtRow): RemoteRow<Debt> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      direction: row.direction,
+      person: row.person,
+      amount: Number(row.amount),
+      day: row.day,
+      dueDay: row.due_day,
+      sectionId: row.section_id,
+      note: row.note,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+function toDebtPaymentRow(payment: DebtPayment) {
+  return {
+    id: payment.id,
+    debt_id: payment.debtId,
+    day: payment.day,
+    amount: payment.amount,
+    section_id: payment.sectionId,
+    note: cleanNote(payment.note),
+    created_at: new Date(payment.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromDebtPaymentRow(row: DebtPaymentRow): RemoteRow<DebtPayment> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      debtId: row.debt_id,
+      day: row.day,
+      amount: Number(row.amount),
+      sectionId: row.section_id,
+      note: row.note,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
 function toTodoRow(todo: Todo) {
   return {
     id: todo.id,
@@ -532,6 +626,11 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       await upsert('money_entries', batch.moneyEntryUpserts.map(toMoneyEntryRow));
       await softDelete('money_entries', batch.moneyEntryDeletes);
       await softDelete('money_sections', batch.moneySectionDeletes);
+      // A debt before its payments; payments deleted before their debt.
+      await upsert('money_debts', batch.debtUpserts.map(toDebtRow));
+      await upsert('money_debt_payments', batch.debtPaymentUpserts.map(toDebtPaymentRow));
+      await softDelete('money_debt_payments', batch.debtPaymentDeletes);
+      await softDelete('money_debts', batch.debtDeletes);
     },
 
     async pull({
@@ -550,6 +649,12 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       const moneyEntryRows = await fetchChanged<MoneyEntryRow>(
         'money_entries',
         MONEY_ENTRY_COLUMNS,
+        moneyCursor,
+      );
+      const debtRows = await fetchChanged<DebtRow>('money_debts', DEBT_COLUMNS, moneyCursor);
+      const debtPaymentRows = await fetchChanged<DebtPaymentRow>(
+        'money_debt_payments',
+        DEBT_PAYMENT_COLUMNS,
         moneyCursor,
       );
       const todoRows = await fetchChanged<TodoRow>('todos', TODO_COLUMNS, todoCursor);
@@ -578,7 +683,12 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         domainCursor: advance(domainCursor, domainRows),
         badHabitCursor: advance(badHabitCursor, [...badHabitRows, ...checkInRows]),
         todoCursor: advance(todoCursor, todoRows),
-        moneyCursor: advance(moneyCursor, [...moneySectionRows, ...moneyEntryRows]),
+        moneyCursor: advance(moneyCursor, [
+          ...moneySectionRows,
+          ...moneyEntryRows,
+          ...debtRows,
+          ...debtPaymentRows,
+        ]),
       };
       // Nothing newer turned up, so later pulls from here can skip the overlap.
       if (next.cursor !== null && next.cursor === cursor) settled.add(cursor);
@@ -604,6 +714,8 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         todos: todoRows.map(fromTodoRow),
         moneySections: moneySectionRows.map(fromMoneySectionRow),
         moneyEntries: moneyEntryRows.map(fromMoneyEntryRow),
+        debts: debtRows.map(fromDebtRow),
+        debtPayments: debtPaymentRows.map(fromDebtPaymentRow),
         cursors: next,
       };
     },

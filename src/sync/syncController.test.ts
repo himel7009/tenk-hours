@@ -13,6 +13,8 @@ const EMPTY: RemoteChanges = {
   todos: [],
   moneySections: [],
   moneyEntries: [],
+  debts: [],
+  debtPayments: [],
   cursors: {
     cursor: null,
     libraryCursor: null,

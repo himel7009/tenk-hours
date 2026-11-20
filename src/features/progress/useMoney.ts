@@ -1,3 +1,4 @@
+import { buildDebtBook, type DebtBook } from '../../domain/debts';
 import { useMemo } from 'react';
 import {
   buildMoneyReport,
@@ -16,10 +17,12 @@ import { useToday } from './useNow';
 export function useMoneyMonth(month: MonthKey): MoneyMonth {
   const sections = useTrackerStore((state) => state.moneySections);
   const entries = useTrackerStore((state) => state.moneyEntries);
+  const debts = useTrackerStore((state) => state.debts);
+  const payments = useTrackerStore((state) => state.debtPayments);
   const today = useToday();
   return useMemo(
-    () => summarizeMoneyMonth(sections, entries, month, today),
-    [sections, entries, month, today],
+    () => summarizeMoneyMonth(sections, entries, month, today, debts, payments),
+    [sections, entries, month, today, debts, payments],
   );
 }
 
@@ -37,4 +40,12 @@ export function useMoneyReport(period: Period): MoneyReport {
 export function useSpendingByDay(): Map<DayKey, number> {
   const entries = useTrackerStore((state) => state.moneyEntries);
   return useMemo(() => spendingByDay(entries), [entries]);
+}
+
+/** Who you owe, who owes you, and what is due soon. */
+export function useDebtBook(): DebtBook {
+  const debts = useTrackerStore((state) => state.debts);
+  const payments = useTrackerStore((state) => state.debtPayments);
+  const today = useToday();
+  return useMemo(() => buildDebtBook(debts, payments, today), [debts, payments, today]);
 }

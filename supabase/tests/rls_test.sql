@@ -139,6 +139,15 @@ select pg_temp.expect_error(
       'move', '2026-11-17', 100)$$,
   'a move needs a section to move to');
 select pg_temp.expect_error($$delete from public.money_entries$$, 'money hard deletes are not granted');
+insert into public.money_debts (id, direction, person, amount, day, due_day)
+  values ('90000000-0000-0000-0000-000000000001', 'borrowed', 'Rahim', 100000, '2026-11-10', '2026-11-30');
+insert into public.money_debt_payments (id, debt_id, day, amount)
+  values ('90000000-0000-0000-0000-000000000011', '90000000-0000-0000-0000-000000000001', '2026-11-15', 50000);
+select pg_temp.expect_count('select 1 from public.money_debt_payments', 1, 'A records a payment');
+select pg_temp.expect_error(
+  $$insert into public.money_debts (id, direction, person, amount, day)
+    values ('90000000-0000-0000-0000-000000000002', 'gifted', 'X', 100, '2026-11-10')$$,
+  'a debt is borrowed or lent');
 
 -- User B sees nothing of A's and cannot change or reference it.
 select pg_temp.sign_in('00000000-0000-0000-0000-00000000000b');
@@ -180,6 +189,11 @@ select pg_temp.expect_affected(
 select pg_temp.expect_count('select 1 from public.todos', 0, 'B cannot read A''s to-dos');
 select pg_temp.expect_count('select 1 from public.money_sections', 0, 'B cannot read A''s money sections');
 select pg_temp.expect_count('select 1 from public.money_entries', 0, 'B cannot read A''s money entries');
+select pg_temp.expect_count('select 1 from public.money_debts', 0, 'B cannot read A''s debts');
+select pg_temp.expect_error(
+  $$insert into public.money_debt_payments (id, debt_id, day, amount)
+    values ('90000000-0000-0000-0000-000000000021', '90000000-0000-0000-0000-000000000001', '2026-11-15', 100)$$,
+  'B cannot pay A''s debt');
 select pg_temp.expect_affected(
   $$update public.money_entries set amount = 1$$, 0, 'B cannot change A''s money entries');
 select pg_temp.expect_error(
@@ -202,6 +216,7 @@ select pg_temp.expect_error($$select 1 from public.domains$$, 'anon cannot read 
 select pg_temp.expect_error($$select 1 from public.bad_habit_checkins$$, 'anon cannot read check-ins');
 select pg_temp.expect_error($$select 1 from public.todos$$, 'anon cannot read to-dos');
 select pg_temp.expect_error($$select 1 from public.money_entries$$, 'anon cannot read money entries');
+select pg_temp.expect_error($$select 1 from public.money_debts$$, 'anon cannot read debts');
 select pg_temp.expect_error($$select public.delete_account()$$, 'anon cannot call delete_account');
 
 -- Deleting an account removes only that user's data.
@@ -220,5 +235,6 @@ select pg_temp.expect_count('select 1 from public.domains', 0, 'A''s domains are
 select pg_temp.expect_count('select 1 from public.bad_habit_checkins', 0, 'A''s check-ins are removed with the account');
 select pg_temp.expect_count('select 1 from public.todos', 0, 'A''s to-dos are removed with the account');
 select pg_temp.expect_count('select 1 from public.money_entries', 0, 'A''s money is removed with the account');
+select pg_temp.expect_count('select 1 from public.money_debts', 0, 'A''s debts are removed with the account');
 
 rollback;

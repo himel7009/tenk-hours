@@ -36,7 +36,7 @@ export function useTodoHistory(targetKey: string | undefined, days = 30): TodoHi
   );
 }
 
-export function useTodoTargets(): TodoTarget[] {
+export function useTodoTargets(keep?: TodoTarget): TodoTarget[] {
   const context = useTodoContext();
-  return useMemo(() => todoTargets(context), [context]);
+  return useMemo(() => todoTargets(context, keep), [context, keep]);
 }

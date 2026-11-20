@@ -8,6 +8,7 @@ import {
   nextPlannedDay,
   planTodo,
   targetOf,
+  todoTargets,
   type Todo,
   type TodoContext,
 } from './todos';
@@ -159,4 +160,10 @@ describe('buildTodoHistory', () => {
 it('cleans titles', () => {
   expect(cleanTodoTitle('  Solve   5 loops ')).toBe('Solve 5 loops');
   expect(cleanTodoTitle('  ')).toBeNull();
+});
+
+it('offers skills, not domains, for a new to-do, but keeps a domain an old one has', () => {
+  expect(todoTargets(context).map((t) => t.key)).toEqual(['general', 'skill:cp', 'skill:os']);
+  const domain = targetOf({ domainId: 'ps', skillId: null }, context);
+  expect(todoTargets(context, domain).map((t) => t.key)).toContain('domain:ps');
 });

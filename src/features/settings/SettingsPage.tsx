@@ -39,6 +39,8 @@ export function SettingsPage() {
       todos,
       moneySections,
       moneyEntries,
+      debts,
+      debtPayments,
     } = useTrackerStore.getState();
     const backup = createBackup({
       skills,
@@ -50,6 +52,8 @@ export function SettingsPage() {
       todos,
       moneySections,
       moneyEntries,
+      debts,
+      debtPayments,
     });
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',

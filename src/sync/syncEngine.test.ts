@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
+import type { Debt, DebtPayment } from '../domain/debts';
 import type { MoneyEntry, MoneySection } from '../domain/money';
 import type { Todo } from '../domain/todos';
 import type { Session, Skill } from '../domain/types';
@@ -22,6 +23,8 @@ class FakeRemote implements RemoteStore {
   todos = new Map<string, { row: Todo; deleted: boolean; at: number }>();
   moneySections = new Map<string, { row: MoneySection; deleted: boolean; at: number }>();
   moneyEntries = new Map<string, { row: MoneyEntry; deleted: boolean; at: number }>();
+  debts = new Map<string, { row: Debt; deleted: boolean; at: number }>();
+  debtPayments = new Map<string, { row: DebtPayment; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -53,6 +56,12 @@ class FakeRemote implements RemoteStore {
     }
     for (const id of batch.moneyEntryDeletes) this.softDelete(this.moneyEntries, id, at);
     for (const id of batch.moneySectionDeletes) this.softDelete(this.moneySections, id, at);
+    for (const row of batch.debtUpserts) this.debts.set(row.id, { row, deleted: false, at });
+    for (const row of batch.debtPaymentUpserts) {
+      this.debtPayments.set(row.id, { row, deleted: false, at });
+    }
+    for (const id of batch.debtPaymentDeletes) this.softDelete(this.debtPayments, id, at);
+    for (const id of batch.debtDeletes) this.softDelete(this.debts, id, at);
   }
 
   async pull({
@@ -79,6 +88,8 @@ class FakeRemote implements RemoteStore {
     const todos = changed(this.todos, todoCursor);
     const moneySections = changed(this.moneySections, moneyCursor);
     const moneyEntries = changed(this.moneyEntries, moneyCursor);
+    const debts = changed(this.debts, moneyCursor);
+    const debtPayments = changed(this.debtPayments, moneyCursor);
     return {
       skills,
       sessions,
@@ -89,13 +100,20 @@ class FakeRemote implements RemoteStore {
       todos,
       moneySections,
       moneyEntries,
+      debts,
+      debtPayments,
       cursors: {
         cursor: newest(cursor, [...skills, ...sessions]),
         libraryCursor: newest(libraryCursor, library),
         domainCursor: newest(domainCursor, domains),
         badHabitCursor: newest(badHabitCursor, [...badHabits, ...checkIns]),
         todoCursor: newest(todoCursor, todos),
-        moneyCursor: newest(moneyCursor, [...moneySections, ...moneyEntries]),
+        moneyCursor: newest(moneyCursor, [
+          ...moneySections,
+          ...moneyEntries,
+          ...debts,
+          ...debtPayments,
+        ]),
       },
     };
   }
@@ -344,6 +362,8 @@ describe('failures and races', () => {
       todos: [],
       moneySections: [],
       moneyEntries: [],
+      debts: [],
+      debtPayments: [],
     });
     await sync(remote);
 
@@ -605,5 +625,33 @@ describe('bad habits', () => {
     // The expense and the move into Meal both go with it.
     expect([...remote.moneyEntries.values()].every((entry) => entry.deleted)).toBe(true);
     expect(store().moneyEntries).toEqual([]);
+  });
+
+  it('syncs debts and payments, and deleting a debt takes its payments', async () => {
+    store().adoptAccount('user-1');
+    const id = store().addDebt({
+      direction: 'borrowed',
+      person: 'Rahim',
+      amount: 100000,
+      day: '2026-11-10',
+      dueDay: '2026-11-30',
+      sectionId: null,
+      note: '',
+    });
+    store().addDebtPayment({
+      debtId: id,
+      day: '2026-11-15',
+      amount: 50000,
+      sectionId: null,
+      note: '',
+    });
+    await sync(remote);
+    expect(remote.debts.get(id)?.row).toMatchObject({ person: 'Rahim', dueDay: '2026-11-30' });
+    expect(remote.debtPayments.size).toBe(1);
+
+    store().deleteDebt(id);
+    await sync(remote);
+    expect(remote.debts.get(id)?.deleted).toBe(true);
+    expect([...remote.debtPayments.values()].every((p) => p.deleted)).toBe(true);
   });
 });

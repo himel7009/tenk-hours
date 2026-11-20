@@ -636,6 +636,7 @@ describe('bad habits', () => {
       day: '2026-11-10',
       dueDay: '2026-11-30',
       sectionId: null,
+      inBudget: false,
       note: '',
     });
     store().addDebtPayment({

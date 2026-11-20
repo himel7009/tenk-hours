@@ -367,6 +367,7 @@ function parseDebt(value: unknown): Debt {
     day: value.day,
     dueDay: isDayKey(value.dueDay) ? value.dueDay : null,
     sectionId: isUuid(value.sectionId) ? value.sectionId : null,
+    inBudget: value.inBudget === true,
     note: typeof value.note === 'string' ? cleanNote(value.note) : '',
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };

@@ -171,10 +171,13 @@ cursor (`sync.moneyCursor`) and are in backups and live updates.
 - Debts (`domain/debts.ts`, tables `money_debts` and `money_debt_payments`,
   same cursor): `borrowed` (you owe) or `lent` (owed to you), with an optional
   `dueDay`. Payments settle them in part or whole. A debt's `sectionId` and
-  each payment's say which section the money went through; `debtFlows` feeds
-  that into section balances (borrowed and paid back to you add, repaid and
-  lent take away), never into spending. Deleting a section keeps its debts
-  and clears their `sectionId`.
+  each payment's say which section the money went through. By default that is
+  only a record: borrowed money is usually already in the budget written
+  down, and counting it again doubled it. Only a debt with `inBudget` on (and
+  its payments) feeds `debtFlows` into section balances (borrowed and paid
+  back to you add, repaid and lent take away), never into spending. Debts
+  stored before v15 became records. Deleting a section keeps its debts and
+  clears their `sectionId`.
 - The calculator (`Calculator.tsx`, maths in `domain/calc.ts`) parses sums
   itself and never evaluates text as code. Percent follows phone calculators
   (500 + 10% is 550). Its result reaches the expense line by remounting
@@ -261,7 +264,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All fourteen migrations in `supabase/migrations/` are applied to the live project
+All sixteen migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-20.
 
 ## Releases

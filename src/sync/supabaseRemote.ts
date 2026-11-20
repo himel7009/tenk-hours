@@ -352,6 +352,7 @@ interface DebtRow {
   day: string;
   due_day: string | null;
   section_id: string | null;
+  in_budget: boolean;
   note: string;
   created_at: string;
   updated_at: string;
@@ -371,7 +372,7 @@ interface DebtPaymentRow {
 }
 
 const DEBT_COLUMNS =
-  'id,direction,person,amount,day,due_day,section_id,note,created_at,updated_at,deleted_at';
+  'id,direction,person,amount,day,due_day,section_id,in_budget,note,created_at,updated_at,deleted_at';
 const DEBT_PAYMENT_COLUMNS =
   'id,debt_id,day,amount,section_id,note,created_at,updated_at,deleted_at';
 
@@ -384,6 +385,7 @@ function toDebtRow(debt: Debt) {
     day: debt.day,
     due_day: debt.dueDay,
     section_id: debt.sectionId,
+    in_budget: debt.inBudget,
     note: cleanNote(debt.note),
     created_at: new Date(debt.createdAt).toISOString(),
     deleted_at: null,
@@ -401,6 +403,7 @@ function fromDebtRow(row: DebtRow): RemoteRow<Debt> {
       day: row.day,
       dueDay: row.due_day,
       sectionId: row.section_id,
+      inBudget: row.in_budget === true,
       note: row.note,
       createdAt: Date.parse(row.created_at),
     },

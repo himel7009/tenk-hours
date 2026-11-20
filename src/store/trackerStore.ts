@@ -58,7 +58,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 14;
+const STORAGE_VERSION = 15;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -1234,6 +1234,11 @@ export const useTrackerStore = create<TrackerStore>()(
             skillId: todo.skillId ?? null,
             day: todo.day ?? toDayKey(new Date(todo.createdAt)),
           }));
+        }
+        // v14 debts all changed section balances; from v15 that is a choice,
+        // off unless set, since borrowed money was usually already budgeted.
+        if (version === 14) {
+          state.debts = (state.debts ?? []).map((debt) => ({ ...debt, inBudget: false }));
         }
         // v13 predates debts.
         if (version < 14) {

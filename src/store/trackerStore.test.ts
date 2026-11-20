@@ -162,3 +162,25 @@ describe('repeated looks', () => {
     expect(store().fixRepeatedLooks()).toBe(0);
   });
 });
+
+describe('stored data from an older version', () => {
+  it('keeps v14 debts as records that leave section balances alone', async () => {
+    const debt = {
+      id: '00000000-0000-4000-8000-0000000000d1',
+      direction: 'borrowed',
+      person: 'Bro',
+      amount: 365000,
+      day: '2026-11-01',
+      dueDay: null,
+      sectionId: '00000000-0000-4000-8000-0000000000e1',
+      note: '',
+      createdAt: 0,
+    };
+    localStorage.setItem(
+      'tenk',
+      JSON.stringify({ version: 14, state: { ...store(), debts: [debt] } }),
+    );
+    await useTrackerStore.persist.rehydrate();
+    expect(store().debts).toEqual([{ ...debt, inBudget: false }]);
+  });
+});

@@ -88,7 +88,14 @@ export function PaymentDialog({
             )}
           </Field>
         </div>
-        <Field label={borrowed ? 'Paid from' : 'Put into'}>
+        <Field
+          label={borrowed ? 'Paid from' : 'Put into'}
+          hint={
+            debt.inBudget
+              ? undefined
+              : 'For your records. The section balance does not change, because this debt is not counted in the budget.'
+          }
+        >
           {(id) => (
             <Select id={id} value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
               <option value="">Not through a section</option>

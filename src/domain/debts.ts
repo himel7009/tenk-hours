@@ -4,8 +4,9 @@ import type { MoneySectionId } from './money';
 /**
  * Money owed. `borrowed`: you owe someone. `lent`: someone owes you. A debt
  * can say which section the money went into (borrowed) or came out of
- * (lent), and each payment which section it was paid from or into, so the
- * section balances stay true. None of it counts as spending.
+ * (lent), and each payment which section it was paid from or into. That is a
+ * record only, unless `inBudget` is on: then the debt and its payments change
+ * the section's balance. None of it ever counts as spending.
  */
 export type DebtId = string;
 export type DebtDirection = 'borrowed' | 'lent';
@@ -22,6 +23,12 @@ export interface Debt {
   dueDay: DayKey | null;
   /** Where the borrowed money went, or the lent money came from. */
   sectionId: MoneySectionId | null;
+  /**
+   * Whether the debt and its payments change the section's balance. Off when
+   * the money is already part of the budget written down, so it is not
+   * counted twice.
+   */
+  inBudget: boolean;
   note: string;
   createdAt: number;
 }
@@ -149,8 +156,10 @@ export function debtFlows(
   inRange: (day: DayKey) => boolean,
 ): DebtFlows {
   const flows: DebtFlows = { borrowed: 0, repaid: 0, lent: 0, returned: 0 };
-  const direction = new Map(debts.map((debt) => [debt.id, debt.direction]));
-  for (const debt of debts) {
+  // Debts kept only as a record move no money, and neither do their payments.
+  const counted = debts.filter((debt) => debt.inBudget);
+  const direction = new Map(counted.map((debt) => [debt.id, debt.direction]));
+  for (const debt of counted) {
     if (debt.sectionId !== sectionId || !inRange(debt.day)) continue;
     if (debt.direction === 'borrowed') flows.borrowed += debt.amount;
     else flows.lent += debt.amount;

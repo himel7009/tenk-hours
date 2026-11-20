@@ -10,6 +10,7 @@ const debt = (extra: Partial<Debt>): Debt => ({
   day: '2026-11-10',
   dueDay: '2026-11-30',
   sectionId: null,
+  inBudget: false,
   note: '',
   createdAt: 0,
   ...extra,
@@ -112,10 +113,30 @@ describe('debts in section balances', () => {
     createdAt: 0,
   };
 
-  it('puts borrowed money into a section and takes repayments and lending out, none of it spending', () => {
+  it('leaves balances alone for debts kept as a record, payments included', () => {
     const debts = [
       debt({ id: 'b', sectionId: 'meal', amount: 100000, day: '2026-11-10' }),
       debt({ id: 'l', direction: 'lent', sectionId: 'pe', amount: 30000, day: '2026-11-12' }),
+    ];
+    const payments = [payment('b', '2026-11-18', 400, 'pe'), payment('l', '2026-11-19', 100, 'pe')];
+    const month = summarizeMoneyMonth([meal, pe], [add], '2026-11', '2026-11-20', debts, payments);
+    const [m, p] = month.sections;
+    expect(m).toMatchObject({ budget: 200000, remaining: 200000 });
+    expect(p).toMatchObject({ budget: 0, remaining: 0 });
+    expect(m?.debt).toEqual({ borrowed: 0, repaid: 0, lent: 0, returned: 0 });
+  });
+
+  it('puts borrowed money into a section and takes repayments and lending out, none of it spending', () => {
+    const debts = [
+      debt({ id: 'b', sectionId: 'meal', amount: 100000, day: '2026-11-10', inBudget: true }),
+      debt({
+        id: 'l',
+        direction: 'lent',
+        sectionId: 'pe',
+        amount: 30000,
+        day: '2026-11-12',
+        inBudget: true,
+      }),
     ];
     const payments = [payment('b', '2026-11-18', 400, 'pe'), payment('l', '2026-11-19', 100, 'pe')];
     const month = summarizeMoneyMonth([meal, pe], [add], '2026-11', '2026-11-20', debts, payments);
@@ -129,7 +150,9 @@ describe('debts in section balances', () => {
 
   it('carries debt flows over for a section that carries over', () => {
     const fund = { ...meal, id: 'fund', carryOver: true };
-    const debts = [debt({ id: 'b', sectionId: 'fund', amount: 50000, day: '2026-10-05' })];
+    const debts = [
+      debt({ id: 'b', sectionId: 'fund', amount: 50000, day: '2026-10-05', inBudget: true }),
+    ];
     const month = summarizeMoneyMonth([fund], [], '2026-11', '2026-11-20', debts, []);
     expect(month.sections[0]).toMatchObject({ opening: 50000, remaining: 50000 });
   });

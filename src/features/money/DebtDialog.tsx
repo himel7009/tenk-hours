@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Toggle } from '../../components/Toggle';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select, Textarea } from '../../components/Field';
@@ -37,6 +38,7 @@ export function DebtDialog({
   const [day, setDay] = useState<DayKey>(debt?.day ?? today);
   const [dueDay, setDueDay] = useState<DayKey | ''>(debt?.dueDay ?? '');
   const [sectionId, setSectionId] = useState(debt?.sectionId ?? '');
+  const [inBudget, setInBudget] = useState(debt?.inBudget ?? false);
   const [note, setNote] = useState(debt?.note ?? '');
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -57,6 +59,7 @@ export function DebtDialog({
       day,
       dueDay: dueDay === '' ? null : dueDay,
       sectionId: sectionId === '' ? null : sectionId,
+      inBudget: sectionId !== '' && inBudget,
       note,
     };
     if (debt) {
@@ -159,11 +162,7 @@ export function DebtDialog({
         </div>
         <Field
           label={borrowed ? 'Where the money went' : 'Where the money came from'}
-          hint={
-            borrowed
-              ? "Adds it to that section's budget, without counting it as spending."
-              : 'Takes it out of that section, without counting it as spending.'
-          }
+          hint="For your records. It never counts as spending."
         >
           {(id) => (
             <Select id={id} value={sectionId} onChange={(e) => setSectionId(e.target.value)}>
@@ -176,6 +175,22 @@ export function DebtDialog({
             </Select>
           )}
         </Field>
+        {sectionId !== '' && (
+          <Toggle
+            label={
+              borrowed ? "Add it to the section's budget" : "Take it out of the section's budget"
+            }
+            hint={
+              inBudget
+                ? borrowed
+                  ? 'The section has this much more to spend, and payments you make take it back out.'
+                  : 'The section has this much less, and what is paid back goes back in.'
+                : 'Leave this off when the money is already in the budget you wrote down, so it is not counted twice.'
+            }
+            checked={inBudget}
+            onChange={setInBudget}
+          />
+        )}
         <Field label="Note">
           {(id) => (
             <Textarea

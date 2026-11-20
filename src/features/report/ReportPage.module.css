@@ -444,11 +444,10 @@
 }
 
 .name a {
-  overflow: hidden;
   color: inherit;
   text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Long names wrap onto the next line instead of being cut off. */
+  overflow-wrap: anywhere;
 }
 
 .name a:hover {

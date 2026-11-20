@@ -37,11 +37,15 @@
 }
 
 .name {
-  overflow: hidden;
   font-weight: 600;
   text-decoration: none;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Long names wrap, to two lines at most so the bar stays slim. */
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .clock {

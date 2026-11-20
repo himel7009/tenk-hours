@@ -48,11 +48,10 @@
 }
 
 .rowNote {
-  overflow: hidden;
   color: var(--ink-soft);
   font-size: var(--text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Long names wrap onto the next line instead of being cut off. */
+  overflow-wrap: anywhere;
 }
 
 .more {

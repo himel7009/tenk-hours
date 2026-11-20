@@ -776,10 +776,9 @@
 }
 
 .rowName {
-  overflow: hidden;
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Long names wrap onto the next line instead of being cut off. */
+  overflow-wrap: anywhere;
 }
 
 .rowCount {

@@ -24,13 +24,13 @@ const KINDS: { kind: MoneyEntryKind; label: string }[] = [
  * One line, the way it goes in a notebook: "130 bus". Pick the section and
  * the day, and it is written down.
  */
-export function QuickAdd({ today }: { today: DayKey }) {
+export function QuickAdd({ today, initialText = '' }: { today: DayKey; initialText?: string }) {
   const sections = useTrackerStore((state) => state.moneySections);
   const addMoneyEntry = useTrackerStore((state) => state.addMoneyEntry);
   const toast = useToastStore((state) => state.show);
 
   const [kind, setKind] = useState<MoneyEntryKind>('spend');
-  const [text, setText] = useState('');
+  const [text, setText] = useState(initialText);
   const [sectionId, setSectionId] = useState<MoneySectionId>(sections[0]?.id ?? '');
   const [toSectionId, setToSectionId] = useState<MoneySectionId>(sections[1]?.id ?? '');
   const [day, setDay] = useState<DayKey>(today);
@@ -103,6 +103,8 @@ export function QuickAdd({ today }: { today: DayKey }) {
           Amount and what it was for
         </label>
         <input
+          // Arriving from the calculator, carry on typing what it was for.
+          autoFocus={initialText !== ''}
           id="money-text"
           className={styles.quickInput}
           value={text}

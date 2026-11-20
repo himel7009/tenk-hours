@@ -34,6 +34,8 @@ failure blocks the deploy.
 - Styling uses the tokens in `src/styles/tokens.css`. No new colours, fonts or
   UI libraries without asking.
 - UI copy is plain sentence case. Buttons say what they do ("Save changes").
+- Names wrap (`overflow-wrap: anywhere`); never cut user text off with an
+  ellipsis. The running timer bar alone clamps to two lines.
 
 ## Security
 
@@ -173,6 +175,10 @@ cursor (`sync.moneyCursor`) and are in backups and live updates.
   that into section balances (borrowed and paid back to you add, repaid and
   lent take away), never into spending. Deleting a section keeps its debts
   and clears their `sectionId`.
+- The calculator (`Calculator.tsx`, maths in `domain/calc.ts`) parses sums
+  itself and never evaluates text as code. Percent follows phone calculators
+  (500 + 10% is 550). Its result reaches the expense line by remounting
+  `QuickAdd` with `initialText`.
 - The bad habits PIN (`badHabitLock`) also hides money (`usePrivacyLocked`).
   Deleting a section deletes its entries and any moves into it.
 

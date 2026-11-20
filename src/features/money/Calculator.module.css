@@ -1,0 +1,124 @@
+.calculator {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(22rem, 100%);
+  margin-inline: auto;
+}
+
+/* The display: the sum as typed, and the answer under it. */
+.screen {
+  padding: var(--space-4);
+  border-radius: var(--radius-panel);
+  background: var(--ink);
+  color: var(--on-ink);
+  text-align: right;
+}
+
+.sum {
+  min-height: 1.4em;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.result {
+  min-height: 1.4em;
+  font-size: var(--text-md);
+  opacity: 0.75;
+}
+
+.keys {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.key {
+  height: 3.25rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.key:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--surface));
+}
+
+.key:active {
+  transform: translateY(1px);
+}
+
+.key:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.key[data-kind='op'] {
+  background: color-mix(in srgb, var(--ink) 8%, var(--surface));
+}
+
+.key[data-kind='clear'] {
+  color: var(--danger);
+}
+
+.key[data-kind='equals'] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+}
+
+/* Delete last sits under the bottom row, across all four columns. */
+.back {
+  grid-column: 1 / -1;
+  height: 2.5rem;
+}
+
+.actions {
+  display: flex;
+}
+
+.actions button {
+  flex: 1;
+}
+
+.tape h3 {
+  margin-bottom: var(--space-1);
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.tape button {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-1) 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tape button span {
+  color: var(--ink-soft);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key:active {
+    transform: none;
+  }
+}

@@ -4,6 +4,8 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-20
 
+- **Calculator on the Money page.** Tap or type a sum (+ − × ÷, brackets, percent the way a phone calculator does it: 500 + 10% is 550), see the answer as you go, and reuse earlier answers. One button writes the result down as an expense, ready for you to add what it was for.
+- **Long names wrap.** A long skill, domain or section name now wraps onto the next line instead of being cut off with "…".
 - **Debts.** A Debts view on the Money page for money you borrowed and money you lent: who, how much, when it started and when it should be settled. Record payments as they happen, in part or in full, and see what is left. Say which section the borrowed money went into (or the lent money came from), and which section each payment went through, and the section balances follow, without any of it counting as spending. Debts due within three days or overdue show at the top of the Money page.
 - **To-dos pick a skill.** The list of places for a to-do now offers skills, habits and projects, not domains. A skill still follows its domain's days.
 - **To-dos belong to a domain or skill, and move on by themselves.** Pick where a to-do goes (a domain such as Problem solving, a skill such as Operating systems, or General) and it is planned for that domain's next working day on your routine. If it is not done that day, it moves to the next working day by itself, marked with how many times it moved. Today groups to-dos by domain and skill, with what is coming up below. Click a to-do to rename it, move it or plan it for another day.

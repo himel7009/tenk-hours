@@ -17,6 +17,7 @@ import { useLockSession, usePrivacyLocked } from '../badHabits/lockSession';
 import { useToday } from '../progress/useNow';
 import { useDebtBook, useMoneyMonth } from '../progress/useMoney';
 import { DebtsView } from './DebtsView';
+import { Calculator } from './Calculator';
 import { DayList } from './DayList';
 import { EntryDialog } from './EntryDialog';
 import { ImportDialog } from './ImportDialog';
@@ -32,6 +33,7 @@ type DialogState =
   | { type: 'entry'; entry: MoneyEntry }
   | { type: 'import' }
   | { type: 'pin' }
+  | { type: 'calculator' }
   | null;
 
 /** Starter sections, the way most people split a month's money. */
@@ -51,6 +53,8 @@ export function MoneyPage() {
   const [view, setView] = usePersistentState<View>('tenk.moneyView', 'month');
   const [month, setMonth] = useState(monthOf(today));
   const [dialog, setDialog] = useState<DialogState>(null);
+  // A calculator result handed to the expense line, which starts over with it.
+  const [prefill, setPrefill] = useState({ key: 0, text: '' });
   const summary = useMoneyMonth(month);
   const debtBook = useDebtBook();
   const thisMonth = monthOf(today);
@@ -102,6 +106,9 @@ export function MoneyPage() {
               ))}
             </fieldset>
           )}
+          <Button size="sm" onClick={() => setDialog({ type: 'calculator' })}>
+            Calculator
+          </Button>
           <Button size="sm" variant="quiet" onClick={() => setDialog({ type: 'import' })}>
             Import sheet
           </Button>
@@ -156,7 +163,7 @@ export function MoneyPage() {
               {debtBook.urgent.length > 3 && `. And ${debtBook.urgent.length - 3} more`}.
             </button>
           )}
-          <QuickAdd today={today} />
+          <QuickAdd key={prefill.key} today={today} initialText={prefill.text} />
 
           <div className={styles.monthBar}>
             <div className={styles.stepper}>
@@ -219,6 +226,17 @@ export function MoneyPage() {
         />
       )}
       {dialog?.type === 'pin' && <PinDialog mode="set" onClose={() => setDialog(null)} />}
+      {dialog?.type === 'calculator' && (
+        <Calculator
+          onClose={() => setDialog(null)}
+          onUse={(amount) => {
+            setPrefill((current) => ({ key: current.key + 1, text: `${amount} ` }));
+            setView('month');
+            setMonth(monthOf(today));
+            setDialog(null);
+          }}
+        />
+      )}
     </div>
   );
 }

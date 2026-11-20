@@ -8,6 +8,7 @@ import {
   nextPlannedDay,
   planTodo,
   targetOf,
+  groupTodoTargets,
   todoTargets,
   type Todo,
   type TodoContext,
@@ -24,6 +25,7 @@ const context: TodoContext = {
       name: 'Competitive programming',
       icon: '⚔️',
       color: 'persimmon',
+      kind: 'skill',
       domainId: 'ps',
       routineDays: [],
     },
@@ -32,8 +34,18 @@ const context: TodoContext = {
       name: 'Operating systems',
       icon: '🖥️',
       color: 'teal',
+      kind: 'skill',
       domainId: null,
       routineDays: [2],
+    },
+    {
+      id: 'thesis',
+      name: 'Senior project',
+      icon: '🎓',
+      color: 'plum',
+      kind: 'project',
+      domainId: null,
+      routineDays: [],
     },
   ],
 };
@@ -163,7 +175,23 @@ it('cleans titles', () => {
 });
 
 it('offers skills, not domains, for a new to-do, but keeps a domain an old one has', () => {
-  expect(todoTargets(context).map((t) => t.key)).toEqual(['general', 'skill:cp', 'skill:os']);
+  expect(todoTargets(context).map((t) => t.key)).toEqual([
+    'general',
+    'skill:cp',
+    'skill:os',
+    'skill:thesis',
+  ]);
   const domain = targetOf({ domainId: 'ps', skillId: null }, context);
   expect(todoTargets(context, domain).map((t) => t.key)).toContain('domain:ps');
+});
+
+it('groups the picker into projects, skills and habits, today first', () => {
+  // A Tuesday: operating systems is on, problem solving is not, the project is every day.
+  const groups = groupTodoTargets(todoTargets(context), '2026-11-17');
+  expect(groups.map((g) => [g.label, g.targets.map((t) => t.key)])).toEqual([
+    ['Projects', ['skill:thesis']],
+    ['Skills', ['skill:os', 'skill:cp']],
+  ]);
+  const old = targetOf({ domainId: 'ps', skillId: null }, context);
+  expect(groupTodoTargets(todoTargets(context, old), '2026-11-17').at(-1)?.label).toBe('Domains');
 });

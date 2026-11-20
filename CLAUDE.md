@@ -143,6 +143,9 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
 
 - New to-dos are offered General and every skill, habit and project
   (`todoTargets`), not domains; a to-do already under a domain keeps it.
+  The picker groups them as Projects, Skills and Habits
+  (`groupTodoTargets`), what the routine plans for today first; an empty
+  routine means every day, so it counts as today.
 - An undone to-do whose day has passed shows on the next working day of its
   domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
   moves to the next day. Only the first planned day is stored: where it shows

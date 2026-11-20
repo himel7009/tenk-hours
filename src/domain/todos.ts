@@ -1,5 +1,6 @@
 import { addDays, toDayKey, type DayKey } from './dates';
 import { isPlannedOn, routineOf, type Weekday } from './routine';
+import type { TrackerKind } from './types';
 
 /**
  * A to-do belongs to a domain, a skill (or habit or project), or neither
@@ -47,6 +48,7 @@ export interface TodoContext {
     name: string;
     icon: string;
     color: string;
+    kind: TrackerKind;
     domainId: string | null;
     routineDays: readonly Weekday[];
   }[];
@@ -59,6 +61,8 @@ export interface TodoTarget {
   icon: string;
   color: string | null;
   routine: readonly Weekday[];
+  /** What it is, for grouping the picker. */
+  kind: 'general' | 'domain' | TrackerKind;
 }
 
 export const GENERAL: TodoTarget = {
@@ -67,6 +71,7 @@ export const GENERAL: TodoTarget = {
   icon: '📝',
   color: null,
   routine: [],
+  kind: 'general',
 };
 
 /** The domain or skill a to-do belongs to. One whose target was deleted becomes General. */
@@ -83,6 +88,7 @@ export function targetOf(
         icon: domain.icon,
         color: domain.color,
         routine: domain.routineDays,
+        kind: 'domain',
       };
     }
   }
@@ -95,6 +101,7 @@ export function targetOf(
         icon: skill.icon,
         color: skill.color,
         routine: routineOf(skill, context.domains),
+        kind: skill.kind,
       };
     }
   }
@@ -241,4 +248,29 @@ export function todoTargets(context: TodoContext, keep?: TodoTarget): TodoTarget
     ...context.skills.map((skill) => targetOf({ domainId: null, skillId: skill.id }, context)),
   ];
   return keep && !targets.some((target) => target.key === keep.key) ? [...targets, keep] : targets;
+}
+
+export interface TodoTargetGroup {
+  label: string;
+  targets: TodoTarget[];
+}
+
+const GROUPS: { kind: TodoTarget['kind']; label: string }[] = [
+  { kind: 'project', label: 'Projects' },
+  { kind: 'skill', label: 'Skills' },
+  { kind: 'habit', label: 'Habits' },
+  // Only a to-do made before domains left the list can still point at one.
+  { kind: 'domain', label: 'Domains' },
+];
+
+/**
+ * The picker's groups, General left out: projects, skills and habits, each
+ * with what the routine plans for `day` first. Empty groups are dropped.
+ */
+export function groupTodoTargets(targets: readonly TodoTarget[], day: DayKey): TodoTargetGroup[] {
+  return GROUPS.map(({ kind, label }) => {
+    const own = targets.filter((target) => target.kind === kind);
+    const planned = own.filter((target) => isPlannedOn(target.routine, day));
+    return { label, targets: [...planned, ...own.filter((t) => !planned.includes(t))] };
+  }).filter((group) => group.targets.length > 0);
 }

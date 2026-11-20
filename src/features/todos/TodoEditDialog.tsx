@@ -2,7 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select } from '../../components/Field';
-import { defaultTodoDay, GENERAL, TODO_TITLE_MAX, type PlannedTodo } from '../../domain/todos';
+import {
+  defaultTodoDay,
+  GENERAL,
+  groupTodoTargets,
+  TODO_TITLE_MAX,
+  type PlannedTodo,
+} from '../../domain/todos';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from '../progress/useNow';
@@ -63,10 +69,17 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
                   if (!item.todo.done) setDay(defaultTodoDay(next, today));
                 }}
               >
-                {targets.map((target) => (
-                  <option key={target.key} value={target.key}>
-                    {target.icon} {target.name}
-                  </option>
+                <option value={GENERAL.key}>
+                  {GENERAL.icon} {GENERAL.name}
+                </option>
+                {groupTodoTargets(targets, today).map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.targets.map((target) => (
+                      <option key={target.key} value={target.key}>
+                        {target.icon} {target.name}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
             )}

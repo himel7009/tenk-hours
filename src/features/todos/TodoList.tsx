@@ -1,7 +1,13 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '../../components/Button';
 import { isPlannedOn } from '../../domain/routine';
-import { defaultTodoDay, GENERAL, TODO_TITLE_MAX, type PlannedTodo } from '../../domain/todos';
+import {
+  defaultTodoDay,
+  GENERAL,
+  groupTodoTargets,
+  TODO_TITLE_MAX,
+  type PlannedTodo,
+} from '../../domain/todos';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from '../progress/useNow';
 import { useTodoBoard, useTodoTargets } from '../progress/useTodos';
@@ -31,10 +37,7 @@ export function TodoList() {
   const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
   // The day follows the place until one is picked by hand.
   const day = pickedDay ?? defaultTodoDay(target, today);
-  const plannedToday = targets.filter(
-    (t) => t !== GENERAL && t.routine.length > 0 && isPlannedOn(t.routine, today),
-  );
-  const others = targets.filter((t) => t !== GENERAL && !plannedToday.includes(t));
+  const groups = groupTodoTargets(targets, today);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -86,24 +89,16 @@ export function TodoList() {
               }}
             >
               <option value={GENERAL.key}>📝 General</option>
-              {plannedToday.length > 0 && (
-                <optgroup label="On today's routine">
-                  {plannedToday.map((t) => (
+              {groups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.targets.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.icon} {t.name}
+                      {isPlannedOn(t.routine, today) ? '' : ' (not today)'}
                     </option>
                   ))}
                 </optgroup>
-              )}
-              {others.length > 0 && (
-                <optgroup label={plannedToday.length > 0 ? 'Other days' : 'Skills'}>
-                  {others.map((t) => (
-                    <option key={t.key} value={t.key}>
-                      {t.icon} {t.name}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
+              ))}
             </select>
           </label>
           <label className={styles.place}>

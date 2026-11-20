@@ -32,3 +32,6 @@ export function useBadHabitsLocked(): boolean {
   const unlocked = useLockSession((state) => state.unlocked);
   return hasLock && !unlocked;
 }
+
+/** The same PIN hides money; the lock is one setting. */
+export const usePrivacyLocked = useBadHabitsLocked;

@@ -1,4 +1,5 @@
 import { normalizeRoutine } from '../domain/routine';
+import { cleanNote, MONEY_AMOUNT_MAX, type MoneyEntry, type MoneySection } from '../domain/money';
 import { cleanTodoTitle, type Todo } from '../domain/todos';
 import { isDayKey } from '../domain/dates';
 import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
@@ -33,11 +34,21 @@ export interface Backup {
   badHabits: BadHabit[];
   checkIns: CheckIn[];
   todos: Todo[];
+  moneySections: MoneySection[];
+  moneyEntries: MoneyEntry[];
 }
 
 export type BackupData = Pick<
   Backup,
-  'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns' | 'todos'
+  | 'skills'
+  | 'sessions'
+  | 'library'
+  | 'domains'
+  | 'badHabits'
+  | 'checkIns'
+  | 'todos'
+  | 'moneySections'
+  | 'moneyEntries'
 >;
 
 export class BackupError extends Error {}
@@ -90,7 +101,25 @@ export function parseBackup(json: string): BackupData {
     : [];
   // Backups from before to-dos existed have none.
   const todos = Array.isArray(raw.todos) ? raw.todos.map(parseTodo) : [];
-  return { skills, sessions, library, domains, badHabits, checkIns, todos };
+  // Backups from before money existed have none.
+  const moneySections = Array.isArray(raw.moneySections)
+    ? raw.moneySections.map(parseMoneySection)
+    : [];
+  const sectionIds = new Set(moneySections.map((section) => section.id));
+  const moneyEntries = Array.isArray(raw.moneyEntries)
+    ? raw.moneyEntries.map((value) => parseMoneyEntry(value, sectionIds))
+    : [];
+  return {
+    skills,
+    sessions,
+    library,
+    domains,
+    badHabits,
+    checkIns,
+    todos,
+    moneySections,
+    moneyEntries,
+  };
 }
 
 function parseSkill(value: unknown): Skill {
@@ -240,5 +269,61 @@ function parseTodo(value: unknown): Todo {
     done,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
     doneAt: done && typeof value.doneAt === 'number' ? value.doneAt : null,
+  };
+}
+
+function parseMoneySection(value: unknown): MoneySection {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.id) ||
+    typeof value.name !== 'string' ||
+    value.name.trim() === ''
+  ) {
+    throw new BackupError('This backup contains a money section that cannot be read.');
+  }
+  return {
+    id: value.id,
+    name: value.name.trim().slice(0, 60),
+    icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon.slice(0, 16) : '💼',
+    color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
+    carryOver: value.carryOver === true,
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+  };
+}
+
+const MONEY_KINDS: readonly unknown[] = ['spend', 'add', 'move'];
+
+function parseMoneyEntry(value: unknown, sections: ReadonlySet<string>): MoneyEntry {
+  if (
+    !isRecord(value) ||
+    !isUuid(value.id) ||
+    typeof value.sectionId !== 'string' ||
+    !sections.has(value.sectionId) ||
+    !MONEY_KINDS.includes(value.kind) ||
+    !isDayKey(value.day) ||
+    typeof value.amount !== 'number' ||
+    !Number.isInteger(value.amount) ||
+    value.amount <= 0 ||
+    value.amount > MONEY_AMOUNT_MAX
+  ) {
+    throw new BackupError('This backup contains a money entry that cannot be read.');
+  }
+  const kind = value.kind as MoneyEntry['kind'];
+  const toSectionId =
+    kind === 'move' && typeof value.toSectionId === 'string' && sections.has(value.toSectionId)
+      ? value.toSectionId
+      : null;
+  if (kind === 'move' && (toSectionId === null || toSectionId === value.sectionId)) {
+    throw new BackupError('This backup contains a money move that cannot be read.');
+  }
+  return {
+    id: value.id,
+    sectionId: value.sectionId,
+    kind,
+    toSectionId,
+    day: value.day,
+    amount: value.amount,
+    note: typeof value.note === 'string' ? cleanNote(value.note) : '',
+    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

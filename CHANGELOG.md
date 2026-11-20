@@ -2,6 +2,13 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-20
+
+- **Money.** A new page for your spending, built on the same idea as a monthly expense sheet. Money lives in sections (personal expense, meal, fund, or your own), each with a budget for the month that you add to whenever money comes in, and you can move money between sections without it counting as spending. Write an expense the way you would in a notebook, "130 bus", and pick the section. Each section shows what is left, a fair amount per day for the rest of the month, and a warning when the pace means it will run out early. A section can carry its balance into the next month. The month is listed day by day like the sheet, with the days nothing was written down pointed out.
+- **Money report.** Spending by day, week or month against the one before, split by section and by kind of spending (transport, groceries, eating out, phone, fees and more, worked out from the words you use), the largest expenses, and a spending calendar.
+- **Import from a sheet.** Download a month from Google Sheets as CSV and import it. Every item line becomes an entry, budgets come in as money added, and every total matches the sheet.
+- The bad habits PIN now hides money too.
+
 ## 2026-11-19
 
 - **Streak switch on every card.** A flame next to edit and delete turns a skill's, habit's or project's streak on or off in one click.

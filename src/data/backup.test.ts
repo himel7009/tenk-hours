@@ -80,6 +80,8 @@ describe('backup', () => {
         badHabits: [],
         checkIns: [checkIn],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
     );
     expect(parseBackup(json).checkIns).toEqual([]);
@@ -95,6 +97,8 @@ describe('backup', () => {
         badHabits: [],
         checkIns: [],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
     );
     expect(parseBackup(json).skills[0]?.domainId).toBeNull();
@@ -110,6 +114,8 @@ describe('backup', () => {
         badHabits: [],
         checkIns: [],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
     );
     expect(parseBackup(json).library[0]?.url).toBe('');
@@ -126,6 +132,8 @@ describe('backup', () => {
         badHabits: [],
         checkIns: [],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
       version: 1,
       skills: [oldSkill],
@@ -149,6 +157,8 @@ describe('backup', () => {
         badHabits: [habit],
         checkIns: [checkIn],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
     );
     expect(parseBackup(json)).toEqual({
@@ -159,6 +169,8 @@ describe('backup', () => {
       badHabits: [habit],
       checkIns: [checkIn],
       todos: [],
+      moneySections: [],
+      moneyEntries: [],
     });
   });
 
@@ -172,6 +184,8 @@ describe('backup', () => {
         badHabits: [],
         checkIns: [],
         todos: [],
+        moneySections: [],
+        moneyEntries: [],
       }),
     );
     expect(parseBackup(json).sessions).toEqual([]);
@@ -191,6 +205,8 @@ describe('backup', () => {
           badHabits: [],
           checkIns: [],
           todos: [],
+          moneySections: [],
+          moneyEntries: [],
         }),
       }),
       'session that cannot be read',

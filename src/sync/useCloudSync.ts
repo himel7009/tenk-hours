@@ -25,6 +25,8 @@ const LIVE_TABLES = [
   'bad_habits',
   'bad_habit_checkins',
   'todos',
+  'money_sections',
+  'money_entries',
 ] as const;
 
 let activeController: SyncController | null = null;

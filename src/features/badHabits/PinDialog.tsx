@@ -17,7 +17,7 @@ import { useLockSession } from './lockSession';
 export type PinDialogMode = 'set' | 'change' | 'remove';
 
 const TITLES: Record<PinDialogMode, string> = {
-  set: 'Lock bad habits with a PIN',
+  set: 'Lock bad habits and money with a PIN',
   change: 'Change PIN',
   remove: 'Remove PIN',
 };
@@ -92,14 +92,18 @@ export function PinDialog({ mode, onClose }: PinDialogProps) {
     try {
       if (mode === 'remove') {
         setBadHabitLock(null);
-        toast('PIN removed. Bad habits are no longer locked on this device.');
+        toast('PIN removed. Bad habits and money are no longer locked on this device.');
       } else {
         setBadHabitLock(await createPinLock(next));
         // Setting a PIN while looking at the bad habits keeps them open;
         // they lock again on leaving the tab.
         if (mode === 'set') unlock();
         else relock();
-        toast(mode === 'set' ? 'PIN set. Bad habits are locked on this device.' : 'PIN changed');
+        toast(
+          mode === 'set'
+            ? 'PIN set. Bad habits and money are locked on this device.'
+            : 'PIN changed',
+        );
       }
       onClose();
     } finally {
@@ -112,8 +116,8 @@ export function PinDialog({ mode, onClose }: PinDialogProps) {
       <form onSubmit={(event) => void handleSubmit(event)} className={formStyles.form} noValidate>
         {mode === 'set' && (
           <p className={formStyles.hint}>
-            The PIN hides your bad habits on this device until it is entered. Each device has its
-            own PIN.
+            The PIN hides your bad habits and money on this device until it is entered. Each device
+            has its own PIN.
           </p>
         )}
         {mode !== 'set' && (

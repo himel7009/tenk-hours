@@ -6,6 +6,7 @@ import { SignInPage } from '../features/account/SignInPage';
 import { HomePage } from '../features/dashboard/HomePage';
 import { LibraryPage } from '../features/library/LibraryPage';
 import { ReportPage } from '../features/report/ReportPage';
+import { MoneyPage } from '../features/money/MoneyPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { SkillPage } from '../features/skills/SkillPage';
 import { useAccountStore } from '../store/accountStore';
@@ -28,6 +29,7 @@ export function App() {
           <Route index element={<HomePage />} />
           <Route path="skills/:skillId" element={<SkillPage />} />
           <Route path="report" element={<ReportPage />} />
+          <Route path="money" element={<MoneyPage />} />
           <Route path="library" element={<LibraryPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="sign-in" element={<SignInPage />} />

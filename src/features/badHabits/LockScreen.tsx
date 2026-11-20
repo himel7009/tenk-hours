@@ -8,12 +8,19 @@ import { useNow } from '../progress/useNow';
 import { useLockSession } from './lockSession';
 import styles from './LockScreen.module.css';
 
-/** Stands in for the bad habits until the PIN is entered. */
-export function LockScreen() {
+interface LockScreenProps {
+  /** What is hidden, for the heading: "Bad habits", "Money". */
+  subject?: string;
+}
+
+/** Stands in for what the PIN hides (bad habits and money) until it is entered. */
+export function LockScreen({ subject = 'Bad habits' }: LockScreenProps) {
   const lock = useTrackerStore((state) => state.badHabitLock);
   const badHabits = useTrackerStore((state) => state.badHabits);
   const deleteBadHabit = useTrackerStore((state) => state.deleteBadHabit);
   const setBadHabitLock = useTrackerStore((state) => state.setBadHabitLock);
+  const moneySections = useTrackerStore((state) => state.moneySections);
+  const deleteMoneySection = useTrackerStore((state) => state.deleteMoneySection);
   const signedIn = useAccountStore((state) => state.user !== null);
   const { failures, retryAt, unlock, recordFailure } = useLockSession();
   const toast = useToastStore((state) => state.show);
@@ -45,8 +52,9 @@ export function LockScreen() {
 
   const resetOnThisDevice = () => {
     for (const habit of badHabits) deleteBadHabit(habit.id);
+    for (const section of moneySections) deleteMoneySection(section.id);
     setBadHabitLock(null);
-    toast('Lock removed and bad habits cleared on this device');
+    toast('Lock removed, and bad habits and money cleared on this device');
   };
 
   return (
@@ -55,8 +63,12 @@ export function LockScreen() {
         <rect x="5" y="10.5" width="14" height="10" rx="2.5" />
         <path d="M8.5 10.5V7.5a3.5 3.5 0 0 1 7 0v3" />
       </svg>
-      <h2 className={styles.title}>Bad habits are locked</h2>
-      <p className={styles.lede}>Enter your PIN to see and update them.</p>
+      <h2 className={styles.title}>
+        {subject} {subject === 'Money' ? 'is' : 'are'} locked
+      </h2>
+      <p className={styles.lede}>
+        Enter your PIN to see and update {subject === 'Money' ? 'it' : 'them'}.
+      </p>
 
       <form onSubmit={(event) => void handleSubmit(event)} className={styles.form}>
         <label htmlFor="unlock-pin" className="visually-hidden">
@@ -104,18 +116,17 @@ export function LockScreen() {
         (signedIn ? (
           <p className={styles.helpText}>
             Sign out from Settings and sign back in on this device. That removes the lock, and your
-            bad habits come back from your account.
+            bad habits and money come back from your account.
           </p>
         ) : (
           <div className={styles.helpText}>
             <p>
               Without an account, the only way back in is to remove the lock together with the bad
-              habits stored on this device.
+              habits and money stored on this device.
             </p>
             {confirmingReset ? (
               <Button size="sm" variant="danger" onClick={resetOnThisDevice}>
-                Delete {badHabits.length} bad habit{badHabits.length === 1 ? '' : 's'} and remove
-                the lock
+                Delete bad habits and money, and remove the lock
               </Button>
             ) : (
               <Button size="sm" variant="quiet" onClick={() => setConfirmingReset(true)}>

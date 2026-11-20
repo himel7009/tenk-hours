@@ -4,9 +4,9 @@ import type { Domain } from './domains';
 import { isPlannedOn, routineOf } from './routine';
 import { hasDailyGoal, type Session, type Skill, type SkillId } from './types';
 
-export type PeriodKind = 'week' | 'month';
+export type PeriodKind = 'day' | 'week' | 'month';
 
-/** A calendar week (Monday to Sunday) or month. Both ends are included. */
+/** A day, a calendar week (Monday to Sunday) or a month. Both ends are included. */
 export interface Period {
   kind: PeriodKind;
   start: DayKey;
@@ -15,6 +15,7 @@ export interface Period {
 
 export function periodContaining(kind: PeriodKind, day: DayKey): Period {
   const date = fromDayKey(day);
+  if (kind === 'day') return { kind, start: day, end: day };
   if (kind === 'week') {
     // getDay() is 0 for Sunday; weeks here start on Monday.
     const start = addDays(day, -((date.getDay() + 6) % 7));
@@ -27,6 +28,7 @@ export function periodContaining(kind: PeriodKind, day: DayKey): Period {
 
 /** The period `steps` before (negative) or after (positive) this one. */
 export function shiftPeriod(period: Period, steps: number): Period {
+  if (period.kind === 'day') return periodContaining('day', addDays(period.start, steps));
   if (period.kind === 'week') return periodContaining('week', addDays(period.start, steps * 7));
   const date = fromDayKey(period.start);
   return periodContaining(

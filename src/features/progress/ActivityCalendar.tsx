@@ -23,18 +23,32 @@ interface ActivityCalendarProps {
   goalMinutes?: number | null;
   /** What the time is on, for the summary: "on Deep learning". */
   subject?: string;
+  /** How to show a day's value and the total. Time by default; money passes taka. */
+  units?: CalendarUnits;
 }
+
+export interface CalendarUnits {
+  /** "2h 15m", "৳266". */
+  value: (amount: number) => string;
+  /** "826 hours", "৳7,846 spent". */
+  total: (amount: number) => string;
+}
+
+const TIME_UNITS: CalendarUnits = {
+  value: (minutes) => formatDuration(minutes),
+  total: (minutes) => `${formatHours(minutes)} hours`,
+};
 
 const days = (count: number) => `${count.toLocaleString()} day${count === 1 ? '' : 's'}`;
 
-function describeDay(day: DayKey, minutes: number): string {
+function describeDay(day: DayKey, minutes: number, units: CalendarUnits = TIME_UNITS): string {
   const date = fromDayKey(day).toLocaleDateString(undefined, {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   });
-  return `${minutes > 0 ? formatDuration(minutes) : 'Nothing'} on ${date}`;
+  return `${minutes > 0 ? units.value(minutes) : 'Nothing'} on ${date}`;
 }
 
 /**
@@ -46,6 +60,7 @@ export function ActivityCalendar({
   today,
   goalMinutes = null,
   subject,
+  units = TIME_UNITS,
 }: ActivityCalendarProps) {
   const [range, setRange] = useState<ActivityRange>({ kind: 'year-to-date' });
   const [hovered, setHovered] = useState<{ day: DayKey; minutes: number } | null>(null);
@@ -77,7 +92,7 @@ export function ActivityCalendar({
     <div className={styles.calendar}>
       <div className={styles.head}>
         <p className={styles.summary}>
-          <strong className="tabular">{formatHours(calendar.totalMinutes)} hours</strong> {period}
+          <strong className="tabular">{units.total(calendar.totalMinutes)}</strong> {period}
           {subject && <> on {subject}</>}
         </p>
         {years.length > 0 && (
@@ -110,7 +125,7 @@ export function ActivityCalendar({
           viewBox={`0 0 ${width} ${height}`}
           className={styles.grid}
           role="img"
-          aria-label={`${formatHours(calendar.totalMinutes)} hours ${period} across ${days(calendar.activeDays)}`}
+          aria-label={`${units.total(calendar.totalMinutes)} ${period} across ${days(calendar.activeDays)}`}
           onMouseOver={onHover}
           onMouseLeave={() => setHovered(null)}
         >
@@ -142,7 +157,7 @@ export function ActivityCalendar({
                   data-day={cell.future ? undefined : cell.day}
                   data-minutes={cell.minutes}
                 >
-                  <title>{describeDay(cell.day, cell.minutes)}</title>
+                  <title>{describeDay(cell.day, cell.minutes, units)}</title>
                 </rect>
               ) : null,
             ),
@@ -153,7 +168,7 @@ export function ActivityCalendar({
       <div className={styles.foot}>
         <p className={`tabular ${styles.stats}`} aria-live="polite">
           {hovered
-            ? describeDay(hovered.day, hovered.minutes)
+            ? describeDay(hovered.day, hovered.minutes, units)
             : `${days(calendar.activeDays)} active. Longest run ${days(calendar.longestRun)}${
                 range.kind === 'year-to-date' || range.year === fromDayKey(today).getFullYear()
                   ? `, current run ${days(calendar.currentRun)}`

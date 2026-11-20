@@ -24,7 +24,7 @@ import { useToday } from '../progress/useNow';
 import { useReport, useTrend } from '../progress/useReport';
 import styles from './ReportPage.module.css';
 
-const TREND_LENGTH: Record<PeriodKind, number> = { week: 8, month: 6 };
+const TREND_LENGTH: Record<PeriodKind, number> = { day: 14, week: 8, month: 6 };
 
 export function ReportPage() {
   const today = useToday();

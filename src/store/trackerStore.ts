@@ -4,6 +4,16 @@ import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
 import { normalizeRoutine, type Weekday } from '../domain/routine';
+import { stableUuid } from '../domain/ids';
+import {
+  cleanNote,
+  monthRange,
+  type MoneyEntry,
+  type MoneyEntryId,
+  type MoneySection,
+  type MoneySectionId,
+} from '../domain/money';
+import type { ImportedSheet } from '../domain/moneyImport';
 import { cleanTodoTitle, type Todo, type TodoId } from '../domain/todos';
 import {
   advancePomodoro as advancePomodoroPhase,
@@ -20,7 +30,12 @@ import {
 } from '../domain/badHabits';
 import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
-import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
+import {
+  DEFAULT_DAILY_GOAL_MINUTES,
+  DEFAULT_ICONS,
+  SKILL_COLORS,
+  type TrackerKind,
+} from '../domain/types';
 import type {
   ActiveTimer,
   Session,
@@ -40,7 +55,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 11;
+const STORAGE_VERSION = 12;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -79,6 +94,8 @@ interface TrackerState {
   badHabits: BadHabit[];
   checkIns: CheckIn[];
   todos: Todo[];
+  moneySections: MoneySection[];
+  moneyEntries: MoneyEntry[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
   /**
@@ -153,12 +170,36 @@ interface TrackerActions {
   /** Removes every done to-do. */
   clearDoneTodos: () => void;
 
+  addMoneySection: (input: MoneySectionInput) => MoneySectionId;
+  updateMoneySection: (id: MoneySectionId, input: MoneySectionInput) => void;
+  /** Removes a section with every entry in it or moved into it. */
+  deleteMoneySection: (id: MoneySectionId) => void;
+  addMoneyEntry: (input: MoneyEntryInput) => MoneyEntryId;
+  updateMoneyEntry: (id: MoneyEntryId, input: MoneyEntryInput) => void;
+  deleteMoneyEntry: (id: MoneyEntryId) => void;
+  /**
+   * Brings in a sheet: each of its sections goes into the matching existing
+   * section, or a new one. Importing the same sheet again replaces its lines.
+   */
+  importMoneySheet: (
+    sheet: ImportedSheet,
+    targets: Record<string, MoneySectionId | null>,
+  ) => { entries: number; sections: number };
+
   setTheme: (theme: Theme) => void;
   setBadHabitLock: (lock: PinLock | null) => void;
   replaceData: (
     data: Pick<
       TrackerState,
-      'skills' | 'sessions' | 'library' | 'domains' | 'badHabits' | 'checkIns' | 'todos'
+      | 'skills'
+      | 'sessions'
+      | 'library'
+      | 'domains'
+      | 'badHabits'
+      | 'checkIns'
+      | 'todos'
+      | 'moneySections'
+      | 'moneyEntries'
     >,
   ) => void;
 
@@ -185,6 +226,8 @@ const initialState: TrackerState = {
   badHabits: [],
   checkIns: [],
   todos: [],
+  moneySections: [],
+  moneyEntries: [],
   activeTimer: null,
   theme: 'system',
   badHabitLock: null,
@@ -198,9 +241,37 @@ type PendingKey =
   | 'pendingDomains'
   | 'pendingBadHabits'
   | 'pendingCheckIns'
-  | 'pendingTodos';
+  | 'pendingTodos'
+  | 'pendingMoneySections'
+  | 'pendingMoneyEntries';
 
 /** Records local changes for the next push. A no-op while used as a guest. */
+export type MoneySectionInput = Pick<MoneySection, 'name' | 'icon' | 'color' | 'carryOver'>;
+export type MoneyEntryInput = Pick<
+  MoneyEntry,
+  'sectionId' | 'kind' | 'toSectionId' | 'day' | 'amount' | 'note'
+>;
+
+function normalizeEntry(input: MoneyEntryInput): MoneyEntryInput {
+  return {
+    ...input,
+    // Only a move has somewhere to go.
+    toSectionId: input.kind === 'move' ? input.toSectionId : null,
+    amount: Math.max(1, Math.round(input.amount)),
+    note: cleanNote(input.note),
+  };
+}
+
+/** A sensible icon for a section from its name. */
+export function suggestSectionIcon(name: string): string {
+  if (/meal|food|bazar|grocer/i.test(name)) return '🍚';
+  if (/fund|saving|emergency/i.test(name)) return '🏦';
+  if (/personal|pocket|daily/i.test(name)) return '👤';
+  if (/rent|house|home/i.test(name)) return '🏠';
+  if (/study|book|course/i.test(name)) return '📚';
+  return '💼';
+}
+
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
   if (sync.ownerId === null || ids.length === 0) return sync;
   const rev = sync.rev + 1;
@@ -523,11 +594,147 @@ export const useTrackerStore = create<TrackerStore>()(
           };
         }),
 
+      addMoneySection: (input) => {
+        const section: MoneySection = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
+        set((state) => ({
+          moneySections: [...state.moneySections, section],
+          sync: markPending(state.sync, 'pendingMoneySections', [section.id], 'upsert'),
+        }));
+        return section.id;
+      },
+
+      updateMoneySection: (id, input) =>
+        set((state) => ({
+          moneySections: state.moneySections.map((section) =>
+            section.id === id ? { ...section, ...input } : section,
+          ),
+          sync: markPending(state.sync, 'pendingMoneySections', [id], 'upsert'),
+        })),
+
+      deleteMoneySection: (id) =>
+        set((state) => {
+          const gone = state.moneyEntries
+            .filter((entry) => entry.sectionId === id || entry.toSectionId === id)
+            .map((entry) => entry.id);
+          let sync = markPending(state.sync, 'pendingMoneyEntries', gone, 'delete');
+          sync = markPending(sync, 'pendingMoneySections', [id], 'delete');
+          return {
+            moneySections: state.moneySections.filter((section) => section.id !== id),
+            moneyEntries: state.moneyEntries.filter(
+              (entry) => entry.sectionId !== id && entry.toSectionId !== id,
+            ),
+            sync,
+          };
+        }),
+
+      addMoneyEntry: (input) => {
+        const entry: MoneyEntry = {
+          id: crypto.randomUUID(),
+          createdAt: Date.now(),
+          ...normalizeEntry(input),
+        };
+        set((state) => ({
+          moneyEntries: [...state.moneyEntries, entry],
+          sync: markPending(state.sync, 'pendingMoneyEntries', [entry.id], 'upsert'),
+        }));
+        return entry.id;
+      },
+
+      updateMoneyEntry: (id, input) =>
+        set((state) => ({
+          moneyEntries: state.moneyEntries.map((entry) =>
+            entry.id === id ? { ...entry, ...normalizeEntry(input) } : entry,
+          ),
+          sync: markPending(state.sync, 'pendingMoneyEntries', [id], 'upsert'),
+        })),
+
+      deleteMoneyEntry: (id) =>
+        set((state) => ({
+          moneyEntries: state.moneyEntries.filter((entry) => entry.id !== id),
+          sync: markPending(state.sync, 'pendingMoneyEntries', [id], 'delete'),
+        })),
+
+      importMoneySheet: (sheet, targets) => {
+        const now = Date.now();
+        const created: MoneySection[] = [];
+        const imported: MoneyEntry[] = [];
+        const { start } = monthRange(sheet.month);
+        sheet.sections.forEach((part, index) => {
+          let sectionId = targets[part.name] ?? null;
+          if (sectionId === null) {
+            const section: MoneySection = {
+              id: crypto.randomUUID(),
+              name: part.name.slice(0, 60),
+              icon: suggestSectionIcon(part.name),
+              color: SKILL_COLORS[index % SKILL_COLORS.length]!,
+              // A fund or savings pot usually keeps its balance month to month.
+              carryOver: /fund|saving/i.test(part.name),
+              createdAt: now,
+            };
+            created.push(section);
+            sectionId = section.id;
+          }
+          if (part.budget > 0) {
+            imported.push({
+              id: stableUuid(`import:${sheet.month}:${part.name.toLowerCase()}:budget`),
+              sectionId,
+              kind: 'add',
+              toSectionId: null,
+              day: start,
+              amount: part.budget,
+              note: 'Budget',
+              createdAt: now,
+            });
+          }
+          part.items.forEach((item, position) =>
+            imported.push({
+              id: item.id,
+              sectionId: sectionId!,
+              kind: 'spend',
+              toSectionId: null,
+              day: item.day,
+              amount: item.amount,
+              note: item.note,
+              createdAt: now + position,
+            }),
+          );
+        });
+        set((state) => {
+          const ids = new Set(imported.map((entry) => entry.id));
+          let sync = markPending(
+            state.sync,
+            'pendingMoneySections',
+            created.map((s) => s.id),
+            'upsert',
+          );
+          sync = markPending(sync, 'pendingMoneyEntries', [...ids], 'upsert');
+          return {
+            moneySections: [...state.moneySections, ...created],
+            moneyEntries: [
+              ...state.moneyEntries.filter((entry) => !ids.has(entry.id)),
+              ...imported,
+            ],
+            sync,
+          };
+        });
+        return { entries: imported.length, sections: created.length };
+      },
+
       setTheme: (theme) => set({ theme }),
 
       setBadHabitLock: (badHabitLock) => set({ badHabitLock }),
 
-      replaceData: ({ skills, sessions, library, domains, badHabits, checkIns, todos }) =>
+      replaceData: ({
+        skills,
+        sessions,
+        library,
+        domains,
+        badHabits,
+        checkIns,
+        todos,
+        moneySections,
+        moneyEntries,
+      }) =>
         set((state) => {
           // Restoring a backup replaces the account's data too: everything
           // that was here is deleted remotely, then the backup is uploaded.
@@ -539,6 +746,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'delete');
           sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'delete');
           sync = markPending(sync, 'pendingTodos', ids(state.todos), 'delete');
+          sync = markPending(sync, 'pendingMoneyEntries', ids(state.moneyEntries), 'delete');
+          sync = markPending(sync, 'pendingMoneySections', ids(state.moneySections), 'delete');
           sync = markPending(sync, 'pendingSkills', ids(skills), 'upsert');
           sync = markPending(sync, 'pendingSessions', ids(sessions), 'upsert');
           sync = markPending(sync, 'pendingLibrary', ids(library), 'upsert');
@@ -546,6 +755,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingBadHabits', ids(badHabits), 'upsert');
           sync = markPending(sync, 'pendingCheckIns', ids(checkIns), 'upsert');
           sync = markPending(sync, 'pendingTodos', ids(todos), 'upsert');
+          sync = markPending(sync, 'pendingMoneySections', ids(moneySections), 'upsert');
+          sync = markPending(sync, 'pendingMoneyEntries', ids(moneyEntries), 'upsert');
           return {
             skills,
             sessions,
@@ -554,6 +765,8 @@ export const useTrackerStore = create<TrackerStore>()(
             badHabits,
             checkIns,
             todos,
+            moneySections,
+            moneyEntries,
             activeTimer: null,
             sync,
           };
@@ -574,6 +787,8 @@ export const useTrackerStore = create<TrackerStore>()(
               badHabits: [],
               checkIns: [],
               todos: [],
+              moneySections: [],
+              moneyEntries: [],
               activeTimer: null,
               // The lock belonged to whoever used the device before.
               badHabitLock: null,
@@ -587,6 +802,8 @@ export const useTrackerStore = create<TrackerStore>()(
           sync = markPending(sync, 'pendingBadHabits', ids(state.badHabits), 'upsert');
           sync = markPending(sync, 'pendingCheckIns', ids(state.checkIns), 'upsert');
           sync = markPending(sync, 'pendingTodos', ids(state.todos), 'upsert');
+          sync = markPending(sync, 'pendingMoneySections', ids(state.moneySections), 'upsert');
+          sync = markPending(sync, 'pendingMoneyEntries', ids(state.moneyEntries), 'upsert');
           return { sync };
         }),
 
@@ -600,6 +817,8 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingBadHabits,
             pendingCheckIns,
             pendingTodos,
+            pendingMoneySections,
+            pendingMoneyEntries,
           } = state.sync;
 
           const skills = new Map(state.skills.map((skill) => [skill.id, skill]));
@@ -651,6 +870,19 @@ export const useTrackerStore = create<TrackerStore>()(
             else todos.set(row.id, row);
           }
 
+          const moneySections = new Map(state.moneySections.map((s) => [s.id, s]));
+          for (const { row, deleted } of changes.moneySections) {
+            if (pendingMoneySections[row.id]) continue;
+            if (deleted) moneySections.delete(row.id);
+            else moneySections.set(row.id, row);
+          }
+          const moneyEntries = new Map(state.moneyEntries.map((e) => [e.id, e]));
+          for (const { row, deleted } of changes.moneyEntries) {
+            if (pendingMoneyEntries[row.id]) continue;
+            if (deleted) moneyEntries.delete(row.id);
+            else moneyEntries.set(row.id, row);
+          }
+
           // A skill whose domain was deleted on another device stands alone.
           const ungrouped = [...skills.values()].map((skill) =>
             skill.domainId !== null && !domains.has(skill.domainId)
@@ -666,6 +898,13 @@ export const useTrackerStore = create<TrackerStore>()(
             // A bad habit deleted on another device takes its answers with it.
             checkIns: [...checkIns.values()].filter((c) => badHabits.has(c.habitId)),
             todos: [...todos.values()],
+            moneySections: [...moneySections.values()],
+            // A section deleted on another device takes its entries with it.
+            moneyEntries: [...moneyEntries.values()].filter(
+              (entry) =>
+                moneySections.has(entry.sectionId) &&
+                (entry.toSectionId === null || moneySections.has(entry.toSectionId)),
+            ),
             skills: ungrouped,
             // A skill deleted on another device takes its sessions with it.
             sessions: [...sessions.values()].filter((session) => skills.has(session.skillId)),
@@ -685,6 +924,14 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingBadHabits: withoutAcknowledged(state.sync.pendingBadHabits, pushed.badHabits),
             pendingCheckIns: withoutAcknowledged(state.sync.pendingCheckIns, pushed.checkIns),
             pendingTodos: withoutAcknowledged(state.sync.pendingTodos, pushed.todos),
+            pendingMoneySections: withoutAcknowledged(
+              state.sync.pendingMoneySections,
+              pushed.moneySections,
+            ),
+            pendingMoneyEntries: withoutAcknowledged(
+              state.sync.pendingMoneyEntries,
+              pushed.moneyEntries,
+            ),
           },
         })),
 
@@ -701,6 +948,8 @@ export const useTrackerStore = create<TrackerStore>()(
         badHabits,
         checkIns,
         todos,
+        moneySections,
+        moneyEntries,
         activeTimer,
         theme,
         sync,
@@ -713,6 +962,8 @@ export const useTrackerStore = create<TrackerStore>()(
         badHabits,
         checkIns,
         todos,
+        moneySections,
+        moneyEntries,
         activeTimer,
         theme,
         sync,
@@ -799,6 +1050,17 @@ export const useTrackerStore = create<TrackerStore>()(
             pendingTodos: {},
           };
         }
+        // v11 predates money.
+        if (version < 12) {
+          state.moneySections = [];
+          state.moneyEntries = [];
+          state.sync = {
+            ...(state.sync ?? initialSyncState),
+            moneyCursor: null,
+            pendingMoneySections: {},
+            pendingMoneyEntries: {},
+          };
+        }
         return state as TrackerState;
       },
     },
@@ -816,6 +1078,8 @@ export function hasPendingChanges(sync: SyncState): boolean {
     sync.pendingBadHabits,
     sync.pendingCheckIns,
     sync.pendingTodos,
+    sync.pendingMoneySections,
+    sync.pendingMoneyEntries,
   ].some((pending) => Object.keys(pending).length > 0);
 }
 

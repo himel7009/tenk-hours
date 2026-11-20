@@ -1,3 +1,4 @@
+import type { MoneyEntry, MoneyEntryId, MoneySection, MoneySectionId } from '../domain/money';
 import type { Todo, TodoId } from '../domain/todos';
 import type { BadHabit, BadHabitId, CheckIn } from '../domain/badHabits';
 import type { Domain, DomainId } from '../domain/domains';
@@ -30,6 +31,8 @@ export interface SyncState {
   badHabitCursor: string | null;
   /** The same for to-dos. */
   todoCursor: string | null;
+  /** The same for money sections and entries, which share one. */
+  moneyCursor: string | null;
   /** Counter bumped on every local change while an account owns the data. */
   rev: number;
   pendingSkills: Record<SkillId, PendingChange>;
@@ -39,6 +42,8 @@ export interface SyncState {
   pendingBadHabits: Record<BadHabitId, PendingChange>;
   pendingCheckIns: Record<string, PendingChange>;
   pendingTodos: Record<TodoId, PendingChange>;
+  pendingMoneySections: Record<MoneySectionId, PendingChange>;
+  pendingMoneyEntries: Record<MoneyEntryId, PendingChange>;
 }
 
 export const initialSyncState: SyncState = {
@@ -48,6 +53,7 @@ export const initialSyncState: SyncState = {
   domainCursor: null,
   badHabitCursor: null,
   todoCursor: null,
+  moneyCursor: null,
   rev: 0,
   pendingSkills: {},
   pendingSessions: {},
@@ -56,6 +62,8 @@ export const initialSyncState: SyncState = {
   pendingBadHabits: {},
   pendingCheckIns: {},
   pendingTodos: {},
+  pendingMoneySections: {},
+  pendingMoneyEntries: {},
 };
 
 export interface RemoteRow<T> {
@@ -72,6 +80,8 @@ export interface RemoteChanges {
   badHabits: RemoteRow<BadHabit>[];
   checkIns: RemoteRow<CheckIn>[];
   todos: RemoteRow<Todo>[];
+  moneySections: RemoteRow<MoneySection>[];
+  moneyEntries: RemoteRow<MoneyEntry>[];
   /** Cursors to store for the next pull. */
   cursors: SyncCursors;
 }
@@ -82,6 +92,7 @@ export interface SyncCursors {
   domainCursor: string | null;
   badHabitCursor: string | null;
   todoCursor: string | null;
+  moneyCursor: string | null;
 }
 
 export interface PushBatch {
@@ -99,6 +110,10 @@ export interface PushBatch {
   checkInDeletes: string[];
   todoUpserts: Todo[];
   todoDeletes: TodoId[];
+  moneySectionUpserts: MoneySection[];
+  moneySectionDeletes: MoneySectionId[];
+  moneyEntryUpserts: MoneyEntry[];
+  moneyEntryDeletes: MoneyEntryId[];
 }
 
 /** The revisions a push covered, so only unchanged entries are cleared. */
@@ -110,6 +125,8 @@ export interface PushedRevisions {
   badHabits: Record<BadHabitId, number>;
   checkIns: Record<string, number>;
   todos: Record<TodoId, number>;
+  moneySections: Record<MoneySectionId, number>;
+  moneyEntries: Record<MoneyEntryId, number>;
 }
 
 /**

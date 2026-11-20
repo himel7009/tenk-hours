@@ -11,12 +11,15 @@ const EMPTY: RemoteChanges = {
   badHabits: [],
   checkIns: [],
   todos: [],
+  moneySections: [],
+  moneyEntries: [],
   cursors: {
     cursor: null,
     libraryCursor: null,
     domainCursor: null,
     badHabitCursor: null,
     todoCursor: null,
+    moneyCursor: null,
   },
 };
 

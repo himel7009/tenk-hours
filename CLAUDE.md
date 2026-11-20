@@ -139,6 +139,26 @@ tracker's page. It is separate from the 10,000-hour grid (`HourField`).
 `done` and `doneAt`. No dates or history; "Clear done" soft-deletes done items.
 It has its own sync cursor (`sync.todoCursor`) and is in backups.
 
+## Money
+
+`features/money/` is the Money page (`/money`), logic in `domain/money.ts`.
+`MoneySection` (table `money_sections`) is a pot with its own budget;
+`MoneyEntry` (table `money_entries`) is one line: `spend`, `add` (into the
+budget) or `move` (to `toSectionId`, not spending). Amounts are positive whole
+paisa (100 to a taka); `formatTaka` shows them. Both tables share one sync
+cursor (`sync.moneyCursor`) and are in backups and live updates.
+
+- A section's month (`summarizeMoneyMonth`): budget is what was carried in
+  (only with `carryOver`) plus adds and moves in, less moves out; remaining is
+  budget less spending. Nothing about balances is stored.
+- Tags (transport, groceries...) come from words in the note (`tagOf`) and are
+  never stored, so improving the word lists improves every past report.
+- `domain/moneyImport.ts` reads a monthly expense sheet saved as CSV. Imported
+  lines get stable ids (`stableUuid`), so importing a month again replaces it.
+  Never commit a real sheet: tests use made-up data.
+- The bad habits PIN (`badHabitLock`) also hides money (`usePrivacyLocked`).
+  Deleting a section deletes its entries and any moves into it.
+
 ## Report
 
 `features/report/` is the Report page (`/report`): a week (Monday to Sunday)
@@ -189,8 +209,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All ten migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-19.
+All eleven migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-20.
 
 ## Releases
 

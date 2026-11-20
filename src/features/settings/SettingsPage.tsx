@@ -29,9 +29,28 @@ export function SettingsPage() {
   const [importError, setImportError] = useState<string | null>(null);
 
   const handleExport = () => {
-    const { skills, sessions, library, domains, badHabits, checkIns, todos } =
-      useTrackerStore.getState();
-    const backup = createBackup({ skills, sessions, library, domains, badHabits, checkIns, todos });
+    const {
+      skills,
+      sessions,
+      library,
+      domains,
+      badHabits,
+      checkIns,
+      todos,
+      moneySections,
+      moneyEntries,
+    } = useTrackerStore.getState();
+    const backup = createBackup({
+      skills,
+      sessions,
+      library,
+      domains,
+      badHabits,
+      checkIns,
+      todos,
+      moneySections,
+      moneyEntries,
+    });
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',
     });
@@ -93,11 +112,11 @@ export function SettingsPage() {
       )}
 
       <section className={styles.section}>
-        <h2>Bad habits lock</h2>
+        <h2>Privacy lock</h2>
         <p className={styles.help}>
           {hasLock
-            ? 'Bad habits on this device are hidden until your PIN is entered. They lock again when you leave them.'
-            : 'Hide your bad habits behind a PIN on this device. Each device has its own PIN.'}
+            ? 'Bad habits and money on this device are hidden until your PIN is entered. They lock again when you leave them.'
+            : 'Hide your bad habits and money behind a PIN on this device. Each device has its own PIN.'}
         </p>
         <div className={styles.actions}>
           {hasLock ? (

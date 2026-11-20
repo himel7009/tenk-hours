@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import type { LibraryItem } from '../domain/library';
+import type { MoneyEntry, MoneySection } from '../domain/money';
 import type { Todo } from '../domain/todos';
 import type { Session, Skill } from '../domain/types';
 import { resetTrackerStore, useTrackerStore } from '../store/trackerStore';
@@ -19,6 +20,8 @@ class FakeRemote implements RemoteStore {
   badHabits = new Map<string, { row: BadHabit; deleted: boolean; at: number }>();
   checkIns = new Map<string, { row: CheckIn; deleted: boolean; at: number }>();
   todos = new Map<string, { row: Todo; deleted: boolean; at: number }>();
+  moneySections = new Map<string, { row: MoneySection; deleted: boolean; at: number }>();
+  moneyEntries = new Map<string, { row: MoneyEntry; deleted: boolean; at: number }>();
   failNextPush = false;
 
   async push(batch: PushBatch): Promise<void> {
@@ -42,6 +45,14 @@ class FakeRemote implements RemoteStore {
     for (const id of batch.badHabitDeletes) this.softDelete(this.badHabits, id, at);
     for (const row of batch.todoUpserts) this.todos.set(row.id, { row, deleted: false, at });
     for (const id of batch.todoDeletes) this.softDelete(this.todos, id, at);
+    for (const row of batch.moneySectionUpserts) {
+      this.moneySections.set(row.id, { row, deleted: false, at });
+    }
+    for (const row of batch.moneyEntryUpserts) {
+      this.moneyEntries.set(row.id, { row, deleted: false, at });
+    }
+    for (const id of batch.moneyEntryDeletes) this.softDelete(this.moneyEntries, id, at);
+    for (const id of batch.moneySectionDeletes) this.softDelete(this.moneySections, id, at);
   }
 
   async pull({
@@ -50,6 +61,7 @@ class FakeRemote implements RemoteStore {
     domainCursor,
     badHabitCursor,
     todoCursor,
+    moneyCursor,
   }: SyncCursors): Promise<RemoteChanges> {
     const changed = <T>(
       rows: Map<string, { row: T; deleted: boolean; at: number }>,
@@ -65,6 +77,8 @@ class FakeRemote implements RemoteStore {
     const badHabits = changed(this.badHabits, badHabitCursor);
     const checkIns = changed(this.checkIns, badHabitCursor);
     const todos = changed(this.todos, todoCursor);
+    const moneySections = changed(this.moneySections, moneyCursor);
+    const moneyEntries = changed(this.moneyEntries, moneyCursor);
     return {
       skills,
       sessions,
@@ -73,12 +87,15 @@ class FakeRemote implements RemoteStore {
       badHabits,
       checkIns,
       todos,
+      moneySections,
+      moneyEntries,
       cursors: {
         cursor: newest(cursor, [...skills, ...sessions]),
         libraryCursor: newest(libraryCursor, library),
         domainCursor: newest(domainCursor, domains),
         badHabitCursor: newest(badHabitCursor, [...badHabits, ...checkIns]),
         todoCursor: newest(todoCursor, todos),
+        moneyCursor: newest(moneyCursor, [...moneySections, ...moneyEntries]),
       },
     };
   }
@@ -325,6 +342,8 @@ describe('failures and races', () => {
       badHabits: [],
       checkIns: [],
       todos: [],
+      moneySections: [],
+      moneyEntries: [],
     });
     await sync(remote);
 
@@ -402,6 +421,7 @@ describe('library', () => {
         domainCursor: null,
         badHabitCursor: null,
         todoCursor: null,
+        moneyCursor: null,
       },
     }));
     await sync(remote);
@@ -538,5 +558,47 @@ describe('bad habits', () => {
     await sync(remote);
     expect(remote.todos.get(read.id)?.deleted).toBe(true);
     expect(store().todos.map((todo) => todo.title)).toEqual(['Email supervisor']);
+  });
+
+  it('syncs money sections and entries, and deleting a section takes its entries', async () => {
+    store().adoptAccount('user-1');
+    const meal = store().addMoneySection({
+      name: 'Meal',
+      icon: '🍚',
+      color: 'moss',
+      carryOver: false,
+    });
+    const fund = store().addMoneySection({
+      name: 'Fund',
+      icon: '🏦',
+      color: 'cobalt',
+      carryOver: true,
+    });
+    store().addMoneyEntry({
+      sectionId: meal,
+      kind: 'spend',
+      toSectionId: null,
+      day: '2026-11-17',
+      amount: 93800,
+      note: 'Gulsha mach',
+    });
+    store().addMoneyEntry({
+      sectionId: fund,
+      kind: 'move',
+      toSectionId: meal,
+      day: '2026-11-16',
+      amount: 100000,
+      note: 'For meal',
+    });
+    await sync(remote);
+    expect(remote.moneySections.size).toBe(2);
+    expect(remote.moneyEntries.size).toBe(2);
+
+    store().deleteMoneySection(meal);
+    await sync(remote);
+    expect(remote.moneySections.get(meal)?.deleted).toBe(true);
+    // The expense and the move into Meal both go with it.
+    expect([...remote.moneyEntries.values()].every((entry) => entry.deleted)).toBe(true);
+    expect(store().moneyEntries).toEqual([]);
   });
 });

@@ -1,3 +1,9 @@
+import {
+  cleanNote,
+  type MoneyEntry,
+  type MoneyEntryKind,
+  type MoneySection,
+} from '../domain/money';
 import { cleanTodoTitle, type Todo } from '../domain/todos';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BadHabit, CheckIn, CheckInStatus } from '../domain/badHabits';
@@ -119,7 +125,9 @@ type Table =
   | 'domains'
   | 'bad_habits'
   | 'bad_habit_checkins'
-  | 'todos';
+  | 'todos'
+  | 'money_sections'
+  | 'money_entries';
 
 const TODO_COLUMNS = 'id,title,done,done_at,created_at,updated_at,deleted_at';
 
@@ -239,6 +247,91 @@ function fromCheckInRow(row: CheckInRow): RemoteRow<CheckIn> {
       habitId: row.habit_id,
       day: row.day,
       status: row.status,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+interface MoneySectionRow {
+  id: string;
+  name: string;
+  icon: string;
+  color: SkillColor;
+  carry_over: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+interface MoneyEntryRow {
+  id: string;
+  section_id: string;
+  kind: MoneyEntryKind;
+  to_section_id: string | null;
+  day: string;
+  amount: number;
+  note: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+const MONEY_SECTION_COLUMNS = 'id,name,icon,color,carry_over,created_at,updated_at,deleted_at';
+const MONEY_ENTRY_COLUMNS =
+  'id,section_id,kind,to_section_id,day,amount,note,created_at,updated_at,deleted_at';
+
+function toMoneySectionRow(section: MoneySection) {
+  return {
+    id: section.id,
+    name: section.name,
+    icon: section.icon,
+    color: section.color,
+    carry_over: section.carryOver,
+    created_at: new Date(section.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromMoneySectionRow(row: MoneySectionRow): RemoteRow<MoneySection> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      name: row.name,
+      icon: row.icon,
+      color: row.color,
+      carryOver: row.carry_over,
+      createdAt: Date.parse(row.created_at),
+    },
+  };
+}
+
+function toMoneyEntryRow(entry: MoneyEntry) {
+  return {
+    id: entry.id,
+    section_id: entry.sectionId,
+    kind: entry.kind,
+    to_section_id: entry.kind === 'move' ? entry.toSectionId : null,
+    day: entry.day,
+    amount: entry.amount,
+    note: cleanNote(entry.note),
+    created_at: new Date(entry.createdAt).toISOString(),
+    deleted_at: null,
+  };
+}
+
+function fromMoneyEntryRow(row: MoneyEntryRow): RemoteRow<MoneyEntry> {
+  return {
+    deleted: row.deleted_at !== null,
+    row: {
+      id: row.id,
+      sectionId: row.section_id,
+      kind: row.kind,
+      toSectionId: row.to_section_id,
+      day: row.day,
+      // bigint can arrive as a string.
+      amount: Number(row.amount),
+      note: row.note,
       createdAt: Date.parse(row.created_at),
     },
   };
@@ -423,6 +516,12 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       await softDelete('bad_habits', batch.badHabitDeletes);
       await upsert('todos', batch.todoUpserts.map(toTodoRow));
       await softDelete('todos', batch.todoDeletes);
+      // Sections before the entries that point at them, and entries deleted
+      // before their sections.
+      await upsert('money_sections', batch.moneySectionUpserts.map(toMoneySectionRow));
+      await upsert('money_entries', batch.moneyEntryUpserts.map(toMoneyEntryRow));
+      await softDelete('money_entries', batch.moneyEntryDeletes);
+      await softDelete('money_sections', batch.moneySectionDeletes);
     },
 
     async pull({
@@ -431,7 +530,18 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
       domainCursor,
       badHabitCursor,
       todoCursor,
+      moneyCursor,
     }: SyncCursors): Promise<RemoteChanges> {
+      const moneySectionRows = await fetchChanged<MoneySectionRow>(
+        'money_sections',
+        MONEY_SECTION_COLUMNS,
+        moneyCursor,
+      );
+      const moneyEntryRows = await fetchChanged<MoneyEntryRow>(
+        'money_entries',
+        MONEY_ENTRY_COLUMNS,
+        moneyCursor,
+      );
       const todoRows = await fetchChanged<TodoRow>('todos', TODO_COLUMNS, todoCursor);
       const badHabitRows = await fetchChanged<BadHabitRow>(
         'bad_habits',
@@ -458,6 +568,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         domainCursor: advance(domainCursor, domainRows),
         badHabitCursor: advance(badHabitCursor, [...badHabitRows, ...checkInRows]),
         todoCursor: advance(todoCursor, todoRows),
+        moneyCursor: advance(moneyCursor, [...moneySectionRows, ...moneyEntryRows]),
       };
       // Nothing newer turned up, so later pulls from here can skip the overlap.
       if (next.cursor !== null && next.cursor === cursor) settled.add(cursor);
@@ -471,6 +582,7 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         settled.add(badHabitCursor);
       }
       if (next.todoCursor !== null && next.todoCursor === todoCursor) settled.add(todoCursor);
+      if (next.moneyCursor !== null && next.moneyCursor === moneyCursor) settled.add(moneyCursor);
 
       return {
         skills: skillRows.map(fromSkillRow),
@@ -480,6 +592,8 @@ export function createSupabaseRemote(client: SupabaseClient): RemoteStore {
         badHabits: badHabitRows.map(fromBadHabitRow),
         checkIns: checkInRows.map(fromCheckInRow),
         todos: todoRows.map(fromTodoRow),
+        moneySections: moneySectionRows.map(fromMoneySectionRow),
+        moneyEntries: moneyEntryRows.map(fromMoneyEntryRow),
         cursors: next,
       };
     },

@@ -1,3 +1,4 @@
+import type { MoneyEntry, MoneySection } from '../domain/money';
 import type { Todo } from '../domain/todos';
 import type { BadHabit, CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -22,6 +23,8 @@ export interface SyncableStore {
     badHabits: BadHabit[];
     checkIns: CheckIn[];
     todos: Todo[];
+    moneySections: MoneySection[];
+    moneyEntries: MoneyEntry[];
     sync: SyncState;
     acknowledgePush(pushed: PushedRevisions): void;
     applyRemoteChanges(changes: RemoteChanges): void;
@@ -42,6 +45,8 @@ export interface PushSource {
   badHabits: BadHabit[];
   checkIns: CheckIn[];
   todos: Todo[];
+  moneySections: MoneySection[];
+  moneyEntries: MoneyEntry[];
   sync: SyncState;
 }
 
@@ -79,6 +84,8 @@ export function planPush(source: PushSource): PlannedPush {
     badHabits: {},
     checkIns: {},
     todos: {},
+    moneySections: {},
+    moneyEntries: {},
   };
   const skillIds = new Set(source.skills.map((skill) => skill.id));
   const habitIds = new Set(source.badHabits.map((habit) => habit.id));
@@ -96,6 +103,16 @@ export function planPush(source: PushSource): PlannedPush {
   );
 
   const todos = collect(sync.pendingTodos, source.todos, revisions.todos);
+  const moneySections = collect(
+    sync.pendingMoneySections,
+    source.moneySections,
+    revisions.moneySections,
+  );
+  const moneyEntries = collect(
+    sync.pendingMoneyEntries,
+    source.moneyEntries,
+    revisions.moneyEntries,
+  );
 
   return {
     batch: {
@@ -113,6 +130,10 @@ export function planPush(source: PushSource): PlannedPush {
       checkInDeletes: checkIns.deletes,
       todoUpserts: todos.upserts,
       todoDeletes: todos.deletes,
+      moneySectionUpserts: moneySections.upserts,
+      moneySectionDeletes: moneySections.deletes,
+      moneyEntryUpserts: moneyEntries.upserts,
+      moneyEntryDeletes: moneyEntries.deletes,
     },
     revisions,
   };
@@ -133,13 +154,15 @@ export async function syncOnce(remote: RemoteStore, store: SyncableStore): Promi
   if (!isEmpty(batch)) await remote.push(batch);
   store.getState().acknowledgePush(revisions);
 
-  const { cursor, libraryCursor, domainCursor, badHabitCursor, todoCursor } = store.getState().sync;
+  const { cursor, libraryCursor, domainCursor, badHabitCursor, todoCursor, moneyCursor } =
+    store.getState().sync;
   const changes = await remote.pull({
     cursor,
     libraryCursor,
     domainCursor,
     badHabitCursor,
     todoCursor,
+    moneyCursor,
   });
   store.getState().applyRemoteChanges(changes);
 }

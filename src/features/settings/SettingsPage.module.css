@@ -78,3 +78,8 @@
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }
+
+.version {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

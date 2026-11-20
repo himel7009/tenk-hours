@@ -243,9 +243,14 @@ pull on focus or reconnect catch anything missed. A new synced table must be
 added to the `supabase_realtime` publication and to `LIVE_TABLES` in
 `useCloudSync.ts`.
 
-New app versions: the service worker uses `registerType: 'prompt'`.
-`useAppUpdates` checks every 30 minutes and on focus, and shows a toast with a
-Reload button rather than reloading by itself.
+New app versions: the service worker uses `registerType: 'autoUpdate'`, so a
+new version installs and takes over by itself (skipWaiting, clientsClaim) even
+on a phone that never closes its tab. Do not switch back to `'prompt'`: on
+2026-11-18 that left phones on the first version, waiting for a click their
+old code could not show. `useAppUpdates` checks every 30 minutes and on focus,
+and once a new version has taken over (`onNeedReload`) shows a toast with a
+Reload button rather than reloading the open page. Settings shows the build
+(`__APP_VERSION__`) so a device's version can be checked.
 
 ## Deploying changes that touch the database
 

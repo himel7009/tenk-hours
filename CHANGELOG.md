@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-20
 
+- **Phones get new versions.** An app open on a phone could stay on an old version for days, so changes from other devices seemed not to sync (old versions do not know about to-dos, money or bad habits). New versions now install by themselves, and Settings shows which version a device is running.
 - **Every item gets its own colour and icon.** A new skill, habit, project, domain, bad habit or money section arrives with a colour nothing else is using and an emoji that fits its name ("Guitar" gets 🎸, "Python" 🐍), also not used anywhere else. The emoji follows the name as you type until you pick one yourself.
 - **Twelve colours, or your own.** Six new colours (gold, indigo, olive, fuchsia, sky and cocoa), plus a colour wheel for any colour you like. Colours and emoji already in use are marked, with the name of the item using them.
 - **All the emoji.** "All emoji" opens about 1,850 emoji in groups, searchable by word ("book", "rocket"), and you can type or paste any emoji too.

@@ -164,6 +164,7 @@ export function SettingsPage() {
           </p>
         )}
       </section>
+      <p className={styles.version}>Version {__APP_VERSION__}</p>
       {pinMode && <PinDialog mode={pinMode} onClose={() => setPinMode(null)} />}
     </div>
   );

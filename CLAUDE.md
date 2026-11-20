@@ -264,7 +264,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All sixteen migrations in `supabase/migrations/` are applied to the live project
+All fifteen migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-20.
 
 ## Releases

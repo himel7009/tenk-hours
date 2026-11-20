@@ -542,21 +542,26 @@ describe('bad habits', () => {
     });
   });
 
-  it('syncs to-dos between devices, including ticking off and clearing', async () => {
+  it('syncs to-dos with their place and day, ticked off and deleted', async () => {
     store().adoptAccount('user-1');
-    store().addTodo('Read chapter 4');
-    store().addTodo('Email supervisor');
+    store().addTodo('Solve 5 loop problems', { domainId: 'ps', skillId: null, day: '2026-11-16' });
+    store().addTodo('Email supervisor', { domainId: null, skillId: null, day: '2026-11-16' });
     await sync(remote);
     expect(remote.todos.size).toBe(2);
 
-    const read = store().todos.find((todo) => todo.title === 'Read chapter 4')!;
-    store().toggleTodo(read.id);
+    const loops = store().todos.find((todo) => todo.title === 'Solve 5 loop problems')!;
+    expect(remote.todos.get(loops.id)?.row).toMatchObject({ domainId: 'ps', day: '2026-11-16' });
+    store().toggleTodo(loops.id);
+    store().updateTodo(loops.id, { title: 'Solve 6 loop problems' });
     await sync(remote);
-    expect(remote.todos.get(read.id)?.row.done).toBe(true);
+    expect(remote.todos.get(loops.id)?.row).toMatchObject({
+      done: true,
+      title: 'Solve 6 loop problems',
+    });
 
-    store().clearDoneTodos();
+    store().deleteTodo(loops.id);
     await sync(remote);
-    expect(remote.todos.get(read.id)?.deleted).toBe(true);
+    expect(remote.todos.get(loops.id)?.deleted).toBe(true);
     expect(store().todos.map((todo) => todo.title)).toEqual(['Email supervisor']);
   });
 

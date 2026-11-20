@@ -114,7 +114,7 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
 overview rail (Today card, the week from the routine, day and year progress
 from `domain/timeProgress.ts`, the 7-day chart) and the trackers in tabs
 (`TrackerTabs`: today, domains, skills, projects, habits, bad habits). The
-Today tab (`TodayTab`) shows the to-do list, then every project planned
+Today tab (`TodayTab`) shows the to-do list (grouped by domain and skill), then every project planned
 today (wherever it sits), then the planned domains without their projects
 (`hideProjects`); a domain holding only projects is left out. The Projects tab
 lists every project, tagged with its domain (`SkillCard`'s `showDomain`).
@@ -135,9 +135,17 @@ tracker's page. It is separate from the 10,000-hour grid (`HourField`).
 
 ## To-dos
 
-`Todo` (table `todos`, `domain/todos.ts`) is a plain checklist item: a title,
-`done` and `doneAt`. No dates or history; "Clear done" soft-deletes done items.
-It has its own sync cursor (`sync.todoCursor`) and is in backups.
+`Todo` (table `todos`, `domain/todos.ts`) belongs to a domain (`domainId`), a
+tracker (`skillId`) or neither (General), never both, and is planned for a
+`day`. It has its own sync cursor (`sync.todoCursor`) and is in backups.
+
+- An undone to-do whose day has passed shows on the next working day of its
+  domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
+  moves to the next day. Only the first planned day is stored: where it shows
+  now and how often it moved are worked out, never written back.
+- The history (`buildTodoHistory`) reads `doneAt` and those planned days: what
+  was done each day and what was planned but moved on. Done to-dos are kept,
+  not cleared. A to-do whose domain or skill is deleted becomes General.
 
 ## Money
 
@@ -209,7 +217,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All eleven migrations in `supabase/migrations/` are applied to the live project
+All twelve migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-20.
 
 ## Releases

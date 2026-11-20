@@ -113,6 +113,9 @@ interface TodoRow {
   title: string;
   done: boolean;
   done_at: string | null;
+  domain_id: string | null;
+  skill_id: string | null;
+  day: string;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -129,7 +132,8 @@ type Table =
   | 'money_sections'
   | 'money_entries';
 
-const TODO_COLUMNS = 'id,title,done,done_at,created_at,updated_at,deleted_at';
+const TODO_COLUMNS =
+  'id,title,done,done_at,domain_id,skill_id,day,created_at,updated_at,deleted_at';
 
 const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
@@ -343,6 +347,9 @@ function toTodoRow(todo: Todo) {
     title: cleanTodoTitle(todo.title) ?? 'Untitled',
     done: todo.done,
     done_at: todo.done && todo.doneAt !== null ? new Date(todo.doneAt).toISOString() : null,
+    domain_id: todo.domainId,
+    skill_id: todo.domainId === null ? todo.skillId : null,
+    day: todo.day,
     created_at: new Date(todo.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -356,6 +363,9 @@ function fromTodoRow(row: TodoRow): RemoteRow<Todo> {
       title: row.title,
       done: row.done,
       doneAt: row.done_at === null ? null : Date.parse(row.done_at),
+      domainId: row.domain_id,
+      skillId: row.domain_id === null ? row.skill_id : null,
+      day: row.day,
       createdAt: Date.parse(row.created_at),
     },
   };

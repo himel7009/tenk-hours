@@ -1,7 +1,7 @@
 import { normalizeRoutine } from '../domain/routine';
 import { cleanNote, MONEY_AMOUNT_MAX, type MoneyEntry, type MoneySection } from '../domain/money';
 import { cleanTodoTitle, type Todo } from '../domain/todos';
-import { isDayKey } from '../domain/dates';
+import { isDayKey, toDayKey } from '../domain/dates';
 import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
 import {
@@ -263,12 +263,18 @@ function parseTodo(value: unknown): Todo {
     throw new BackupError('This backup contains a to-do that cannot be read.');
   }
   const done = value.done === true;
+  const createdAt = typeof value.createdAt === 'number' ? value.createdAt : Date.now();
+  const domainId = isUuid(value.domainId) ? value.domainId : null;
   return {
     id: value.id,
     title,
     done,
-    createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
+    createdAt,
     doneAt: done && typeof value.doneAt === 'number' ? value.doneAt : null,
+    // Older backups have neither: General, on the day it was written.
+    domainId,
+    skillId: domainId === null && isUuid(value.skillId) ? value.skillId : null,
+    day: isDayKey(value.day) ? value.day : toDayKey(new Date(createdAt)),
   };
 }
 

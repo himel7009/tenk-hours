@@ -55,7 +55,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 12;
+const STORAGE_VERSION = 13;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -162,13 +162,12 @@ interface TrackerActions {
   updateLibraryItem: (id: LibraryItemId, input: LibraryInput) => void;
   deleteLibraryItem: (id: LibraryItemId) => void;
 
-  /** Adds a to-do; returns false if the title is empty. */
-  addTodo: (title: string) => boolean;
+  /** Adds a to-do for a domain, a skill or neither, on a day; false if the title is empty. */
+  addTodo: (title: string, place: TodoPlace) => boolean;
   toggleTodo: (id: TodoId) => void;
-  renameTodo: (id: TodoId, title: string) => void;
+  /** Changes the title, where it belongs, or its day. */
+  updateTodo: (id: TodoId, patch: Partial<TodoPlace & { title: string }>) => void;
   deleteTodo: (id: TodoId) => void;
-  /** Removes every done to-do. */
-  clearDoneTodos: () => void;
 
   addMoneySection: (input: MoneySectionInput) => MoneySectionId;
   updateMoneySection: (id: MoneySectionId, input: MoneySectionInput) => void;
@@ -251,6 +250,13 @@ export type MoneyEntryInput = Pick<
   MoneyEntry,
   'sectionId' | 'kind' | 'toSectionId' | 'day' | 'amount' | 'note'
 >;
+
+export type TodoPlace = Pick<Todo, 'domainId' | 'skillId' | 'day'>;
+
+/** A to-do sits in a domain or a skill, never both. */
+function onePlace(place: TodoPlace): TodoPlace {
+  return { ...place, skillId: place.domainId === null ? place.skillId : null };
+}
 
 function normalizeEntry(input: MoneyEntryInput): MoneyEntryInput {
   return {
@@ -543,7 +549,7 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingLibrary', [id], 'delete'),
         })),
 
-      addTodo: (title) => {
+      addTodo: (title, place) => {
         const clean = cleanTodoTitle(title);
         if (clean === null) return false;
         const todo: Todo = {
@@ -552,6 +558,7 @@ export const useTrackerStore = create<TrackerStore>()(
           done: false,
           createdAt: Date.now(),
           doneAt: null,
+          ...onePlace(place),
         };
         set((state) => ({
           todos: [...state.todos, todo],
@@ -570,11 +577,19 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingTodos', [id], 'upsert'),
         })),
 
-      renameTodo: (id, title) => {
-        const clean = cleanTodoTitle(title);
-        if (clean === null) return;
+      updateTodo: (id, patch) => {
+        const title = patch.title === undefined ? undefined : cleanTodoTitle(patch.title);
+        if (title === null) return;
         set((state) => ({
-          todos: state.todos.map((todo) => (todo.id === id ? { ...todo, title: clean } : todo)),
+          todos: state.todos.map((todo) => {
+            if (todo.id !== id) return todo;
+            const place = onePlace({
+              domainId: patch.domainId === undefined ? todo.domainId : patch.domainId,
+              skillId: patch.skillId === undefined ? todo.skillId : patch.skillId,
+              day: patch.day ?? todo.day,
+            });
+            return { ...todo, ...place, title: title ?? todo.title };
+          }),
           sync: markPending(state.sync, 'pendingTodos', [id], 'upsert'),
         }));
       },
@@ -584,15 +599,6 @@ export const useTrackerStore = create<TrackerStore>()(
           todos: state.todos.filter((todo) => todo.id !== id),
           sync: markPending(state.sync, 'pendingTodos', [id], 'delete'),
         })),
-
-      clearDoneTodos: () =>
-        set((state) => {
-          const done = state.todos.filter((todo) => todo.done).map((todo) => todo.id);
-          return {
-            todos: state.todos.filter((todo) => !todo.done),
-            sync: markPending(state.sync, 'pendingTodos', done, 'delete'),
-          };
-        }),
 
       addMoneySection: (input) => {
         const section: MoneySection = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
@@ -1049,6 +1055,15 @@ export const useTrackerStore = create<TrackerStore>()(
             todoCursor: null,
             pendingTodos: {},
           };
+        }
+        // v12 to-dos had no place or day: General, on the day they were written.
+        if (version >= 11 && version < 13) {
+          state.todos = (state.todos ?? []).map((todo) => ({
+            ...todo,
+            domainId: todo.domainId ?? null,
+            skillId: todo.skillId ?? null,
+            day: todo.day ?? toDayKey(new Date(todo.createdAt)),
+          }));
         }
         // v11 predates money.
         if (version < 12) {

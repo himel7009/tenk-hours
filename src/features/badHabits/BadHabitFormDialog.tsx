@@ -2,10 +2,11 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input } from '../../components/Field';
-import { BAD_HABIT_ICONS, DEFAULT_BAD_HABIT_ICON, type BadHabit } from '../../domain/badHabits';
-import { SKILL_COLORS } from '../../domain/types';
+import type { BadHabit } from '../../domain/badHabits';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { LookPicker } from '../appearance/LookPicker';
+import { useLook } from '../appearance/useLook';
 import formStyles from '../skills/SkillFormDialog.module.css';
 
 interface BadHabitFormDialogProps {
@@ -17,17 +18,12 @@ interface BadHabitFormDialogProps {
 export function BadHabitFormDialog({ habit, onClose }: BadHabitFormDialogProps) {
   const addBadHabit = useTrackerStore((state) => state.addBadHabit);
   const updateBadHabit = useTrackerStore((state) => state.updateBadHabit);
-  const count = useTrackerStore((state) => state.badHabits.length);
   const toast = useToastStore((state) => state.show);
 
   const [name, setName] = useState(habit?.name ?? '');
-  const [icon, setIcon] = useState(habit?.icon ?? DEFAULT_BAD_HABIT_ICON);
-  // Rose first: it reads as "stop" without being the error red.
-  const colors = ['rose', ...SKILL_COLORS.filter((c) => c !== 'rose')] as const;
-  const [color, setColor] = useState(habit?.color ?? colors[count % colors.length]!);
+  const look = useLook({ kind: 'badHabit', name, current: habit, exceptId: habit?.id });
+  const { icon, color } = look;
   const [error, setError] = useState<string | null>(null);
-
-  const icons = [...new Set([icon, ...BAD_HABIT_ICONS])];
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -67,38 +63,7 @@ export function BadHabitFormDialog({ habit, onClose }: BadHabitFormDialogProps) 
           )}
         </Field>
 
-        <fieldset className={formStyles.icons}>
-          <legend>Icon</legend>
-          {icons.map((option) => (
-            <label key={option} className={formStyles.iconChoice}>
-              <input
-                type="radio"
-                name="bad-habit-icon"
-                className="visually-hidden"
-                aria-label={option}
-                checked={icon === option}
-                onChange={() => setIcon(option)}
-              />
-              <span aria-hidden="true">{option}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset className={formStyles.colors}>
-          <legend>Colour</legend>
-          {colors.map((option) => (
-            <label key={option} className={formStyles.swatch} data-color={option}>
-              <input
-                type="radio"
-                name="bad-habit-color"
-                className="visually-hidden"
-                checked={color === option}
-                onChange={() => setColor(option)}
-              />
-              <span className="visually-hidden">{option}</span>
-            </label>
-          ))}
-        </fieldset>
+        <LookPicker look={look} />
 
         {error && (
           <p className={formStyles.error} role="alert">

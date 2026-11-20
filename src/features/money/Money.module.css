@@ -508,39 +508,6 @@
 
 /* ---- Section dialog ---- */
 
-.colors {
-  display: flex;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.colors legend {
-  margin-bottom: var(--space-2);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
-.colors label {
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 50%;
-  background: var(--skill);
-  cursor: pointer;
-}
-
-.colors label:has(input:checked) {
-  box-shadow:
-    0 0 0 2px var(--surface),
-    0 0 0 4px var(--ink);
-}
-
-.colors label:has(input:focus-visible) {
-  outline: 2px solid var(--ink);
-  outline-offset: 4px;
-}
-
 /* ---- Import ---- */
 
 .importTitle {

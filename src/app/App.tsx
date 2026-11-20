@@ -12,6 +12,7 @@ import { SkillPage } from '../features/skills/SkillPage';
 import { useAccountStore } from '../store/accountStore';
 import { useCloudSync } from '../sync/useCloudSync';
 import { AppLayout } from './AppLayout';
+import { CustomColorStyles } from '../features/appearance/CustomColorStyles';
 import { NotFoundPage } from './NotFoundPage';
 import { useApplyTheme } from './useApplyTheme';
 
@@ -23,6 +24,7 @@ export function App() {
   // Hash routing keeps deep links working on static hosts such as GitHub Pages.
   return (
     <HashRouter>
+      <CustomColorStyles />
       <PasswordRecoveryRedirect />
       <Routes>
         <Route element={<AppLayout />}>

@@ -61,3 +61,20 @@
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
+
+.looks {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  margin-top: var(--space-5);
+  max-width: 36rem;
+}
+
+.looks h3 {
+  font-size: var(--text-md);
+}
+
+.looks p {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}

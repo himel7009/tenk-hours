@@ -141,3 +141,24 @@ describe('streak switch', () => {
     expect(store().skills.find((skill) => skill.id === id)?.keepStreak).toBe(true);
   });
 });
+
+describe('repeated looks', () => {
+  it('gives the newer of two look-alikes its own icon and colour, and syncs it', () => {
+    store().adoptAccount('user-1');
+    const first = newSkill();
+    const second = newSkill();
+    const domainId = store().addDomain({ name: 'Art', icon: '🎨', color: 'plum' });
+    const firstRev = store().sync.pendingSkills[first]!.rev;
+    expect(store().fixRepeatedLooks()).toBe(2);
+    const skills = store().skills;
+    expect(skills.find((s) => s.id === first)).toMatchObject({ icon: '🎨', color: 'plum' });
+    const changed = skills.find((s) => s.id === second)!;
+    expect(changed.icon).not.toBe('🎨');
+    expect(changed.color).not.toBe('plum');
+    expect(store().domains[0]!.icon).not.toBe('🎨');
+    expect(store().sync.pendingSkills[second]).toBeDefined();
+    expect(store().sync.pendingSkills[first]!.rev).toBe(firstRev);
+    expect(store().sync.pendingDomains[domainId]).toBeDefined();
+    expect(store().fixRepeatedLooks()).toBe(0);
+  });
+});

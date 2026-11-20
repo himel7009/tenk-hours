@@ -32,7 +32,7 @@ failure blocks the deploy.
   migration; add a new file. Any new table needs row level security policies
   and a case in `supabase/tests/rls_test.sql`.
 - Styling uses the tokens in `src/styles/tokens.css`. No new colours, fonts or
-  UI libraries without asking.
+  UI libraries without asking. (Item colours are the exception, below.)
 - UI copy is plain sentence case. Buttons say what they do ("Save changes").
 - Names wrap (`overflow-wrap: anywhere`); never cut user text off with an
   ellipsis. The running timer bar alone clamps to two lines.
@@ -182,6 +182,30 @@ cursor (`sync.moneyCursor`) and are in backups and live updates.
 - The bad habits PIN (`badHabitLock`) also hides money (`usePrivacyLocked`).
   Deleting a section deletes its entries and any moves into it.
 
+## Colours and icons
+
+Skills, habits, projects, domains, bad habits and money sections each have an
+`icon` (one emoji) and a `color`, and they share one pool
+(`domain/appearance.ts`).
+
+- `color` is one of the twelve `SKILL_COLORS` (light and dark values in
+  `tokens.css`) or a custom lowercase `#rrggbb`. `isSkillColor` and the
+  database checks accept exactly that; anything else becomes cobalt in a
+  backup. Custom colours get their `[data-color]` rule from
+  `CustomColorStyles` at the app root (`customColorCss` writes only values
+  that pass the check, so stored text cannot inject CSS).
+- New items are filled in by `useLook`: `pickColor` (the least used named
+  colour) and `suggestEmoji` (the best unused match for the name from
+  `KEYWORDS`, then the kind's pool). The icon follows the name until picked
+  by hand. Edited items keep their look. Repeats are allowed when chosen,
+  but marked with who else uses them.
+- `LookPicker` is the shared form field. Its full list is
+  `src/data/emojiLibrary.json`, generated from emojibase-data by
+  `npm run emoji` (Emoji 14 and older, so nothing shows as an empty box) and
+  loaded only when opened.
+- `fixRepeatedLooks` (Settings) gives items that repeat an older item's icon
+  or colour a new one (`planLookFixes`).
+
 ## Report
 
 `features/report/` is the Report page (`/report`): a week (Monday to Sunday)
@@ -232,7 +256,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All thirteen migrations in `supabase/migrations/` are applied to the live project
+All fourteen migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-20.
 
 ## Releases

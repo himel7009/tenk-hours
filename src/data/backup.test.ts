@@ -127,6 +127,36 @@ describe('backup', () => {
     expect(parseBackup(json).library[0]?.url).toBe('');
   });
 
+  it('keeps custom colours and replaces anything that is not a colour', () => {
+    const skill = (id: string, color: string) => ({
+      id,
+      name: 'Python',
+      color,
+      targetHours: 10_000,
+    });
+    const json = JSON.stringify({
+      ...createBackup({
+        skills: [],
+        sessions: [],
+        library: [],
+        domains: [],
+        badHabits: [],
+        checkIns: [],
+        todos: [],
+        moneySections: [],
+        moneyEntries: [],
+        debts: [],
+        debtPayments: [],
+      }),
+      skills: [
+        skill('00000000-0000-4000-8000-0000000000a1', '#1f8a70'),
+        skill('00000000-0000-4000-8000-0000000000a2', 'gold'),
+        skill('00000000-0000-4000-8000-0000000000a3', "red'] body {"),
+      ],
+    });
+    expect(parseBackup(json).skills.map((s) => s.color)).toEqual(['#1f8a70', 'gold', 'cobalt']);
+  });
+
   it('fills in defaults for backups made before habits existed', () => {
     const oldSkill = { id: SKILL_ID, name: 'Python', color: 'moss', targetHours: 10_000 };
     const json = JSON.stringify({

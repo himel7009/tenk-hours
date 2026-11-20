@@ -4,13 +4,12 @@ import { Dialog } from '../../components/Dialog';
 import { Field, Input } from '../../components/Field';
 import { WeekdayPicker } from '../../components/WeekdayPicker';
 import type { Weekday } from '../../domain/routine';
-import { DEFAULT_DOMAIN_ICON, type Domain } from '../../domain/domains';
-import { ICON_CHOICES, SKILL_COLORS } from '../../domain/types';
+import type { Domain } from '../../domain/domains';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { LookPicker } from '../appearance/LookPicker';
+import { useLook } from '../appearance/useLook';
 import formStyles from '../skills/SkillFormDialog.module.css';
-
-const DOMAIN_ICONS = [DEFAULT_DOMAIN_ICON, '🧪', '🏗️', '💼', '🎭', '🏅', '🩺', '⚙️'];
 
 interface DomainFormDialogProps {
   /** The domain to edit. Omit to create a new one. */
@@ -23,22 +22,17 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
   const updateDomain = useTrackerStore((state) => state.updateDomain);
   const deleteDomain = useTrackerStore((state) => state.deleteDomain);
   const setRoutine = useTrackerStore((state) => state.setRoutine);
-  const domainCount = useTrackerStore((state) => state.domains.length);
   const skillCount = useTrackerStore(
     (state) => state.skills.filter((skill) => skill.domainId === domain?.id).length,
   );
   const toast = useToastStore((state) => state.show);
 
   const [name, setName] = useState(domain?.name ?? '');
-  const [icon, setIcon] = useState(domain?.icon ?? DEFAULT_DOMAIN_ICON);
-  const [color, setColor] = useState(
-    domain?.color ?? SKILL_COLORS[domainCount % SKILL_COLORS.length]!,
-  );
+  const look = useLook({ kind: 'domain', name, current: domain, exceptId: domain?.id });
+  const { icon, color } = look;
   const [routineDays, setRoutineDays] = useState<Weekday[]>(domain?.routineDays ?? []);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-  const icons = [...new Set([icon, ...DOMAIN_ICONS, ...ICON_CHOICES])].slice(0, 40);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -69,7 +63,7 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
 
   return (
     <Dialog title={domain ? 'Edit domain' : 'Add a domain'} onClose={onClose}>
-      <form onSubmit={handleSubmit} className={formStyles.form} noValidate>
+      <form onSubmit={handleSubmit} className={formStyles.form} data-color={color} noValidate>
         <Field
           label="Name"
           hint="A field that several skills belong to. Its hours are the total of those skills."
@@ -87,38 +81,7 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
           )}
         </Field>
 
-        <fieldset className={formStyles.icons} data-color={color}>
-          <legend>Icon</legend>
-          {icons.map((option) => (
-            <label key={option} className={formStyles.iconChoice}>
-              <input
-                type="radio"
-                name="domain-icon"
-                className="visually-hidden"
-                aria-label={option}
-                checked={icon === option}
-                onChange={() => setIcon(option)}
-              />
-              <span aria-hidden="true">{option}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset className={formStyles.colors}>
-          <legend>Colour</legend>
-          {SKILL_COLORS.map((option) => (
-            <label key={option} className={formStyles.swatch} data-color={option}>
-              <input
-                type="radio"
-                name="domain-color"
-                className="visually-hidden"
-                checked={color === option}
-                onChange={() => setColor(option)}
-              />
-              <span className="visually-hidden">{option}</span>
-            </label>
-          ))}
-        </fieldset>
+        <LookPicker look={look} />
 
         <WeekdayPicker
           legend="Days you study this domain"

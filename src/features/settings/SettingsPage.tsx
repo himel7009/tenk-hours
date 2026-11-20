@@ -8,6 +8,7 @@ import { useAccountStore } from '../../store/accountStore';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
 import { AccountSection } from '../account/AccountSection';
+import { useRepeatedLooks } from '../appearance/useRepeatedLooks';
 import { PinDialog, type PinDialogMode } from '../badHabits/PinDialog';
 import styles from './SettingsPage.module.css';
 
@@ -106,6 +107,7 @@ export function SettingsPage() {
             </label>
           ))}
         </div>
+        <RepeatedLooks />
       </section>
 
       {isCloudEnabled && (
@@ -163,6 +165,37 @@ export function SettingsPage() {
         )}
       </section>
       {pinMode && <PinDialog mode={pinMode} onClose={() => setPinMode(null)} />}
+    </div>
+  );
+}
+
+/** Offers to give items that copy an older item's icon or colour their own. */
+function RepeatedLooks() {
+  const repeats = useRepeatedLooks();
+  const fixRepeatedLooks = useTrackerStore((state) => state.fixRepeatedLooks);
+  const toast = useToastStore((state) => state.show);
+  return (
+    <div className={styles.looks}>
+      <h3>Colours and icons</h3>
+      <p>
+        New skills, habits, projects, domains, bad habits and money sections get a colour and an
+        icon nothing else uses.{' '}
+        {repeats === 0
+          ? 'Everything already looks different.'
+          : `${repeats} ${repeats === 1 ? 'item shares' : 'items share'} an icon or colour with an older one.`}
+      </p>
+      {repeats > 0 && (
+        <Button
+          onClick={() => {
+            const changed = fixRepeatedLooks();
+            toast(
+              `Gave ${changed} ${changed === 1 ? 'item' : 'items'} a look of ${changed === 1 ? 'its' : 'their'} own`,
+            );
+          }}
+        >
+          Give each its own look
+        </Button>
+      )}
     </div>
   );
 }

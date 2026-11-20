@@ -149,6 +149,18 @@ select pg_temp.expect_error(
     values ('90000000-0000-0000-0000-000000000002', 'gifted', 'X', 100, '2026-11-10')$$,
   'a debt is borrowed or lent');
 
+-- Colours are one of the twelve names or a lowercase six-digit hex code.
+select pg_temp.expect_affected(
+  $$update public.skills set color = '#1f8a70' where id = '10000000-0000-0000-0000-000000000001'$$,
+  1, 'a custom hex colour is allowed');
+select pg_temp.expect_affected(
+  $$update public.domains set color = 'fuchsia'$$, 1, 'a new named colour is allowed');
+select pg_temp.expect_error(
+  $$update public.skills set color = 'red; } body { display: none'$$,
+  'a colour that is neither a name nor a hex code');
+select pg_temp.expect_error(
+  $$update public.money_sections set color = '#ABCDEF'$$, 'an uppercase hex colour');
+
 -- User B sees nothing of A's and cannot change or reference it.
 select pg_temp.sign_in('00000000-0000-0000-0000-00000000000b');
 select pg_temp.expect_count('select 1 from public.skills', 0, 'B cannot read A''s skills');

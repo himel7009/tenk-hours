@@ -4,6 +4,10 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-20
 
+- **Every item gets its own colour and icon.** A new skill, habit, project, domain, bad habit or money section arrives with a colour nothing else is using and an emoji that fits its name ("Guitar" gets 🎸, "Python" 🐍), also not used anywhere else. The emoji follows the name as you type until you pick one yourself.
+- **Twelve colours, or your own.** Six new colours (gold, indigo, olive, fuchsia, sky and cocoa), plus a colour wheel for any colour you like. Colours and emoji already in use are marked, with the name of the item using them.
+- **All the emoji.** "All emoji" opens about 1,850 emoji in groups, searchable by word ("book", "rocket"), and you can type or paste any emoji too.
+- **Settings tidies older items.** If two items already share a colour or icon, Settings offers to give the newer one its own.
 - **Calculator on the Money page.** Tap or type a sum (+ − × ÷, brackets, percent the way a phone calculator does it: 500 + 10% is 550), see the answer as you go, and reuse earlier answers. One button writes the result down as an expense, ready for you to add what it was for.
 - **Long names wrap.** A long skill, domain or section name now wraps onto the next line instead of being cut off with "…".
 - **Debts.** A Debts view on the Money page for money you borrowed and money you lent: who, how much, when it started and when it should be settled. Record payments as they happen, in part or in full, and see what is left. Say which section the borrowed money went into (or the lent money came from), and which section each payment went through, and the section balances follow, without any of it counting as spending. Debts due within three days or overdue show at the top of the Money page.

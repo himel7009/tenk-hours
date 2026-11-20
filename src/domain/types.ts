@@ -36,7 +36,7 @@ export interface Skill {
   name: string;
   /** An emoji shown next to the name. */
   icon: string;
-  /** Key into SKILL_COLORS. */
+  /** A name from SKILL_COLORS or a custom hex code. */
   color: SkillColor;
   /** Total hours aimed for. Only meaningful for skills. */
   targetHours: number;
@@ -84,8 +84,42 @@ export interface ActiveTimer {
 
 export type Theme = 'system' | 'light' | 'dark';
 
-export const SKILL_COLORS = ['cobalt', 'persimmon', 'moss', 'plum', 'teal', 'rose'] as const;
-export type SkillColor = (typeof SKILL_COLORS)[number];
+/**
+ * The named colours, in the order new items are given them, so neighbours in
+ * a list look as different as possible. Each has light and dark values in
+ * tokens.css.
+ */
+export const SKILL_COLORS = [
+  'cobalt',
+  'persimmon',
+  'moss',
+  'plum',
+  'teal',
+  'rose',
+  'gold',
+  'indigo',
+  'olive',
+  'fuchsia',
+  'sky',
+  'cocoa',
+] as const;
+export type NamedColor = (typeof SKILL_COLORS)[number];
+/** A named colour, or a custom one as a lowercase hex code such as #1f8a70. */
+export type SkillColor = NamedColor | `#${string}`;
+
+const HEX_COLOR = /^#[0-9a-f]{6}$/;
+
+/** Whether a value is a colour the app can show. The database checks the same. */
+export function isSkillColor(value: unknown): value is SkillColor {
+  return (
+    typeof value === 'string' &&
+    (SKILL_COLORS.includes(value as NamedColor) || HEX_COLOR.test(value))
+  );
+}
+
+export function isCustomColor(color: SkillColor): color is `#${string}` {
+  return HEX_COLOR.test(color);
+}
 
 export const DEFAULT_TARGET_HOURS = 10_000;
 export const DEFAULT_DAILY_GOAL_MINUTES = 60;
@@ -94,39 +128,3 @@ export const DEFAULT_ICONS: Record<TrackerKind, string> = {
   habit: '🌱',
   project: '🛠️',
 };
-
-/** Emoji offered when creating a skill or habit. */
-export const ICON_CHOICES = [
-  '🎯',
-  '💻',
-  '🐍',
-  '🧠',
-  '🤖',
-  '📊',
-  '🧮',
-  '🔬',
-  '📚',
-  '✍️',
-  '🗣️',
-  '🌍',
-  '🎨',
-  '✏️',
-  '📷',
-  '🎬',
-  '🎹',
-  '🎸',
-  '🎤',
-  '♟️',
-  '🏃',
-  '🏋️',
-  '🧘',
-  '🚴',
-  '🏊',
-  '⚽',
-  '🌱',
-  '💧',
-  '😴',
-  '🍳',
-  '🧹',
-  '🙏',
-] as const;

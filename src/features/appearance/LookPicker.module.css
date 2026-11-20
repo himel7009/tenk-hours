@@ -1,0 +1,245 @@
+.look {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field legend {
+  margin-bottom: var(--space-1);
+  padding: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* ---- Icons ---- */
+
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.emoji {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emoji:hover {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.emoji[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--skill) 22%, var(--surface));
+  box-shadow: inset 0 0 0 2px var(--skill);
+}
+
+/* Already on another item: still pickable, just quieter. */
+.emoji[data-used] {
+  opacity: 0.45;
+}
+
+.emoji[data-used][aria-pressed='true'],
+.emoji[data-used]:hover {
+  opacity: 1;
+}
+
+.emoji:focus-visible,
+.more:focus-visible,
+.groupTab:focus-visible,
+.useOwn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.more,
+.useOwn {
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more:hover,
+.useOwn:hover:not(:disabled) {
+  border-color: var(--ink-soft);
+}
+
+.useOwn:disabled {
+  color: var(--ink-soft);
+  cursor: default;
+}
+
+.library {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--skill) 5%, var(--surface));
+}
+
+.search {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+}
+
+.groups {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+}
+
+.groupTab {
+  flex: 0 0 auto;
+  width: 2.4rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.groupTab[aria-selected='true'] {
+  border-bottom-color: var(--skill);
+  opacity: 1;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
+  max-height: 15rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.note {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--space-3) 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.own {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.own .search {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- Colours ---- */
+
+.colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.swatch {
+  position: relative;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--skill);
+  cursor: pointer;
+}
+
+/* A small hole marks a colour something else already has. */
+.swatch[data-used]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: auto;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.swatch:has(input:checked) {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ink);
+}
+
+.swatch:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 5px;
+}
+
+.custom {
+  overflow: hidden;
+  background: conic-gradient(
+    var(--persimmon),
+    var(--gold),
+    var(--moss),
+    var(--teal),
+    var(--cobalt),
+    var(--plum),
+    var(--rose),
+    var(--persimmon)
+  );
+}
+
+.custom[data-active] {
+  background: var(--skill);
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--ink);
+}
+
+.custom:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 5px;
+}
+
+.colorInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}

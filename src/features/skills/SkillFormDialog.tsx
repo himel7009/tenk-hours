@@ -9,17 +9,16 @@ import { plannedPhrase, type Weekday } from '../../domain/routine';
 import type { DomainId } from '../../domain/domains';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
-  DEFAULT_ICONS,
   DEFAULT_TARGET_HOURS,
   canJoinDomain,
   hasDailyGoal,
-  ICON_CHOICES,
-  SKILL_COLORS,
   type Skill,
   type TrackerKind,
 } from '../../domain/types';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { LookPicker } from '../appearance/LookPicker';
+import { useLook } from '../appearance/useLook';
 import styles from './SkillFormDialog.module.css';
 
 const MAX_TARGET_HOURS = 100_000;
@@ -53,17 +52,12 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const [kind, setKind] = useState<TrackerKind>(props.skill ? props.skill.kind : props.kind);
   const { noun, add, placeholder } = COPY[kind];
 
-  const changeKind = (next: TrackerKind) => {
-    // An icon left at the old kind's default follows the switch.
-    if (icon === DEFAULT_ICONS[kind]) setIcon(DEFAULT_ICONS[next]);
-    setKind(next);
-  };
+  const changeKind = (next: TrackerKind) => setKind(next);
 
   const navigate = useNavigate();
   const addSkill = useTrackerStore((state) => state.addSkill);
   const updateSkill = useTrackerStore((state) => state.updateSkill);
   const deleteSkill = useTrackerStore((state) => state.deleteSkill);
-  const skillCount = useTrackerStore((state) => state.skills.length);
   const domains = useTrackerStore((state) => state.domains);
   const sessionCount = useTrackerStore(
     (state) => state.sessions.filter((session) => session.skillId === skill?.id).length,
@@ -71,10 +65,8 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const toast = useToastStore((state) => state.show);
 
   const [name, setName] = useState(skill?.name ?? '');
-  const [icon, setIcon] = useState(skill?.icon ?? DEFAULT_ICONS[kind]);
-  const [color, setColor] = useState(
-    skill?.color ?? SKILL_COLORS[skillCount % SKILL_COLORS.length]!,
-  );
+  const look = useLook({ kind, name, current: skill, exceptId: skill?.id });
+  const { icon, color } = look;
   const [target, setTarget] = useState(String(skill?.targetHours ?? DEFAULT_TARGET_HOURS));
   const [dailyGoal, setDailyGoal] = useState(
     String(skill?.dailyGoalMinutes ?? DEFAULT_DAILY_GOAL_MINUTES),
@@ -91,11 +83,6 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   const domainSelected = canJoinDomain(kind)
     ? domains.find((domain) => domain.id === domainId)
     : undefined;
-
-  // An icon saved earlier may not be in today's list; keep it selectable.
-  const icons = ICON_CHOICES.includes(icon as (typeof ICON_CHOICES)[number])
-    ? ICON_CHOICES
-    : [icon, ...ICON_CHOICES];
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -191,38 +178,7 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
           )}
         </Field>
 
-        <fieldset className={styles.icons} data-color={color}>
-          <legend>Icon</legend>
-          {icons.map((option) => (
-            <label key={option} className={styles.iconChoice}>
-              <input
-                type="radio"
-                name="icon"
-                className="visually-hidden"
-                aria-label={option}
-                checked={icon === option}
-                onChange={() => setIcon(option)}
-              />
-              <span aria-hidden="true">{option}</span>
-            </label>
-          ))}
-        </fieldset>
-
-        <fieldset className={styles.colors}>
-          <legend>Colour</legend>
-          {SKILL_COLORS.map((option) => (
-            <label key={option} className={styles.swatch} data-color={option}>
-              <input
-                type="radio"
-                name="color"
-                className="visually-hidden"
-                checked={color === option}
-                onChange={() => setColor(option)}
-              />
-              <span className="visually-hidden">{option}</span>
-            </label>
-          ))}
-        </fieldset>
+        <LookPicker look={look} />
 
         {canJoinDomain(kind) && domains.length > 0 && (
           <Field label="Domain" hint="Its hours count towards the domain's total.">

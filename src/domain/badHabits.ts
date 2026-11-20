@@ -25,25 +25,6 @@ export interface CheckIn {
 
 export const DEFAULT_BAD_HABIT_ICON = '🚫';
 
-export const BAD_HABIT_ICONS = [
-  '🚫',
-  '📱',
-  '🚬',
-  '🍺',
-  '🍔',
-  '🍩',
-  '🥤',
-  '☕',
-  '🎮',
-  '📺',
-  '🛒',
-  '💸',
-  '😴',
-  '⏰',
-  '🗯️',
-  '🤳',
-] as const;
-
 /**
  * The id of the check-in for a habit on a day. It is derived from the two, so
  * every device answering for the same day writes the same row and the later

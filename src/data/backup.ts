@@ -16,9 +16,9 @@ import {
   DEFAULT_DAILY_GOAL_MINUTES,
   DEFAULT_ICONS,
   SKILL_COLORS,
+  isSkillColor,
   type Session,
   type Skill,
-  type SkillColor,
   type TrackerKind,
 } from '../domain/types';
 
@@ -265,9 +265,6 @@ const isUuid = (value: unknown): value is string =>
 
 const isPositive = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value) && value > 0;
-
-const isSkillColor = (value: unknown): value is SkillColor =>
-  SKILL_COLORS.includes(value as SkillColor);
 
 function parseTodo(value: unknown): Todo {
   const title =

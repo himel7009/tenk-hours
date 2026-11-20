@@ -7,6 +7,13 @@ import { normalizeRoutine, type Weekday } from '../domain/routine';
 import { DEBT_PERSON_MAX, type Debt, type DebtId, type DebtPayment } from '../domain/debts';
 import { stableUuid } from '../domain/ids';
 import {
+  lookInUse,
+  pickColor,
+  planLookFixes,
+  suggestEmoji,
+  type AppearanceKind,
+} from '../domain/appearance';
+import {
   cleanNote,
   monthRange,
   type MoneyEntry,
@@ -31,12 +38,7 @@ import {
 } from '../domain/badHabits';
 import type { Domain, DomainId } from '../domain/domains';
 import type { LibraryItem, LibraryItemId } from '../domain/library';
-import {
-  DEFAULT_DAILY_GOAL_MINUTES,
-  DEFAULT_ICONS,
-  SKILL_COLORS,
-  type TrackerKind,
-} from '../domain/types';
+import { DEFAULT_DAILY_GOAL_MINUTES, DEFAULT_ICONS, type TrackerKind } from '../domain/types';
 import type {
   ActiveTimer,
   Session,
@@ -172,6 +174,11 @@ interface TrackerActions {
   updateTodo: (id: TodoId, patch: Partial<TodoPlace & { title: string }>) => void;
   deleteTodo: (id: TodoId) => void;
 
+  /**
+   * Gives anything that repeats an older item's icon or colour a new one.
+   * Returns how many items changed.
+   */
+  fixRepeatedLooks: () => number;
   addMoneySection: (input: MoneySectionInput) => MoneySectionId;
   updateMoneySection: (id: MoneySectionId, input: MoneySectionInput) => void;
   /** Removes a section with every entry in it or moved into it. */
@@ -296,13 +303,12 @@ function normalizeEntry(input: MoneyEntryInput): MoneyEntryInput {
 }
 
 /** A sensible icon for a section from its name. */
-export function suggestSectionIcon(name: string): string {
-  if (/meal|food|bazar|grocer/i.test(name)) return '🍚';
-  if (/fund|saving|emergency/i.test(name)) return '🏦';
-  if (/personal|pocket|daily/i.test(name)) return '👤';
-  if (/rent|house|home/i.test(name)) return '🏠';
-  if (/study|book|course/i.test(name)) return '📚';
-  return '💼';
+/** The kinds of the collections passed to planLookFixes, in order. */
+const LOOK_KINDS: AppearanceKind[] = ['skill', 'domain', 'badHabit', 'section'];
+
+/** Every colour and icon in use across the app, but the item being edited. */
+export function selectLookInUse(state: TrackerState, exceptId?: string) {
+  return lookInUse([state.skills, state.domains, state.badHabits, state.moneySections], exceptId);
 }
 
 function markPending(sync: SyncState, key: PendingKey, ids: string[], op: PendingOp): SyncState {
@@ -627,6 +633,41 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingTodos', [id], 'delete'),
         })),
 
+      fixRepeatedLooks: () => {
+        const state = get();
+        const fixes = planLookFixes(
+          [state.skills, state.domains, state.badHabits, state.moneySections],
+          LOOK_KINDS,
+        );
+        if (fixes.length === 0) return 0;
+        const patch = <T extends { id: string; icon: string; color: SkillColor }>(
+          items: T[],
+          collection: number,
+        ): T[] =>
+          items.map((item) => {
+            const fix = fixes.find((f) => f.collection === collection && f.id === item.id);
+            return fix
+              ? { ...item, icon: fix.icon ?? item.icon, color: fix.color ?? item.color }
+              : item;
+          });
+        const changed = (collection: number) =>
+          fixes.filter((f) => f.collection === collection).map((f) => f.id);
+        set((current) => {
+          let sync = markPending(current.sync, 'pendingSkills', changed(0), 'upsert');
+          sync = markPending(sync, 'pendingDomains', changed(1), 'upsert');
+          sync = markPending(sync, 'pendingBadHabits', changed(2), 'upsert');
+          sync = markPending(sync, 'pendingMoneySections', changed(3), 'upsert');
+          return {
+            skills: patch(current.skills, 0),
+            domains: patch(current.domains, 1),
+            badHabits: patch(current.badHabits, 2),
+            moneySections: patch(current.moneySections, 3),
+            sync,
+          };
+        });
+        return fixes.length;
+      },
+
       addMoneySection: (input) => {
         const section: MoneySection = { id: crypto.randomUUID(), createdAt: Date.now(), ...input };
         set((state) => ({
@@ -752,19 +793,22 @@ export const useTrackerStore = create<TrackerStore>()(
         const created: MoneySection[] = [];
         const imported: MoneyEntry[] = [];
         const { start } = monthRange(sheet.month);
-        sheet.sections.forEach((part, index) => {
+        const look = selectLookInUse(get());
+        sheet.sections.forEach((part) => {
           let sectionId = targets[part.name] ?? null;
           if (sectionId === null) {
             const section: MoneySection = {
               id: crypto.randomUUID(),
               name: part.name.slice(0, 60),
-              icon: suggestSectionIcon(part.name),
-              color: SKILL_COLORS[index % SKILL_COLORS.length]!,
+              icon: suggestEmoji(part.name, look.icons, 'section'),
+              color: pickColor(look.colors),
               // A fund or savings pot usually keeps its balance month to month.
               carryOver: /fund|saving/i.test(part.name),
               createdAt: now,
             };
             created.push(section);
+            look.icons.push(section.icon);
+            look.colors.push(section.color);
             sectionId = section.id;
           }
           if (part.budget > 0) {

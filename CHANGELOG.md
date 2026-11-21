@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-21
+
+- **To-dos follow your routine.** The "Belongs to" list shows only the projects, skills and habits your routine plans for the chosen day. Pick another date and the list changes to that day's plan. An unfinished to-do still moves on to the next working day by itself.
+
 ## 2026-11-20
 
 - **To-do picker by kind.** "Belongs to" now lists Projects, Skills and Habits in their own groups, with today's first and the rest marked "not today". Things you do every day, such as a project with no set days, no longer land under "Other days".

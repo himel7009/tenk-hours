@@ -9,6 +9,7 @@ import {
   planTodo,
   targetOf,
   groupTodoTargets,
+  isTargetOpenOn,
   todoTargets,
   type Todo,
   type TodoContext,
@@ -185,13 +186,20 @@ it('offers skills, not domains, for a new to-do, but keeps a domain an old one h
   expect(todoTargets(context, domain).map((t) => t.key)).toContain('domain:ps');
 });
 
-it('groups the picker into projects, skills and habits, today first', () => {
+it('offers only what the routine plans for the day, grouped by kind', () => {
   // A Tuesday: operating systems is on, problem solving is not, the project is every day.
-  const groups = groupTodoTargets(todoTargets(context), '2026-11-17');
-  expect(groups.map((g) => [g.label, g.targets.map((t) => t.key)])).toEqual([
+  const tuesday = groupTodoTargets(todoTargets(context), '2026-11-17');
+  expect(tuesday.map((g) => [g.label, g.targets.map((t) => t.key)])).toEqual([
     ['Projects', ['skill:thesis']],
-    ['Skills', ['skill:os', 'skill:cp']],
+    ['Skills', ['skill:os']],
   ]);
+  // A Monday: competitive programming follows its domain, problem solving.
+  const monday = groupTodoTargets(todoTargets(context), '2026-11-16');
+  expect(monday.find((g) => g.label === 'Skills')?.targets.map((t) => t.key)).toEqual(['skill:cp']);
+  // A to-do's own place stays listed on any day.
   const old = targetOf({ domainId: 'ps', skillId: null }, context);
-  expect(groupTodoTargets(todoTargets(context, old), '2026-11-17').at(-1)?.label).toBe('Domains');
+  const kept = groupTodoTargets(todoTargets(context, old), '2026-11-17', old.key);
+  expect(kept.at(-1)).toMatchObject({ label: 'Domains', targets: [old] });
+  expect(isTargetOpenOn(GENERAL, '2026-11-17')).toBe(true);
+  expect(isTargetOpenOn(old, '2026-11-17')).toBe(false);
 });

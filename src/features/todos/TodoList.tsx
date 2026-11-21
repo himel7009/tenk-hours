@@ -1,10 +1,9 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '../../components/Button';
-import { isPlannedOn } from '../../domain/routine';
 import {
-  defaultTodoDay,
   GENERAL,
   groupTodoTargets,
+  isTargetOpenOn,
   TODO_TITLE_MAX,
   type PlannedTodo,
 } from '../../domain/todos';
@@ -34,10 +33,11 @@ export function TodoList() {
   const [editing, setEditing] = useState<PlannedTodo | null>(null);
   const [history, setHistory] = useState(false);
 
-  const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
-  // The day follows the place until one is picked by hand.
-  const day = pickedDay ?? defaultTodoDay(target, today);
-  const groups = groupTodoTargets(targets, today);
+  // The day decides the list: only what the routine plans for it is offered.
+  const day = pickedDay ?? today;
+  const picked = targets.find((t) => t.key === targetKey) ?? GENERAL;
+  const target = isTargetOpenOn(picked, day) ? picked : GENERAL;
+  const groups = groupTodoTargets(targets, day);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -81,20 +81,13 @@ export function TodoList() {
         <div className={styles.addRow}>
           <label className={styles.place}>
             <span className="visually-hidden">To-do belongs to</span>
-            <select
-              value={target.key}
-              onChange={(event) => {
-                setTargetKey(event.target.value);
-                setPickedDay(null);
-              }}
-            >
+            <select value={target.key} onChange={(event) => setTargetKey(event.target.value)}>
               <option value={GENERAL.key}>📝 General</option>
               {groups.map((group) => (
                 <optgroup key={group.label} label={group.label}>
                   {group.targets.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.icon} {t.name}
-                      {isPlannedOn(t.routine, today) ? '' : ' (not today)'}
                     </option>
                   ))}
                 </optgroup>
@@ -115,10 +108,9 @@ export function TodoList() {
           </Button>
         </div>
         <p className={styles.addHint}>
-          {day === today
-            ? `For today${target === GENERAL ? '' : `, under ${target.name}`}.`
-            : `Goes to ${target.name} on ${shortDay(day)}${pickedDay ? '' : ', its next working day'}.`}{' '}
-          Not done by then, it moves on to the next working day by itself.
+          {day === today ? 'For today' : `For ${shortDay(day)}`}
+          {target === GENERAL ? '' : `, under ${target.name}`}. The list shows what your routine
+          plans for that day. Not done by then, it moves on to the next working day by itself.
         </p>
       </form>
 

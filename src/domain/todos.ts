@@ -264,13 +264,26 @@ const GROUPS: { kind: TodoTarget['kind']; label: string }[] = [
 ];
 
 /**
- * The picker's groups, General left out: projects, skills and habits, each
- * with what the routine plans for `day` first. Empty groups are dropped.
+ * The picker's groups, General left out: the projects, skills and habits the
+ * routine plans for `day`, so a to-do only goes where that day's work is.
+ * `keepKey` stays listed whatever the day (the place a to-do already has).
+ * Empty groups are dropped.
  */
-export function groupTodoTargets(targets: readonly TodoTarget[], day: DayKey): TodoTargetGroup[] {
-  return GROUPS.map(({ kind, label }) => {
-    const own = targets.filter((target) => target.kind === kind);
-    const planned = own.filter((target) => isPlannedOn(target.routine, day));
-    return { label, targets: [...planned, ...own.filter((t) => !planned.includes(t))] };
-  }).filter((group) => group.targets.length > 0);
+export function groupTodoTargets(
+  targets: readonly TodoTarget[],
+  day: DayKey,
+  keepKey?: string,
+): TodoTargetGroup[] {
+  return GROUPS.map(({ kind, label }) => ({
+    label,
+    targets: targets.filter(
+      (target) =>
+        target.kind === kind && (target.key === keepKey || isPlannedOn(target.routine, day)),
+    ),
+  })).filter((group) => group.targets.length > 0);
+}
+
+/** Whether a to-do can be planned under `target` on `day`. General always can. */
+export function isTargetOpenOn(target: TodoTarget, day: DayKey): boolean {
+  return target === GENERAL || isPlannedOn(target.routine, day);
 }

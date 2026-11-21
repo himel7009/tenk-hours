@@ -3,22 +3,20 @@ import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select } from '../../components/Field';
 import {
-  defaultTodoDay,
   GENERAL,
   groupTodoTargets,
+  isTargetOpenOn,
   TODO_TITLE_MAX,
   type PlannedTodo,
 } from '../../domain/todos';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
-import { useToday } from '../progress/useNow';
 import { useTodoTargets } from '../progress/useTodos';
 import formStyles from '../skills/SkillFormDialog.module.css';
 import { placeOf } from './todoPlace';
 
 /** Rename a to-do, move it to another domain or skill, or plan it for another day. */
 export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: () => void }) {
-  const today = useToday();
   const targets = useTodoTargets(item.target);
   const updateTodo = useTrackerStore((state) => state.updateTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
@@ -63,16 +61,12 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
               <Select
                 id={id}
                 value={targetKey}
-                onChange={(event) => {
-                  setTargetKey(event.target.value);
-                  const next = targets.find((t) => t.key === event.target.value) ?? GENERAL;
-                  if (!item.todo.done) setDay(defaultTodoDay(next, today));
-                }}
+                onChange={(event) => setTargetKey(event.target.value)}
               >
                 <option value={GENERAL.key}>
                   {GENERAL.icon} {GENERAL.name}
                 </option>
-                {groupTodoTargets(targets, today).map((group) => (
+                {groupTodoTargets(targets, day, item.target.key).map((group) => (
                   <optgroup key={group.label} label={group.label}>
                     {group.targets.map((target) => (
                       <option key={target.key} value={target.key}>
@@ -91,7 +85,15 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
                 type="date"
                 value={day}
                 disabled={item.todo.done}
-                onChange={(event) => setDay(event.target.value || day)}
+                onChange={(event) => {
+                  const next = event.target.value || day;
+                  setDay(next);
+                  // A skill not on the routine that day gives way to General.
+                  const current = targets.find((t) => t.key === targetKey) ?? GENERAL;
+                  if (targetKey !== item.target.key && !isTargetOpenOn(current, next)) {
+                    setTargetKey(GENERAL.key);
+                  }
+                }}
               />
             )}
           </Field>

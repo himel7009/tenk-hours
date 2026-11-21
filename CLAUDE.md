@@ -152,6 +152,10 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
   moves to the next day. Only the first planned day is stored: where it shows
   now and how often it moved are worked out, never written back.
+- The list labels each group Skill, Habit or Project (`targetKindName`) and
+  each to-do with its age (`PlannedTodo.age`): calendar days since it was
+  added, counting that day as day 1, stopping when done. Worked out from
+  `createdAt`, never stored.
 - The history (`buildTodoHistory`) reads `doneAt` and those planned days: what
   was done each day and what was planned but moved on. Done to-dos are kept,
   not cleared. A to-do whose domain or skill is deleted becomes General.

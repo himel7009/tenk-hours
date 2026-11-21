@@ -1,4 +1,4 @@
-import { addDays, toDayKey, type DayKey } from './dates';
+import { addDays, daysBetween, toDayKey, type DayKey } from './dates';
 import { isPlannedOn, routineOf, type Weekday } from './routine';
 import type { TrackerKind } from './types';
 
@@ -131,6 +131,13 @@ export interface PlannedTodo {
   moved: number;
   /** The day it was done, in local time. */
   doneDay: DayKey | null;
+  /** The day it was written down, in local time. */
+  addedDay: DayKey;
+  /**
+   * Which day of its life it is on: 1 on the day it was added, counting
+   * every calendar day since. A done one stops at the day it was done.
+   */
+  age: number;
 }
 
 /** Days the target was planned for from `from` up to, not including, `to`. */
@@ -153,7 +160,9 @@ export function planTodo(todo: Todo, context: TodoContext, today: DayKey): Plann
   // Every working day between the plan and the day it shows on (or was done) was missed.
   const until = todo.done ? (doneDay ?? todo.day) : due;
   const moved = until > todo.day ? plannedDaysBetween(target.routine, todo.day, until).length : 0;
-  return { todo, target, due, moved, doneDay };
+  const addedDay = toDayKey(new Date(todo.createdAt));
+  const age = Math.max(1, daysBetween(addedDay, doneDay ?? today) + 1);
+  return { todo, target, due, moved, doneDay, addedDay, age };
 }
 
 export interface TodoBoard {
@@ -286,4 +295,17 @@ export function groupTodoTargets(
 /** Whether a to-do can be planned under `target` on `day`. General always can. */
 export function isTargetOpenOn(target: TodoTarget, day: DayKey): boolean {
   return target === GENERAL || isPlannedOn(target.routine, day);
+}
+
+const KIND_NAMES: Record<TodoTarget['kind'], string> = {
+  general: '',
+  domain: 'Domain',
+  skill: 'Skill',
+  habit: 'Habit',
+  project: 'Project',
+};
+
+/** "Skill", "Habit", "Project" or "Domain"; empty for General. */
+export function targetKindName(target: TodoTarget): string {
+  return KIND_NAMES[target.kind];
 }

@@ -7,6 +7,7 @@ import {
   GENERAL,
   nextPlannedDay,
   planTodo,
+  targetKindName,
   targetOf,
   groupTodoTargets,
   isTargetOpenOn,
@@ -95,6 +96,14 @@ describe('moving on', () => {
   it('moves a General to-do to the next day', () => {
     const plan = todo('2026-11-16', { domainId: null });
     expect(planTodo(plan, context, '2026-11-18')).toMatchObject({ due: '2026-11-18', moved: 2 });
+  });
+
+  it('counts the days since it was added, stopping when done', () => {
+    const open = todo('2026-11-18', { createdAt: at('2026-11-18') });
+    expect(planTodo(open, context, '2026-11-18')).toMatchObject({ addedDay: '2026-11-18', age: 1 });
+    expect(planTodo(open, context, '2026-11-21')).toMatchObject({ age: 4 });
+    const done = { ...open, done: true, doneAt: at('2026-11-19') };
+    expect(planTodo(done, context, '2026-11-30')).toMatchObject({ age: 2 });
   });
 
   it('keeps a done to-do on the day it was done', () => {
@@ -202,4 +211,10 @@ it('offers only what the routine plans for the day, grouped by kind', () => {
   expect(kept.at(-1)).toMatchObject({ label: 'Domains', targets: [old] });
   expect(isTargetOpenOn(GENERAL, '2026-11-17')).toBe(true);
   expect(isTargetOpenOn(old, '2026-11-17')).toBe(false);
+});
+
+it('names what a to-do belongs to', () => {
+  expect(targetKindName(targetOf({ domainId: null, skillId: 'thesis' }, context))).toBe('Project');
+  expect(targetKindName(targetOf({ domainId: null, skillId: 'os' }, context))).toBe('Skill');
+  expect(targetKindName(GENERAL)).toBe('');
 });

@@ -4,6 +4,7 @@ import {
   GENERAL,
   groupTodoTargets,
   isTargetOpenOn,
+  targetKindName,
   TODO_TITLE_MAX,
   type PlannedTodo,
 } from '../../domain/todos';
@@ -125,6 +126,9 @@ export function TodoList() {
           <div key={group.key} className={styles.group} data-color={group.color ?? undefined}>
             <h3 className={styles.groupName}>
               <span aria-hidden="true">{group.icon}</span> {group.name}
+              {targetKindName(group) && (
+                <span className={styles.kind}>{targetKindName(group)}</span>
+              )}
             </h3>
             <ul className={styles.items}>
               {items.map((item) => (
@@ -210,7 +214,20 @@ function TodoItem({
 }) {
   const toggleTodo = useTrackerStore((state) => state.toggleTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
-  const { todo, target, moved, due } = item;
+  const { todo, target, moved, due, addedDay, age } = item;
+  const today = useToday();
+  const place = `${target.icon} ${target.name}${
+    targetKindName(target) ? ` (${targetKindName(target).toLowerCase()})` : ''
+  }`;
+  // How long it has been going: "Day 3, added Thu, Nov 19". Done ones say how
+  // long they took.
+  const life = todo.done
+    ? age === 1
+      ? 'Done the day it was added'
+      : `Done on day ${age}, added ${shortDay(addedDay)}`
+    : addedDay === today
+      ? 'Added today'
+      : `Day ${age}, added ${shortDay(addedDay)}`;
 
   return (
     <li className={styles.item} data-done={todo.done}>
@@ -228,18 +245,19 @@ function TodoItem({
         title="Edit, move or change its domain"
       >
         <span>{todo.title}</span>
-        {(showWhen || showPlace || moved > 0) && (
-          <span className={styles.meta}>
-            {showWhen && `${shortDay(due)}, ${target.icon} ${target.name}`}
-            {showPlace && `${target.icon} ${target.name}`}
-            {moved > 0 && (
-              <span className={styles.moved}>
-                {showWhen || showPlace ? ', ' : ''}moved {moved === 1 ? 'once' : `${moved} times`},
-                planned {shortDay(todo.day)}
-              </span>
-            )}
+        <span className={styles.meta}>
+          {showWhen && `${shortDay(due)}, ${place}. `}
+          {showPlace && `${place}. `}
+          <span className={styles.age} data-long={(!todo.done && age >= 3) || undefined}>
+            {life}
           </span>
-        )}
+          {moved > 0 && (
+            <span className={styles.moved}>
+              , moved {moved === 1 ? 'once' : `${moved} times`}
+              {todo.day !== addedDay && `, planned ${shortDay(todo.day)}`}
+            </span>
+          )}
+        </span>
       </button>
       <button
         type="button"

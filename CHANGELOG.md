@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-21
 
+- **To-dos show what they belong to and how long they have been going.** Each group says Skill, Habit or Project, and each to-do shows its day count ("Day 3, added Thu, Nov 19"), which turns bold from day 3. Done to-dos say which day they were finished on.
 - **To-dos follow your routine.** The "Belongs to" list shows only the projects, skills and habits your routine plans for the chosen day. Pick another date and the list changes to that day's plan. An unfinished to-do still moves on to the next working day by itself.
 
 ## 2026-11-20

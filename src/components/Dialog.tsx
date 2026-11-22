@@ -5,13 +5,15 @@ interface DialogProps {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** `wide` for grids and tables that need the room. */
+  size?: 'normal' | 'wide';
 }
 
 /**
  * Modal built on the native <dialog>, which handles focus trapping, Escape and
  * the backdrop. Mount it to open it; unmount it (via onClose) to close it.
  */
-export function Dialog({ title, onClose, children }: DialogProps) {
+export function Dialog({ title, onClose, children, size = 'normal' }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -25,6 +27,7 @@ export function Dialog({ title, onClose, children }: DialogProps) {
     <dialog
       ref={ref}
       className={styles.dialog}
+      data-size={size}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

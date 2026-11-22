@@ -7,6 +7,10 @@
   color: var(--ink);
 }
 
+.dialog[data-size='wide'] {
+  width: min(56rem, calc(100vw - 2rem));
+}
+
 .dialog::backdrop {
   background: rgb(15 22 40 / 0.55);
 }

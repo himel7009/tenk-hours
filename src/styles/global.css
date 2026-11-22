@@ -70,6 +70,21 @@ textarea {
   white-space: nowrap;
 }
 
+/*
+ * A hidden checkbox or radio inside its label stays inside that label.
+ * Left to its static position it can sit far from the box drawn for it
+ * (in a grid cell, hundreds of pixels lower), and ticking it focuses the
+ * input and scrolls the page there.
+ */
+label:has(> input.visually-hidden) {
+  position: relative;
+}
+
+label > input.visually-hidden {
+  top: 0;
+  left: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -179,6 +179,8 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   each to-do with its age (`PlannedTodo.age`): calendar days since it was
   added, counting that day as day 1, stopping when done. Worked out from
   `createdAt`, never stored.
+- Today's list scrolls inside its card (`todayList`, about eight rows) so a
+  long day does not push the rest of the Today tab down.
 - The history (`buildTodoHistory`) reads `doneAt` and those planned days: what
   was done each day and what was planned but moved on. Done to-dos are kept,
   not cleared. A to-do whose domain or skill is deleted becomes General.

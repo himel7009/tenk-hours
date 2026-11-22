@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-23
+
+- **Today's to-dos scroll.** A long list now scrolls inside the to-do card (fading at the bottom when there is more), so the add form, Coming up and Done today stay in place and the rest of the Today tab is no longer pushed far down.
+
 ## 2026-11-22
 
 - **Tidier week card and routine view.** The week card's title sits on its own line with View, Change a day and Edit in a row beneath it. In View routine every day is the same size and a busy day scrolls inside its own card.

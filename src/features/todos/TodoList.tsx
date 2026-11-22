@@ -122,21 +122,29 @@ export function TodoList() {
             : 'Nothing for today. Write down what you want to get done, and pick its skill.'}
         </p>
       ) : (
-        board.today.map(({ target: group, items }) => (
-          <div key={group.key} className={styles.group} data-color={group.color ?? undefined}>
-            <h3 className={styles.groupName}>
-              <span aria-hidden="true">{group.icon}</span> {group.name}
-              {targetKindName(group) && (
-                <span className={styles.kind}>{targetKindName(group)}</span>
-              )}
-            </h3>
-            <ul className={styles.items}>
-              {items.map((item) => (
-                <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} />
-              ))}
-            </ul>
-          </div>
-        ))
+        // A long day scrolls inside the card rather than pushing the page down.
+        <div
+          className={styles.todayList}
+          tabIndex={0}
+          aria-label="Today's to-dos"
+          data-long={board.today.reduce((n, g) => n + g.items.length, 0) > 6 || undefined}
+        >
+          {board.today.map(({ target: group, items }) => (
+            <div key={group.key} className={styles.group} data-color={group.color ?? undefined}>
+              <h3 className={styles.groupName}>
+                <span aria-hidden="true">{group.icon}</span> {group.name}
+                {targetKindName(group) && (
+                  <span className={styles.kind}>{targetKindName(group)}</span>
+                )}
+              </h3>
+              <ul className={styles.items}>
+                {items.map((item) => (
+                  <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       )}
 
       {board.upcoming.length > 0 && (

@@ -371,3 +371,28 @@
 .doneToggle[aria-expanded='true'] svg {
   transform: none;
 }
+
+/* Today's to-dos: past about eight rows the list scrolls in place. */
+.todayList {
+  max-height: 30rem;
+  margin-right: calc(-1 * var(--space-2));
+  padding-right: var(--space-2);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* Fades the last line when there is more below. */
+.todayList[data-long] {
+  padding-bottom: var(--space-4);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+}
+
+.todayList:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.todayList > .group:first-child {
+  margin-top: var(--space-3);
+}

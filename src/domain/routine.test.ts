@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildDayPlan,
+  buildRoutineView,
   buildWeekPlan,
   describeRoutine,
   changeDay,
@@ -203,5 +204,47 @@ describe('setWeekday', () => {
     expect(setWeekday([], 0, false)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(setWeekday([3], 3, false)).toEqual([3]);
     expect(setWeekday([1, 2, 3, 4, 5, 6], 0, true)).toEqual([]);
+  });
+});
+
+describe('buildRoutineView', () => {
+  it('lays the week out by day and domain, every-day trackers once', () => {
+    const ai = { id: 'ai', name: 'AI', icon: '🤖', color: 'plum' };
+    const t = (
+      id: string,
+      domainId: string | null,
+      routineDays: Weekday[],
+      goal: number | null,
+    ) => ({
+      id,
+      name: id,
+      icon: '🎯',
+      color: 'rose',
+      domainId,
+      kind: 'skill' as const,
+      routineDays,
+      goalMinutes: goal,
+    });
+    const view = buildRoutineView(
+      [ai],
+      [
+        t('ml', 'ai', [0, 2], 60),
+        t('dl', 'ai', [2], 90),
+        t('run', null, [], 30),
+        t('app', null, [0], null),
+      ],
+    );
+    expect(view.everyDay).toEqual([
+      { domain: null, items: [expect.objectContaining({ id: 'run' })] },
+    ]);
+    const sunday = view.days[0]!;
+    expect(sunday.groups.map((g) => [g.domain?.id ?? null, g.items.map((i) => i.id)])).toEqual([
+      ['ai', ['ml']],
+      [null, ['app']],
+    ]);
+    // ML's hour plus the every-day half hour; the project has no goal.
+    expect(sunday.goalMinutes).toBe(90);
+    expect(view.days[2]?.goalMinutes).toBe(180);
+    expect(view.days[1]?.groups).toEqual([]);
   });
 });

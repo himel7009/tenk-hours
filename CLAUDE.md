@@ -81,7 +81,9 @@ migration plan.
   trackers under their domain, whose row sets a day for all of them
   (`setWeekday`). Start over edits a blank draft (no days means none picked
   yet) and saves it all at once; anything left without days becomes every
-  day. It opens as a wide dialog (`Dialog` `size="wide"`). `domains.routine_days`, `added_days` and `skipped_days` are
+  day. It opens as a wide dialog (`Dialog` `size="wide"`). View routine
+  (`RoutineView`, `buildRoutineView`) shows the weekly routine read-only by
+  day and domain, without day changes. `domains.routine_days`, `added_days` and `skipped_days` are
   kept in the table but no longer read; `domainPlan` stands in for a domain
   where old to-dos still point at one.
 - Streaks are per tracker, never app-wide. A day counts only when that

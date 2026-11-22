@@ -7,6 +7,7 @@ import { useToday } from '../progress/useNow';
 import styles from './routine.module.css';
 import { ChangeDayDialog } from './ChangeDayDialog';
 import { RoutineDialog } from './RoutineDialog';
+import { RoutineView } from './RoutineView';
 
 const dayName = (weekday: number, style: 'narrow' | 'long') =>
   // 2023-01-01 was a Sunday.
@@ -19,6 +20,7 @@ export function RoutineCard() {
   const today = useToday();
   const [editing, setEditing] = useState(false);
   const [changing, setChanging] = useState(false);
+  const [viewing, setViewing] = useState(false);
   const todayWeekday = weekdayOf(today);
   // This week's real dates, Sunday first, so one-day changes show.
   const plan = useMemo(() => {
@@ -38,6 +40,11 @@ export function RoutineCard() {
           Your week
         </h2>
         <div className={styles.headActions}>
+          {skills.length > 0 && (
+            <Button size="sm" variant="quiet" onClick={() => setViewing(true)}>
+              View routine
+            </Button>
+          )}
           {planned && (
             <Button size="sm" variant="quiet" onClick={() => setChanging(true)}>
               Change a day
@@ -107,6 +114,15 @@ export function RoutineCard() {
 
       {editing && <RoutineDialog onClose={() => setEditing(false)} />}
       {changing && <ChangeDayDialog onClose={() => setChanging(false)} />}
+      {viewing && (
+        <RoutineView
+          onClose={() => setViewing(false)}
+          onEdit={() => {
+            setViewing(false);
+            setEditing(true);
+          }}
+        />
+      )}
     </section>
   );
 }

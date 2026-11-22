@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-22
 
+- **View your routine.** "View routine" on the week card shows the whole week to read: each day's skills, habits and projects by domain with their daily goals, how much time the day's goals add up to, and what you do every day listed once. "Edit routine" is a tap away.
 - **Fixed: ticking a day no longer jumps the window.** In "Plan your week" (and anywhere a box or option is drawn in place of the real checkbox) ticking could scroll the window to the bottom, again on every tick. Each hidden checkbox now stays inside the box drawn for it.
 - **Start over on your routine.** "Plan your week" is wider, and "Start over" clears every day so you can pick them from scratch. Nothing changes until you save; "Keep the old routine" leaves it as it was. Anything left without days is planned for every day.
 - **Plan days per skill, habit and project.** The routine is no longer set on domains: each skill picks its own days, so Machine learning can be on Sunday and Deep learning on Tuesday. In "Plan your week" skills sit under their domain, and the domain's row sets a day for all of them at once. Your current days carried over unchanged. A domain shows on Today when any of its skills does, and "Change a day" now adds or skips single skills.

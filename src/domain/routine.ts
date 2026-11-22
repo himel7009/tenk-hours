@@ -340,3 +340,63 @@ export function inheritDomainRoutines<
     };
   });
 }
+
+export interface RoutineViewItem extends Look {
+  kind: 'skill' | 'habit' | 'project';
+  /** Its daily goal, when it has one that day. */
+  goalMinutes: number | null;
+}
+
+export interface RoutineViewGroup {
+  /** Null for trackers outside a domain. */
+  domain: Look | null;
+  items: RoutineViewItem[];
+}
+
+export interface RoutineView {
+  /** Trackers planned for all seven days, listed once. */
+  everyDay: RoutineViewGroup[];
+  /** The rest, by weekday, Sunday first, with that day's goals added up (every-day ones included). */
+  days: { weekday: Weekday; groups: RoutineViewGroup[]; goalMinutes: number }[];
+}
+
+/**
+ * The weekly routine to read rather than edit: what each weekday holds,
+ * grouped by domain, with every-day trackers set apart. Day changes are left
+ * out; this is the routine itself.
+ */
+export function buildRoutineView(
+  domains: readonly Look[],
+  trackers: readonly (Look &
+    Planned & {
+      domainId: string | null;
+      kind: 'skill' | 'habit' | 'project';
+      goalMinutes: number | null;
+    })[],
+): RoutineView {
+  const group = (list: typeof trackers): RoutineViewGroup[] => {
+    const groups: RoutineViewGroup[] = [];
+    for (const domain of domains) {
+      const items = list.filter((t) => t.domainId === domain.id);
+      if (items.length > 0) groups.push({ domain: pick(domain), items: items.map(item) });
+    }
+    const own = list.filter((t) => !domains.some((d) => d.id === t.domainId));
+    if (own.length > 0) groups.push({ domain: null, items: own.map(item) });
+    return groups;
+  };
+  const item = (t: (typeof trackers)[number]): RoutineViewItem => ({
+    ...pick(t),
+    kind: t.kind,
+    goalMinutes: t.goalMinutes,
+  });
+  const sum = (list: typeof trackers) => list.reduce((total, t) => total + (t.goalMinutes ?? 0), 0);
+  const daily = trackers.filter((t) => t.routineDays.length === 0);
+  const rest = trackers.filter((t) => t.routineDays.length > 0);
+  return {
+    everyDay: group(daily),
+    days: WEEKDAYS.map((weekday) => {
+      const on = rest.filter((t) => t.routineDays.includes(weekday));
+      return { weekday, groups: group(on), goalMinutes: sum(on) + sum(daily) };
+    }),
+  };
+}

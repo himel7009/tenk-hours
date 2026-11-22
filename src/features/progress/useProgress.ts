@@ -13,8 +13,7 @@ export function useSkillSessions(skillId: string): Session[] {
 /** Progress for one skill or habit. Streaks are always per tracker. */
 export function useSkillProgress(skill: Skill): Progress {
   const sessions = useSkillSessions(skill.id);
-  const domains = useTrackerStore((state) => state.domains);
-  const routine = routineOf(skill, domains);
+  const routine = useMemo(() => routineOf(skill), [skill]);
   const today = useToday();
   return useMemo(
     () => summarizeProgress(sessions, skill.targetHours, skill.dailyGoalMinutes, today, routine),

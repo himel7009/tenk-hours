@@ -8,7 +8,6 @@ import { useToday } from '../progress/useNow';
 import styles from './routine.module.css';
 
 const KIND: Record<DayPlanRow['kind'], string> = {
-  domain: 'Domain',
   skill: 'Skill',
   habit: 'Habit',
   project: 'Project',
@@ -66,11 +65,11 @@ export function ChangeDayDialog({
           <span className={styles.planName}>
             {item.name} <span className={styles.planKind}>{KIND[item.kind]}</span>
           </span>
-          {(item.inside.length > 0 || item.state === 'added' || item.state === 'skipped') && (
+          {(item.domain || item.state === 'added' || item.state === 'skipped') && (
             <span className={styles.planNote}>
               {item.state === 'added' && 'Added for this day. '}
               {item.state === 'skipped' && 'Skipped this day; its streak is safe. '}
-              {item.inside.length > 0 && `With ${item.inside.join(', ')}.`}
+              {item.domain && `In ${item.domain}.`}
             </span>
           )}
         </span>
@@ -78,7 +77,7 @@ export function ChangeDayDialog({
           size="sm"
           variant={action.change === 'add' ? 'secondary' : 'quiet'}
           aria-label={action.hint}
-          onClick={() => changeDayPlan(item.target, day, action.change)}
+          onClick={() => changeDayPlan({ skillId: item.id }, day, action.change)}
         >
           {action.text}
         </Button>

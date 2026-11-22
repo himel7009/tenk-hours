@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '../../components/Button';
 import {
   buildDayPlan,
+  isDomainPlannedOn,
   isPlannedOn,
   planOf,
   routineOf,
@@ -40,16 +41,20 @@ export function TodayTab({
   const domains = useTrackerStore((state) => state.domains);
   const skills = useTrackerStore((state) => state.skills);
 
-  // A domain holding only projects has nothing left to show once they are listed above.
-  const holdsMoreThanProjects = (domain: Domain) =>
-    skills.some((skill) => skill.domainId === domain.id && skill.kind !== 'project');
-  const plannedDomains = domains.filter(
-    (domain) => isPlannedOn(planOf(domain), today) && holdsMoreThanProjects(domain),
+  // A domain shows when one of its skills is on today; its projects are listed above.
+  const membersOf = (domain: Domain) => skills.filter((skill) => skill.domainId === domain.id);
+  const plannedDomains = domains.filter((domain) =>
+    isDomainPlannedOn(
+      membersOf(domain).filter((skill) => skill.kind !== 'project'),
+      today,
+    ),
   );
-  const restingDomains = domains.filter((domain) => !isPlannedOn(planOf(domain), today));
+  const restingDomains = domains.filter(
+    (domain) => !isDomainPlannedOn(membersOf(domain), today) && membersOf(domain).length > 0,
+  );
   // Projects come first, wherever they sit: they are the daily work.
   const plannedProjects = skills.filter(
-    (skill) => skill.kind === 'project' && isPlannedOn(routineOf(skill, domains), today),
+    (skill) => skill.kind === 'project' && isPlannedOn(routineOf(skill), today),
   );
   const plannedOwn = skills.filter(
     (skill) =>
@@ -140,6 +145,7 @@ export function TodayTab({
                   onEdit={() => onEditDomain(domain)}
                   onAddSkill={() => onAddSkill(domain.id)}
                   hideProjects
+                  plannedOn={today}
                 />
               ))}
             </ul>

@@ -5,7 +5,7 @@ import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select } from '../../components/Field';
 import { Toggle } from '../../components/Toggle';
 import { WeekdayPicker } from '../../components/WeekdayPicker';
-import { plannedPhrase, type Weekday } from '../../domain/routine';
+import type { Weekday } from '../../domain/routine';
 import type { DomainId } from '../../domain/domains';
 import {
   DEFAULT_DAILY_GOAL_MINUTES,
@@ -76,13 +76,16 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
   );
   // Everything new starts with a streak; it is one switch away from off.
   const [keepStreak, setKeepStreak] = useState(skill?.keepStreak ?? true);
-  const [routineDays, setRoutineDays] = useState<Weekday[]>(skill?.routineDays ?? []);
+  const skills = useTrackerStore((state) => state.skills);
+  // A new skill starts on the days its domain's skills already share.
+  const daysInDomain = (id: DomainId | null) =>
+    skills.find((s) => id !== null && s.domainId === id && s.id !== skill?.id)?.routineDays;
+  const [routineDays, setRoutineDays] = useState<Weekday[]>(() => [
+    ...(skill?.routineDays ?? daysInDomain(props.skill ? null : (props.domainId ?? null)) ?? []),
+  ]);
+  const [daysTouched, setDaysTouched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-
-  const domainSelected = canJoinDomain(kind)
-    ? domains.find((domain) => domain.id === domainId)
-    : undefined;
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -186,7 +189,12 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
               <Select
                 id={id}
                 value={domainId ?? ''}
-                onChange={(event) => setDomainId(event.target.value || null)}
+                onChange={(event) => {
+                  const next = event.target.value || null;
+                  setDomainId(next);
+                  const shared = daysInDomain(next);
+                  if (!skill && !daysTouched && shared) setRoutineDays([...shared]);
+                }}
               >
                 <option value="">No domain, on its own</option>
                 {domains.map((domain) => (
@@ -212,19 +220,15 @@ export function SkillFormDialog(props: SkillFormDialogProps) {
           }
         />
 
-        {domainSelected ? (
-          <p className={styles.routineNote}>
-            Planned with its domain, {domainSelected.icon} {domainSelected.name},{' '}
-            {plannedPhrase(domainSelected.routineDays)}. Change the days on the domain.
-          </p>
-        ) : (
-          <WeekdayPicker
-            legend="Days you plan to work on it"
-            hint="Days off never break a streak"
-            value={routineDays}
-            onChange={setRoutineDays}
-          />
-        )}
+        <WeekdayPicker
+          legend="Days you plan to work on it"
+          hint="Days off never break a streak"
+          value={routineDays}
+          onChange={(days) => {
+            setRoutineDays(days);
+            setDaysTouched(true);
+          }}
+        />
 
         {(hasDailyGoal({ kind, keepStreak }) || kind === 'skill') && (
           <div className={styles.numbers}>

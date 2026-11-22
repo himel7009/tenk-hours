@@ -51,7 +51,7 @@ function SkillDetail({ skill }: { skill: Skill }) {
   const isProject = skill.kind === 'project';
   const withGoal = hasDailyGoal(skill);
   const streakOn = withGoal && keepsStreak(skill);
-  const routine = routineOf(skill, domains);
+  const routine = routineOf(skill);
 
   const activity = (
     <ActivityCalendar

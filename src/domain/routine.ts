@@ -121,6 +121,16 @@ export function changeDay(
   return { addedDays: added.sort(), skippedDays: skipped.sort() };
 }
 
+/**
+ * Turns one weekday on or off. Turning off the last day leaves the routine
+ * as it was, since no days at all would mean every day.
+ */
+export function setWeekday(routine: readonly Weekday[], weekday: Weekday, on: boolean): Weekday[] {
+  const current = routine.length === 0 ? [...WEEKDAYS] : [...routine];
+  const next = on ? [...current, weekday] : current.filter((day) => day !== weekday);
+  return next.length === 0 ? normalizeRoutine(routine) : normalizeRoutine(next);
+}
+
 export function toggleWeekday(routine: readonly Weekday[], weekday: Weekday): Weekday[] {
   // Every day is stored as empty, so turning one day off starts from all seven.
   const current = routine.length === 0 ? [...WEEKDAYS] : routine;
@@ -129,23 +139,47 @@ export function toggleWeekday(routine: readonly Weekday[], weekday: Weekday): We
   );
 }
 
-/**
- * The routine a tracker follows: its domain's when it is in one, since a
- * domain is planned as a whole, otherwise its own.
- */
 type Planned = {
   routineDays: readonly Weekday[];
   addedDays?: readonly DayKey[];
   skippedDays?: readonly DayKey[];
 };
 
-export function routineOf(
-  item: Planned & { domainId: string | null },
-  domains: readonly (Planned & { id: string })[],
-): Plan {
-  if (item.domainId === null) return planOf(item);
-  const domain = domains.find((d) => d.id === item.domainId);
-  return planOf(domain ?? item);
+/**
+ * The plan a tracker follows: its own weekdays and day changes. Domains no
+ * longer have days of their own; they are on whenever one of their skills is.
+ */
+export function routineOf(item: Planned): Plan {
+  return planOf(item);
+}
+
+/** Whether any of a domain's trackers is on that day. */
+export function isDomainPlannedOn(members: readonly Planned[], day: DayKey): boolean {
+  return members.some((member) => isPlannedOn(planOf(member), day));
+}
+
+/** Whether a domain is on the weekly routine that day (ignoring day changes). */
+function isDomainOnRoutine(members: readonly Planned[], day: DayKey): boolean {
+  return members.some((member) => isOnRoutine(planOf(member), day));
+}
+
+/**
+ * A domain's plan as one routine: the weekdays any member is on (every day
+ * when that is all seven) and their added days. Only for things that still
+ * point at a domain, such as old to-dos.
+ */
+export function domainPlan(members: readonly Planned[]): Plan {
+  const days = new Set<Weekday>();
+  for (const member of members) {
+    for (const day of member.routineDays.length === 0 ? WEEKDAYS : member.routineDays) {
+      days.add(day);
+    }
+  }
+  return {
+    days: members.length === 0 ? [] : normalizeRoutine([...days]),
+    added: normalizeDayList(members.flatMap((member) => member.addedDays ?? [])),
+    skipped: [],
+  };
 }
 
 /** "every day" or "on Sun and Tue", to follow a verb such as "planned". */
@@ -186,100 +220,123 @@ export interface WeekPlan {
 type Look = { id: string; name: string; icon: string; color: string };
 
 /**
- * The routine laid out by weekday: domains, and trackers that stand alone.
- * Items planned for every day are counted rather than listed in all seven.
- * Given the week's real dates (Sunday first), day changes are applied: added
- * items join that day and skipped ones are kept, marked, so the gap shows.
+ * The routine laid out by weekday: domains (on when any of their trackers
+ * is) and trackers outside a domain. Items on every day are counted rather
+ * than listed in all seven. Given the week's real dates (Sunday first), day
+ * changes are applied: added items join that day and skipped ones are kept,
+ * marked, so the gap shows.
  */
 export function buildWeekPlan(
-  domains: readonly (Look & Planned)[],
+  domains: readonly Look[],
   trackers: readonly (Look & Planned & { domainId: string | null })[],
   week?: readonly DayKey[],
 ): WeekPlan {
-  const items: (PlanEntry & { plan: Plan })[] = [
-    ...domains.map((domain) => ({ ...domain, type: 'domain' as const, plan: planOf(domain) })),
+  type Item = {
+    entry: PlanEntry;
+    onWeekday: (weekday: Weekday) => boolean;
+    onRoutine: (day: DayKey) => boolean;
+    planned: (day: DayKey) => boolean;
+  };
+  const items: Item[] = [
+    ...domains.map((domain): Item => {
+      const members = trackers.filter((tracker) => tracker.domainId === domain.id);
+      return {
+        entry: { ...pick(domain), type: 'domain' },
+        onWeekday: (weekday) =>
+          members.some((m) => m.routineDays.length === 0 || m.routineDays.includes(weekday)),
+        onRoutine: (day) => isDomainOnRoutine(members, day),
+        planned: (day) => isDomainPlannedOn(members, day),
+      };
+    }),
     ...trackers
       .filter((tracker) => tracker.domainId === null)
-      .map((tracker) => ({ ...tracker, type: 'tracker' as const, plan: planOf(tracker) })),
+      .map((tracker): Item => {
+        const plan = planOf(tracker);
+        return {
+          entry: { ...pick(tracker), type: 'tracker' },
+          onWeekday: (weekday) => plan.days.length === 0 || plan.days.includes(weekday),
+          onRoutine: (day) => isOnRoutine(plan, day),
+          planned: (day) => isPlannedOn(plan, day),
+        };
+      }),
   ];
-  const scheduled = items.filter((item) => item.plan.days.length > 0);
-  const entry = (item: PlanEntry, change?: 'added' | 'skipped'): PlanEntry => ({
-    id: item.id,
-    name: item.name,
-    icon: item.icon,
-    color: item.color,
-    type: item.type,
-    ...(change ? { change } : {}),
-  });
+  const everyDay = (item: Item) => WEEKDAYS.every(item.onWeekday);
   return {
     days: WEEKDAYS.map((weekday) => {
       const date = week?.[weekday];
-      if (date === undefined) {
-        return {
-          weekday,
-          entries: scheduled.filter((i) => i.plan.days.includes(weekday)).map((i) => entry(i)),
-        };
-      }
       const entries: PlanEntry[] = [];
       for (const item of items) {
-        const change = dayChangeOf(item.plan, date);
-        if (change) entries.push(entry(item, change));
-        else if (item.plan.days.length > 0 && item.plan.days.includes(weekday)) {
-          entries.push(entry(item));
+        const daily = everyDay(item);
+        if (date === undefined) {
+          if (!daily && item.onWeekday(weekday)) entries.push(item.entry);
+          continue;
         }
+        const routine = item.onRoutine(date);
+        const planned = item.planned(date);
+        if (routine && !planned) entries.push({ ...item.entry, change: 'skipped' });
+        else if (!routine && planned) entries.push({ ...item.entry, change: 'added' });
+        else if (planned && !daily) entries.push(item.entry);
       }
       return { weekday, entries };
     }),
-    everyDay: items.length - scheduled.length,
+    everyDay: items.filter(everyDay).length,
   };
 }
 
+function pick(item: Look): Look {
+  return { id: item.id, name: item.name, icon: item.icon, color: item.color };
+}
+
 export interface DayPlanRow extends Look {
-  target: { domainId: string } | { skillId: string };
-  kind: 'domain' | 'skill' | 'habit' | 'project';
+  kind: 'skill' | 'habit' | 'project';
   /** On the routine, added for the day, skipped for the day, or off. */
   state: 'routine' | 'added' | 'skipped' | 'off';
-  /** For a domain: the skills and projects that come with it. */
-  inside: string[];
+  /** The domain it sits in, if any. */
+  domain: string | null;
 }
 
 /**
- * Everything whose plan can change for a day (domains, and trackers outside
- * one), split into what is on that day and what is not.
+ * Every skill, habit and project, split into what is on that day and what
+ * is not, for changing one day of the plan.
  */
 export function buildDayPlan(
-  domains: readonly (Look & Planned)[],
+  domains: readonly (Look & { id: string })[],
   trackers: readonly (Look &
     Planned & { domainId: string | null; kind: 'skill' | 'habit' | 'project' })[],
   day: DayKey,
 ): { on: DayPlanRow[]; off: DayPlanRow[] } {
-  const row = (
-    item: Look & Planned,
-    target: DayPlanRow['target'],
-    kind: DayPlanRow['kind'],
-    inside: string[],
-  ): DayPlanRow => {
-    const plan = planOf(item);
-    const change = dayChangeOf(plan, day);
-    const state = change ?? (isPlannedOn(plan, day) ? 'routine' : 'off');
-    const { id, name, icon, color } = item;
-    return { id, name, icon, color, target, kind, state, inside };
-  };
-  const rows = [
-    ...domains.map((domain) =>
-      row(
-        domain,
-        { domainId: domain.id },
-        'domain',
-        trackers.filter((t) => t.domainId === domain.id).map((t) => t.name),
-      ),
-    ),
-    ...trackers
-      .filter((tracker) => tracker.domainId === null)
-      .map((tracker) => row(tracker, { skillId: tracker.id }, tracker.kind, [])),
-  ];
+  const rows = trackers.map((tracker): DayPlanRow => {
+    const plan = planOf(tracker);
+    const state = dayChangeOf(plan, day) ?? (isPlannedOn(plan, day) ? 'routine' : 'off');
+    const domain = domains.find((d) => d.id === tracker.domainId)?.name ?? null;
+    return { ...pick(tracker), kind: tracker.kind, state, domain };
+  });
   return {
     on: rows.filter((r) => r.state === 'routine' || r.state === 'added'),
     off: rows.filter((r) => r.state === 'skipped' || r.state === 'off'),
   };
+}
+
+/**
+ * Hands each domain's weekdays and day changes to the trackers in it, for
+ * the move from domain routines to per-tracker ones: nothing a tracker was
+ * planned for changes. Trackers outside a domain keep their own.
+ */
+export function inheritDomainRoutines<
+  T extends Planned & { domainId: string | null },
+  D extends Planned & { id: string },
+>(trackers: readonly T[], domains: readonly D[]): T[] {
+  return trackers.map((tracker) => {
+    const domain = domains.find((d) => d.id === tracker.domainId);
+    if (!domain) return tracker;
+    return {
+      ...tracker,
+      routineDays: [...domain.routineDays],
+      addedDays: normalizeDayList([...(domain.addedDays ?? []), ...(tracker.addedDays ?? [])]),
+      skippedDays: normalizeDayList([
+        ...(domain.skippedDays ?? []),
+        ...(tracker.skippedDays ?? []),
+      ]),
+    };
+  });
 }

@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-22
 
+- **Plan days per skill, habit and project.** The routine is no longer set on domains: each skill picks its own days, so Machine learning can be on Sunday and Deep learning on Tuesday. In "Plan your week" skills sit under their domain, and the domain's row sets a day for all of them at once. Your current days carried over unchanged. A domain shows on Today when any of its skills does, and "Change a day" now adds or skips single skills.
 - **Change a day without changing your routine.** "Change today" on the Today tab (and "Change a day" on the week card) lets you add any domain, skill, habit or project to today, tomorrow or any later day, or skip one. Doing competitive programming instead of machine learning today is: skip AI, add Problem solving. A skipped day never breaks a streak, and added work is a bonus: reaching its goal counts, missing it costs nothing. The week card shows added days dashed and skipped days struck through, and the to-do list follows the changed plan.
 
 ## 2026-11-21

@@ -3,7 +3,12 @@ import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
-import { changeDay, normalizeRoutine, type Weekday } from '../domain/routine';
+import {
+  changeDay,
+  inheritDomainRoutines,
+  normalizeRoutine,
+  type Weekday,
+} from '../domain/routine';
 import { DEBT_PERSON_MAX, type Debt, type DebtId, type DebtPayment } from '../domain/debts';
 import { stableUuid } from '../domain/ids';
 import {
@@ -58,7 +63,7 @@ import {
 } from '../sync/types';
 
 /** Bump when the persisted shape changes and add a step to `migrate`. */
-const STORAGE_VERSION = 15;
+const STORAGE_VERSION = 16;
 const STORAGE_KEY = 'tenk';
 
 /** Timer runs shorter than this are treated as accidental and not saved. */
@@ -1263,6 +1268,12 @@ export const useTrackerStore = create<TrackerStore>()(
             skillId: todo.skillId ?? null,
             day: todo.day ?? toDayKey(new Date(todo.createdAt)),
           }));
+        }
+        // Up to v15 a skill in a domain followed the domain's days. From v16
+        // every tracker has its own, so each takes its domain's to start.
+        // The server copies the same in the matching migration.
+        if (version < 16) {
+          state.skills = inheritDomainRoutines(state.skills ?? [], state.domains ?? []);
         }
         // v14 debts all changed section balances; from v15 that is a choice,
         // off unless set, since borrowed money was usually already budgeted.

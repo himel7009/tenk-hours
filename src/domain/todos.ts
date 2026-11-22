@@ -1,5 +1,5 @@
 import { addDays, daysBetween, toDayKey, type DayKey } from './dates';
-import { isPlannedOn, planOf, routineOf, type Routine, type Weekday } from './routine';
+import { domainPlan, isPlannedOn, routineOf, type Routine, type Weekday } from './routine';
 import type { TrackerKind } from './types';
 
 /**
@@ -87,7 +87,7 @@ export function targetOf(
         name: domain.name,
         icon: domain.icon,
         color: domain.color,
-        routine: planOf(domain),
+        routine: domainPlan(context.skills.filter((skill) => skill.domainId === domain.id)),
         kind: 'domain',
       };
     }
@@ -100,7 +100,7 @@ export function targetOf(
         name: skill.name,
         icon: skill.icon,
         color: skill.color,
-        routine: routineOf(skill, context.domains),
+        routine: routineOf(skill),
         kind: skill.kind,
       };
     }

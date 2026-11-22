@@ -326,3 +326,23 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* A domain's row in the routine grid: sets a day for all its skills. */
+.grid tbody .groupRow {
+  border-top: 2px solid var(--ink);
+  background: color-mix(in srgb, var(--skill, var(--ink-soft)) 8%, transparent);
+}
+
+.grid tbody tr[data-member] th {
+  padding-left: var(--space-4);
+}
+
+/* Some of the domain's skills are on that day, not all. */
+.cell[data-some] {
+  border-color: var(--skill);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--skill) 35%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+}

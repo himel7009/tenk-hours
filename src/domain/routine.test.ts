@@ -5,11 +5,15 @@ import {
   describeRoutine,
   changeDay,
   dayChangeOf,
+  domainPlan,
+  inheritDomainRoutines,
+  isDomainPlannedOn,
   isPlannedOn,
   isRequiredOn,
   normalizeDayList,
   normalizeRoutine,
   planOf,
+  setWeekday,
   routineOf,
   toggleWeekday,
   type Weekday,
@@ -35,18 +39,123 @@ describe('routine', () => {
     expect(toggleWeekday([1], 1)).toEqual([]);
   });
 
-  it('follows the domain when the item is in one', () => {
-    const domains = [{ id: 'ai', routineDays: [0] as const }];
-    expect(routineOf({ domainId: 'ai', routineDays: [3] }, domains).days).toEqual([0]);
-    expect(routineOf({ domainId: null, routineDays: [3] }, domains).days).toEqual([3]);
+  it('follows its own days, in a domain or not', () => {
+    expect(routineOf({ routineDays: [3] }).days).toEqual([3]);
+    const ml = { routineDays: [0] as Weekday[], skippedDays: ['2026-11-22'] };
+    // 2026-11-22 is a Sunday.
+    expect(isPlannedOn(routineOf(ml), '2026-11-22')).toBe(false);
   });
 
-  it("follows the domain's day changes too", () => {
-    const domains = [{ id: 'ai', routineDays: [0] as const, skippedDays: ['2026-11-22'] }];
-    // 2026-11-22 is a Sunday.
-    const plan = routineOf({ domainId: 'ai', routineDays: [], addedDays: ['2026-11-23'] }, domains);
-    expect(isPlannedOn(plan, '2026-11-22')).toBe(false);
-    expect(isPlannedOn(plan, '2026-11-23')).toBe(false);
+  it('puts a domain on when any of its trackers is', () => {
+    const ml = { routineDays: [0] as Weekday[] };
+    const dl = { routineDays: [2] as Weekday[], addedDays: ['2026-11-23'] };
+    expect(isDomainPlannedOn([ml, dl], '2026-11-22')).toBe(true);
+    expect(isDomainPlannedOn([ml, dl], '2026-11-23')).toBe(true);
+    expect(isDomainPlannedOn([ml, dl], '2026-11-25')).toBe(false);
+    expect(isDomainPlannedOn([], '2026-11-22')).toBe(false);
+    expect(domainPlan([ml, dl])).toEqual({ days: [0, 2], added: ['2026-11-23'], skipped: [] });
+    expect(domainPlan([ml, { routineDays: [] }]).days).toEqual([]);
+  });
+
+  it("hands a domain's days and changes to its trackers", () => {
+    const domains = [{ id: 'ai', routineDays: [0, 2] as Weekday[], skippedDays: ['2026-11-22'] }];
+    const trackers = [
+      { id: 'ml', domainId: 'ai', routineDays: [] as Weekday[], addedDays: ['2026-11-23'] },
+      { id: 'run', domainId: null, routineDays: [1] as Weekday[] },
+    ];
+    expect(inheritDomainRoutines(trackers, domains)).toEqual([
+      {
+        id: 'ml',
+        domainId: 'ai',
+        routineDays: [0, 2],
+        addedDays: ['2026-11-23'],
+        skippedDays: ['2026-11-22'],
+      },
+      trackers[1],
+    ]);
+  });
+
+  it('describes a routine', () => {
+    expect(describeRoutine([])).toBe('Every day');
+    expect(describeRoutine([0, 2])).toMatch(/^Sun and Tue$/);
+  });
+});
+
+describe('buildWeekPlan', () => {
+  it('lists domains on the days any of their trackers is, and standalone trackers', () => {
+    const ai = { id: 'ai', name: 'AI', icon: '🤖', color: 'plum' };
+    const empty = { id: 'e', name: 'Empty', icon: '📦', color: 'teal' };
+    const tracker = (id: string, domainId: string | null, routineDays: Weekday[]) => ({
+      id,
+      name: id,
+      icon: '🎯',
+      color: 'rose',
+      domainId,
+      routineDays,
+    });
+    const plan = buildWeekPlan(
+      [ai, empty],
+      [
+        tracker('ml', 'ai', [0]),
+        tracker('dl', 'ai', [2]),
+        tracker('guitar', null, [0, 1]),
+        tracker('writing', null, []),
+      ],
+    );
+    expect(plan.days[0]?.entries.map((e) => e.id)).toEqual(['ai', 'guitar']);
+    expect(plan.days[1]?.entries.map((e) => e.id)).toEqual(['guitar']);
+    expect(plan.days[2]?.entries.map((e) => e.id)).toEqual(['ai']);
+    // Skills are not listed on their own, and an empty domain is never on.
+    expect(plan.days[3]?.entries).toEqual([]);
+    expect(plan.everyDay).toBe(1);
+  });
+});
+
+describe('day changes in the week and day plans', () => {
+  // The week of Sunday 2026-11-22.
+  const week = ['22', '23', '24', '25', '26', '27', '28'].map((d) => `2026-11-${d}`);
+  const ai = { id: 'ai', name: 'AI', icon: '🤖', color: 'plum' };
+  const ps = { id: 'ps', name: 'Problem solving', icon: '🧩', color: 'moss' };
+  const tracker = (
+    id: string,
+    name: string,
+    domainId: string | null,
+    routineDays: Weekday[],
+    extra: { addedDays?: string[]; skippedDays?: string[] } = {},
+  ) => ({
+    id,
+    name,
+    icon: '🎯',
+    color: 'rose',
+    domainId,
+    kind: (domainId ? 'skill' : 'habit') as 'skill' | 'habit',
+    routineDays,
+    ...extra,
+  });
+  // Machine learning skipped and competitive programming added on Sunday.
+  const trackers = [
+    tracker('ml', 'Machine learning', 'ai', [0], { skippedDays: ['2026-11-22'] }),
+    tracker('cp', 'Competitive programming', 'ps', [1], { addedDays: ['2026-11-22'] }),
+    tracker('run', 'Running', null, []),
+  ];
+
+  it('swaps AI for problem solving on Sunday in the week', () => {
+    const plan = buildWeekPlan([ai, ps], trackers, week);
+    expect(plan.days[0]?.entries.map((e) => [e.id, e.change])).toEqual([
+      ['ai', 'skipped'],
+      ['ps', 'added'],
+    ]);
+    expect(plan.days[1]?.entries.map((e) => e.id)).toEqual(['ps']);
+    expect(plan.everyDay).toBe(1);
+  });
+
+  it("splits a day's plan into on and off, tracker by tracker", () => {
+    const day = buildDayPlan([ai, ps], trackers, '2026-11-22');
+    expect(day.on.map((r) => [r.id, r.state, r.domain])).toEqual([
+      ['cp', 'added', 'Problem solving'],
+      ['run', 'routine', null],
+    ]);
+    expect(day.off.map((r) => [r.id, r.state])).toEqual([['ml', 'skipped']]);
   });
 });
 
@@ -86,107 +195,13 @@ describe('changing a single day', () => {
     ]);
     expect(normalizeDayList(null)).toEqual([]);
   });
-
-  it('describes a routine', () => {
-    expect(describeRoutine([])).toBe('Every day');
-    expect(describeRoutine([0, 2])).toMatch(/^Sun and Tue$/);
-  });
 });
 
-describe('buildWeekPlan', () => {
-  it('lists domains and standalone trackers on their days', () => {
-    const ai = { id: 'ai', name: 'AI', icon: '🤖', color: 'plum', routineDays: [0] as const };
-    const maths = { id: 'm', name: 'Maths', icon: '📐', color: 'teal', routineDays: [1] as const };
-    const all = { id: 'x', name: 'Writing', icon: '✍️', color: 'rose', routineDays: [] as const };
-    const trackers = [
-      {
-        id: 'ml',
-        name: 'ML',
-        icon: '🧠',
-        color: 'plum',
-        domainId: 'ai',
-        routineDays: [3] as const,
-      },
-      {
-        id: 'g',
-        name: 'Guitar',
-        icon: '🎸',
-        color: 'moss',
-        domainId: null,
-        routineDays: [0, 1] as const,
-      },
-    ];
-    const plan = buildWeekPlan([ai, maths, all], trackers);
-    expect(plan.days[0]?.entries.map((e) => e.id)).toEqual(['ai', 'g']);
-    expect(plan.days[1]?.entries.map((e) => e.id)).toEqual(['m', 'g']);
-    // ML follows its domain, so it is not listed on its own.
-    expect(plan.days[3]?.entries).toEqual([]);
-    expect(plan.everyDay).toBe(1);
-  });
-});
-
-describe('day changes in the week and day plans', () => {
-  // The week of Sunday 2026-11-22.
-  const week = ['22', '23', '24', '25', '26', '27', '28'].map((d) => `2026-11-${d}`);
-  const ai = { id: 'ai', name: 'AI', icon: '🤖', color: 'plum', routineDays: [0] as Weekday[] };
-  const ps = {
-    id: 'ps',
-    name: 'Problem solving',
-    icon: '🧩',
-    color: 'moss',
-    routineDays: [1] as Weekday[],
-  };
-  const ml = {
-    id: 'ml',
-    name: 'Machine learning',
-    icon: '🧠',
-    color: 'plum',
-    domainId: 'ai',
-    kind: 'skill' as const,
-    routineDays: [] as Weekday[],
-  };
-  const run = {
-    id: 'run',
-    name: 'Running',
-    icon: '🏃',
-    color: 'teal',
-    domainId: null,
-    kind: 'habit' as const,
-    routineDays: [] as Weekday[],
-  };
-
-  it('swaps AI for problem solving on Sunday in the week', () => {
-    const plan = buildWeekPlan(
-      [
-        { ...ai, skippedDays: ['2026-11-22'] },
-        { ...ps, addedDays: ['2026-11-22'] },
-      ],
-      [ml, run],
-      week,
-    );
-    expect(plan.days[0]?.entries.map((e) => [e.id, e.change])).toEqual([
-      ['ai', 'skipped'],
-      ['ps', 'added'],
-    ]);
-    expect(plan.days[1]?.entries.map((e) => e.id)).toEqual(['ps']);
-    expect(plan.everyDay).toBe(1);
-  });
-
-  it("splits a day's plan into on and off", () => {
-    const day = buildDayPlan(
-      [
-        { ...ai, skippedDays: ['2026-11-22'] },
-        { ...ps, addedDays: ['2026-11-22'] },
-      ],
-      [ml, run],
-      '2026-11-22',
-    );
-    expect(day.on.map((r) => [r.id, r.state])).toEqual([
-      ['ps', 'added'],
-      ['run', 'routine'],
-    ]);
-    expect(day.off).toEqual([
-      expect.objectContaining({ id: 'ai', state: 'skipped', inside: ['Machine learning'] }),
-    ]);
+describe('setWeekday', () => {
+  it('turns a day on or off, never down to no days', () => {
+    expect(setWeekday([0], 2, true)).toEqual([0, 2]);
+    expect(setWeekday([], 0, false)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(setWeekday([3], 3, false)).toEqual([3]);
+    expect(setWeekday([1, 2, 3, 4, 5, 6], 0, true)).toEqual([]);
   });
 });

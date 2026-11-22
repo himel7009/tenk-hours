@@ -59,20 +59,29 @@ migration plan.
   keeps a streak. With the streak off, nothing shows or counts a streak
   (`keepsStreak`), but hours, goals and the activity map stay.
 - `routineDays` (weekdays, 0 = Sunday, empty = every day, `domain/routine.ts`)
-  plans the week. A skill in a domain follows the domain's `routineDays`
-  (`routineOf`), never its own. A day off the routine neither counts nor breaks
+  plans the week. Every skill, habit and project has its own (`routineOf`),
+  in a domain or not. Until v16 a skill in a domain followed the domain's
+  days; the v16 storage step and the matching migration copied them over
+  (`inheritDomainRoutines`). A day off the routine neither counts nor breaks
   a streak (`computeStreak`'s `isDayOff`); time put in on a day off counts.
   Today's goals, a domain's daily plan and the report's goal days include only
   planned days. Changing a routine reinterprets past days too.
 - Single days can differ from the routine (`addedDays`, `skippedDays`, columns
-  `added_days`, `skipped_days`), stored where the routine is: on a domain or
-  a tracker outside one (`planOf`, `routineOf`, `changeDay`). `isPlannedOn`
+  `added_days`, `skipped_days`), stored on each tracker (`planOf`,
+  `routineOf`, `changeDay`). `isPlannedOn`
   (routine plus added, less skipped) decides what Today, the week card and
   the to-do list show; `isRequiredOn` (routine less skipped) decides what a
   missed goal costs, so skipping never breaks a streak and an added day is a
   bonus. The lists are kept for good, since past streaks read them. Changed
   from the Change a day dialog (`ChangeDayDialog`, `buildDayPlan`) on the
   Today tab and the week card.
+- Domains have no days of their own. A domain is on whenever one of its
+  trackers is (`isDomainPlannedOn`); its streak skips days when none of its
+  streak-keeping skills is required. The routine grid (`RoutineDialog`) lists
+  trackers under their domain, whose row sets a day for all of them
+  (`setWeekday`). `domains.routine_days`, `added_days` and `skipped_days` are
+  kept in the table but no longer read; `domainPlan` stands in for a domain
+  where old to-dos still point at one.
 - Streaks are per tracker, never app-wide. A day counts only when that
   day's minutes reach the item's `dailyGoalMinutes` (default 60).
 - Timers are countdowns by default (`ActiveTimer.durationSeconds`), saved
@@ -126,8 +135,9 @@ overview rail (Today card, the week from the routine, day and year progress
 from `domain/timeProgress.ts`, the 7-day chart) and the trackers in tabs
 (`TrackerTabs`: today, domains, skills, projects, habits, bad habits). The
 Today tab (`TodayTab`) shows the to-do list (grouped by domain and skill), then every project planned
-today (wherever it sits), then the planned domains without their projects
-(`hideProjects`); a domain holding only projects is left out. The Projects tab
+today (wherever it sits), then the domains with a skill on today, listing
+only those skills (`plannedOn`) and naming the rest, without their projects
+(`hideProjects`). The Projects tab
 lists every project, tagged with its domain (`SkillCard`'s `showDomain`).
 New trackers, projects included, start with `keepStreak` on.
 Below 62rem the rail dissolves with `display: contents` so the tabs come
@@ -282,7 +292,7 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All sixteen migrations in `supabase/migrations/` are applied to the live project
+All seventeen migrations in `supabase/migrations/` are applied to the live project
 as of 2026-11-22.
 
 ## Releases

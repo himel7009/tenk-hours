@@ -1,6 +1,5 @@
 import { addDays, type DayKey } from './dates';
 import { summarizeProgress, type Progress } from './progress';
-import type { Domain } from './domains';
 import { routineOf } from './routine';
 import { hasDailyGoal, keepsStreak, type Session, type Skill, type SkillId } from './types';
 
@@ -35,7 +34,6 @@ export function summarizeDashboard(
   skills: readonly Skill[],
   sessions: readonly Session[],
   today: DayKey,
-  domains: readonly Domain[] = [],
 ): Dashboard {
   const bySkill = new Map<SkillId, Session[]>(skills.map((skill) => [skill.id, []]));
   for (const session of sessions) bySkill.get(session.skillId)?.push(session);
@@ -47,7 +45,7 @@ export function summarizeDashboard(
       skill.targetHours,
       skill.dailyGoalMinutes,
       today,
-      routineOf(skill, domains),
+      routineOf(skill),
     ),
   }));
 

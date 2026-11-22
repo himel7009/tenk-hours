@@ -1,7 +1,8 @@
 import { Button } from '../../components/Button';
 import { usePersistentState } from '../../components/usePersistentState';
 import type { DailyPlan, Domain } from '../../domain/domains';
-import { describeRoutine } from '../../domain/routine';
+import type { DayKey } from '../../domain/dates';
+import { isPlannedOn, planOf } from '../../domain/routine';
 import { hasDailyGoal, type Skill } from '../../domain/types';
 import { formatDuration, formatHours } from '../../domain/format';
 import { ActivityCalendar } from '../progress/ActivityCalendar';
@@ -18,6 +19,8 @@ interface DomainPanelProps {
   onAddSkill: () => void;
   /** Leave projects out of the skill list, when they are listed elsewhere on the page. */
   hideProjects?: boolean;
+  /** List only the skills on the plan for this day (the Today tab). */
+  plannedOn?: DayKey;
 }
 
 /** "2 skills and 1 project", leaving out kinds there are none of. */
@@ -84,12 +87,18 @@ export function DomainPanel({
   onEdit,
   onAddSkill,
   hideProjects = false,
+  plannedOn,
 }: DomainPanelProps) {
   const today = useToday();
   const { skills, progress } = useDomainProgress(domain);
   const contributing = progress.shares.filter((share) => share.minutes > 0);
   // The cards listed here; projects may be shown elsewhere on the page.
-  const listed = skills.filter((skill) => !(hideProjects && skill.kind === 'project'));
+  const onDay = (skill: Skill) => plannedOn === undefined || isPlannedOn(planOf(skill), plannedOn);
+  const listed = skills.filter(
+    (skill) => !(hideProjects && skill.kind === 'project') && onDay(skill),
+  );
+  // On the Today tab, the domain's other skills are named, not shown.
+  const resting = skills.filter((skill) => skill.kind !== 'project' && !onDay(skill));
   const hasGoals = skills.some((skill) => hasDailyGoal(skill));
   const streakOn = progress.keepsStreak;
   const [open, setOpen] = usePersistentState<boolean>(`tenk:domain-open:${domain.id}`, true);
@@ -103,10 +112,9 @@ export function DomainPanel({
         </span>
         <div className={styles.heading}>
           <h3 className={styles.name}>{domain.name}</h3>
-          {domain.routineDays.length > 0 && (
+          {plannedOn === undefined && (
             <p className={styles.routine} data-today={progress.plannedToday}>
-              {progress.plannedToday ? 'On today' : 'Not today'}, planned{' '}
-              {describeRoutine(domain.routineDays)}
+              {progress.plannedToday ? 'On today' : 'Not today'}
             </p>
           )}
           <p className={`tabular ${styles.total}`}>
@@ -196,7 +204,12 @@ export function DomainPanel({
           {open ? 'Hide' : 'Show'} {describeContents(listed)}
         </button>
       )}
-      {hideProjects && listed.length < skills.length && (
+      {plannedOn !== undefined && resting.length > 0 && (
+        <p className={styles.listedAbove}>
+          Not today: {resting.map((skill) => skill.name).join(', ')}.
+        </p>
+      )}
+      {hideProjects && skills.some((skill) => skill.kind === 'project' && onDay(skill)) && (
         <p className={styles.listedAbove}>Its projects are listed above.</p>
       )}
 

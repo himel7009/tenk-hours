@@ -29,7 +29,8 @@ const context: TodoContext = {
       color: 'persimmon',
       kind: 'skill',
       domainId: 'ps',
-      routineDays: [],
+      // Skills keep their own days; this one has its domain's.
+      routineDays: [1, 4],
     },
     {
       id: 'os',
@@ -67,7 +68,7 @@ const todo = (day: string, extra: Partial<Todo> = {}): Todo => ({
 const at = (day: string) => new Date(`${day}T15:00:00`).getTime();
 
 describe('targets and days', () => {
-  it("finds the domain or skill, and a skill follows its domain's days", () => {
+  it('finds the domain or skill, each with its days', () => {
     expect(targetOf({ domainId: 'ps', skillId: null }, context).name).toBe('Problem solving');
     expect(targetOf({ domainId: null, skillId: 'cp' }, context).routine).toMatchObject({
       days: [1, 4],

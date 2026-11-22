@@ -19,7 +19,7 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
-import { isPlannedOn, planOf, routineOf } from '../../domain/routine';
+import { isDomainPlannedOn, isPlannedOn, routineOf } from '../../domain/routine';
 import { RoutineCard } from '../routine/RoutineCard';
 import { TodayTab } from './TodayTab';
 import { TodayCard } from './TodayCard';
@@ -122,11 +122,16 @@ export function HomePage() {
   };
   // What the Today tab lists: domains, and trackers outside a domain, planned today.
   const plannedCount =
-    domains.filter((domain) => isPlannedOn(planOf(domain), today)).length +
+    domains.filter((domain) =>
+      isDomainPlannedOn(
+        skills.filter((skill) => skill.domainId === domain.id && skill.kind !== 'project'),
+        today,
+      ),
+    ).length +
     skills.filter(
       (skill) =>
         (skill.domainId === null || skill.kind === 'project') &&
-        isPlannedOn(routineOf(skill, domains), today),
+        isPlannedOn(routineOf(skill), today),
     ).length;
   const isEmpty = skills.length === 0 && domains.length === 0 && badHabits.length === 0;
   const copy = TAB_COPY[tab];

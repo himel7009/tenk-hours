@@ -1,65 +1,85 @@
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
-import { toggleWeekday, WEEKDAYS, type Weekday } from '../../domain/routine';
+import { setWeekday, toggleWeekday, WEEKDAYS, type Weekday } from '../../domain/routine';
+import type { Skill } from '../../domain/types';
 import { useTrackerStore } from '../../store/trackerStore';
 import styles from './routine.module.css';
 
 const dayName = (weekday: number, style: 'short' | 'long') =>
   new Date(2023, 0, 1 + weekday).toLocaleDateString(undefined, { weekday: style });
 
-interface Row {
-  key: string;
-  name: string;
-  icon: string;
-  color: string;
-  note: string;
-  days: readonly Weekday[];
-  target: { domainId: string } | { skillId: string };
-}
+const kindName = (skill: Skill) => skill.kind.charAt(0).toUpperCase() + skill.kind.slice(1);
+
+const isOn = (days: readonly Weekday[], weekday: Weekday) =>
+  days.length === 0 || days.includes(weekday);
 
 /**
- * The whole routine in one grid: a row per domain and per tracker outside a
- * domain, a column per weekday. Changes save as they are made.
+ * The whole routine in one grid: a row per skill, habit and project, a
+ * column per weekday. Skills sit under their domain, whose row sets a day
+ * for all of them at once. Changes save as they are made.
  */
 export function RoutineDialog({ onClose }: { onClose: () => void }) {
   const domains = useTrackerStore((state) => state.domains);
   const skills = useTrackerStore((state) => state.skills);
   const setRoutine = useTrackerStore((state) => state.setRoutine);
 
-  const rows: Row[] = [
-    ...domains.map((domain) => {
-      const count = skills.filter((skill) => skill.domainId === domain.id).length;
-      return {
+  const groups = [
+    ...domains
+      .map((domain) => ({
         key: domain.id,
-        name: domain.name,
-        icon: domain.icon,
-        color: domain.color,
-        note: `Domain, ${count} ${count === 1 ? 'item' : 'items'}`,
-        days: domain.routineDays,
-        target: { domainId: domain.id },
-      };
-    }),
-    ...skills
-      .filter((skill) => skill.domainId === null)
-      .map((skill) => ({
-        key: skill.id,
-        name: skill.name,
-        icon: skill.icon,
-        color: skill.color,
-        note: skill.kind.charAt(0).toUpperCase() + skill.kind.slice(1),
-        days: skill.routineDays,
-        target: { skillId: skill.id },
-      })),
-  ];
+        domain,
+        members: skills.filter((skill) => skill.domainId === domain.id),
+      }))
+      .filter((group) => group.members.length > 0),
+    { key: 'own', domain: null, members: skills.filter((skill) => skill.domainId === null) },
+  ].filter((group) => group.members.length > 0);
+
+  const trackerRow = (skill: Skill, inDomain: boolean) => (
+    <tr key={skill.id} data-color={skill.color} data-member={inDomain || undefined}>
+      <th scope="row">
+        <span className={styles.rowName}>
+          <span aria-hidden="true">{skill.icon}</span> {skill.name}
+        </span>
+        <span className={styles.rowNote}>
+          {kindName(skill)}
+          {skill.routineDays.length === 0 && ', every day'}
+        </span>
+      </th>
+      {WEEKDAYS.map((weekday) => {
+        const on = isOn(skill.routineDays, weekday);
+        return (
+          <td key={weekday}>
+            <label className={styles.cell}>
+              <input
+                type="checkbox"
+                className="visually-hidden"
+                checked={on}
+                // One day stays on: none at all would mean nothing.
+                disabled={skill.routineDays.length === 1 && on}
+                onChange={() =>
+                  setRoutine({ skillId: skill.id }, toggleWeekday(skill.routineDays, weekday))
+                }
+              />
+              <span className="visually-hidden">
+                {skill.name} on {dayName(weekday, 'long')}
+              </span>
+            </label>
+          </td>
+        );
+      })}
+    </tr>
+  );
 
   return (
     <Dialog title="Plan your week" onClose={onClose}>
       <p className={styles.lede}>
-        Pick the days for each one. Skills in a domain follow its days. A day off never breaks a
-        streak, and time put in on a day off still counts.
+        Pick the days for each skill, habit and project. A domain&rsquo;s row sets a day for all its
+        skills at once. A day off never breaks a streak, and time put in on a day off still counts.
       </p>
-      {rows.length === 0 ? (
-        <p className={styles.empty}>Add a domain, skill or habit first, then plan its days here.</p>
+      {groups.length === 0 ? (
+        <p className={styles.empty}>
+          Add a skill, habit or project first, then plan its days here.
+        </p>
       ) : (
         <div className={styles.gridWrap}>
           <table className={styles.grid}>
@@ -75,44 +95,58 @@ export function RoutineDialog({ onClose }: { onClose: () => void }) {
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {rows.map((row) => {
-                const on = (weekday: Weekday) =>
-                  row.days.length === 0 || row.days.includes(weekday);
-                return (
-                  <tr key={row.key} data-color={row.color}>
-                    <th scope="row">
+            {groups.map(({ key, domain, members }) => (
+              <tbody key={key}>
+                {domain ? (
+                  <tr className={styles.groupRow} data-color={domain.color}>
+                    <th scope="rowgroup">
                       <span className={styles.rowName}>
-                        <span aria-hidden="true">{row.icon}</span> {row.name}
+                        <span aria-hidden="true">{domain.icon}</span> {domain.name}
                       </span>
-                      <span className={styles.rowNote}>
-                        {row.note}
-                        {row.days.length === 0 && ', every day'}
-                      </span>
+                      <span className={styles.rowNote}>Same days for all its skills</span>
                     </th>
-                    {WEEKDAYS.map((weekday) => (
-                      <td key={weekday}>
-                        <label className={styles.cell}>
-                          <input
-                            type="checkbox"
-                            className="visually-hidden"
-                            checked={on(weekday)}
-                            // One day stays on: none at all would mean nothing.
-                            disabled={row.days.length === 1 && on(weekday)}
-                            onChange={() =>
-                              setRoutine(row.target, toggleWeekday(row.days, weekday))
-                            }
-                          />
-                          <span className="visually-hidden">
-                            {row.name} on {dayName(weekday, 'long')}
-                          </span>
-                        </label>
-                      </td>
-                    ))}
+                    {WEEKDAYS.map((weekday) => {
+                      const count = members.filter((m) => isOn(m.routineDays, weekday)).length;
+                      const all = count === members.length;
+                      return (
+                        <td key={weekday}>
+                          <label
+                            className={styles.cell}
+                            data-some={(count > 0 && !all) || undefined}
+                          >
+                            <input
+                              type="checkbox"
+                              className="visually-hidden"
+                              checked={all}
+                              onChange={() => {
+                                for (const member of members) {
+                                  setRoutine(
+                                    { skillId: member.id },
+                                    setWeekday(member.routineDays, weekday, !all),
+                                  );
+                                }
+                              }}
+                            />
+                            <span className="visually-hidden">
+                              {all ? 'Take all of' : 'Put all of'} {domain.name}{' '}
+                              {all ? 'off' : 'on'} {dayName(weekday, 'long')}
+                              {count > 0 && !all && `, ${count} of ${members.length} on now`}
+                            </span>
+                          </label>
+                        </td>
+                      );
+                    })}
                   </tr>
-                );
-              })}
-            </tbody>
+                ) : (
+                  <tr className={styles.groupRow}>
+                    <th scope="rowgroup" colSpan={8}>
+                      <span className={styles.rowName}>Not in a domain</span>
+                    </th>
+                  </tr>
+                )}
+                {members.map((skill) => trackerRow(skill, domain !== null))}
+              </tbody>
+            ))}
           </table>
         </div>
       )}

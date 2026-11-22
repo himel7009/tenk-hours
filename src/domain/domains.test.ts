@@ -114,12 +114,21 @@ describe('summarizeDomain', () => {
 
   it('carries its streak over days off its routine, with no plan on those days', () => {
     // 2026-11-16 is a Monday. AI is studied on Sundays and Tuesdays.
-    const ml = skill('ml');
+    const ml = { ...skill('ml'), routineDays: [0, 2] as Skill['routineDays'] };
     const sessions = [session('ml', '2026-11-10', 60), session('ml', '2026-11-15', 60)];
-    const summary = summarizeDomain([ml], sessions, today, [0, 2]);
+    const summary = summarizeDomain([ml], sessions, today);
     expect(summary.plannedToday).toBe(false);
     expect(summary.plan.items).toEqual([]);
     expect(summary.streak.current).toBe(2);
+  });
+
+  it("is on when any skill is, and plans only today's skills", () => {
+    // 2026-11-16 is a Monday: ML is on Mondays, DL on Tuesdays.
+    const ml = { ...skill('ml'), routineDays: [1] as Skill['routineDays'] };
+    const dl = { ...skill('dl'), routineDays: [2] as Skill['routineDays'] };
+    const summary = summarizeDomain([ml, dl], [], today);
+    expect(summary.plannedToday).toBe(true);
+    expect(summary.plan.items.map((item) => item.skill.id)).toEqual(['ml']);
   });
 
   it('has no streak when none of its skills keeps one', () => {

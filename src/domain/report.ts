@@ -157,7 +157,7 @@ export function buildReport(input: ReportInput, period: Period, today: DayKey): 
       );
       let goal: TrackerReport['goal'] = null;
       if (hasDailyGoal(skill)) {
-        const routine = routineOf(skill, input.domains);
+        const routine = routineOf(skill);
         const metDays = [...byDay]
           .filter(([day, total]) => day <= today && total >= skill.dailyGoalMinutes)
           .map(([day]) => day);

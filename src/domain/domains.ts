@@ -1,6 +1,6 @@
 import type { DayKey } from './dates';
 import { summarizeProgress } from './progress';
-import { isPlannedOn, isRequiredOn, type Routine, type Weekday } from './routine';
+import { isPlannedOn, isRequiredOn, planOf, type Weekday } from './routine';
 import { computeStreak, type Streak } from './streaks';
 import {
   hasDailyGoal,
@@ -96,9 +96,10 @@ export function summarizeDomain(
   skills: readonly Skill[],
   sessions: readonly Session[],
   today: DayKey,
-  routine: Routine = [],
 ): DomainProgress {
-  const plannedToday = isPlannedOn(routine, today);
+  // A domain is on whenever one of its trackers is; each follows its own plan.
+  const plannedToday = skills.some((skill) => isPlannedOn(planOf(skill), today));
+  const streakSkills = skills.filter((skill) => hasDailyGoal(skill) && keepsStreak(skill));
   const bySkill = new Map<SkillId, Session[]>(skills.map((skill) => [skill.id, []]));
   for (const session of sessions) bySkill.get(session.skillId)?.push(session);
 
@@ -114,7 +115,7 @@ export function summarizeDomain(
       skill.targetHours,
       skill.dailyGoalMinutes,
       today,
-      routine,
+      planOf(skill),
     );
     if (hasDailyGoal(skill) && keepsStreak(skill)) {
       for (const day of progress.completedDays) completedDays.add(day);
@@ -124,7 +125,7 @@ export function summarizeDomain(
       byDay.set(day, (byDay.get(day) ?? 0) + minutes);
     }
     minutesToday += progress.minutesToday;
-    if (hasDailyGoal(skill) && plannedToday) {
+    if (hasDailyGoal(skill) && isPlannedOn(planOf(skill), today)) {
       planItems.push({
         skill,
         goalMinutes: skill.dailyGoalMinutes,
@@ -142,7 +143,12 @@ export function summarizeDomain(
     completedDays,
     activeDays,
     byDay,
-    streak: computeStreak(completedDays, today, (day) => !isRequiredOn(routine, day)),
+    streak: computeStreak(
+      completedDays,
+      today,
+      // A day is off when none of the streak-keeping skills is required on it.
+      (day) => !streakSkills.some((skill) => isRequiredOn(planOf(skill), day)),
+    ),
     keepsStreak: skills.some((skill) => hasDailyGoal(skill) && keepsStreak(skill)),
     plannedToday,
     plan: {

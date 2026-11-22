@@ -2,8 +2,6 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input } from '../../components/Field';
-import { WeekdayPicker } from '../../components/WeekdayPicker';
-import type { Weekday } from '../../domain/routine';
 import type { Domain } from '../../domain/domains';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
@@ -21,7 +19,6 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
   const addDomain = useTrackerStore((state) => state.addDomain);
   const updateDomain = useTrackerStore((state) => state.updateDomain);
   const deleteDomain = useTrackerStore((state) => state.deleteDomain);
-  const setRoutine = useTrackerStore((state) => state.setRoutine);
   const skillCount = useTrackerStore(
     (state) => state.skills.filter((skill) => skill.domainId === domain?.id).length,
   );
@@ -30,7 +27,6 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
   const [name, setName] = useState(domain?.name ?? '');
   const look = useLook({ kind: 'domain', name, current: domain, exceptId: domain?.id });
   const { icon, color } = look;
-  const [routineDays, setRoutineDays] = useState<Weekday[]>(domain?.routineDays ?? []);
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -45,10 +41,9 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
     const input = { name: trimmed, icon, color };
     if (domain) {
       updateDomain(domain.id, input);
-      setRoutine({ domainId: domain.id }, routineDays);
       toast('Changes saved');
     } else {
-      setRoutine({ domainId: addDomain(input) }, routineDays);
+      addDomain(input);
       toast(`Added ${trimmed}. Now add skills to it.`);
     }
     onClose();
@@ -82,13 +77,6 @@ export function DomainFormDialog({ domain, onClose }: DomainFormDialogProps) {
         </Field>
 
         <LookPicker look={look} />
-
-        <WeekdayPicker
-          legend="Days you study this domain"
-          hint="Its skills follow these days, and days off never break a streak"
-          value={routineDays}
-          onChange={setRoutineDays}
-        />
 
         {error && (
           <p className={formStyles.error} role="alert">

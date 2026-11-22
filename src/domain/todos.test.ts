@@ -69,7 +69,9 @@ const at = (day: string) => new Date(`${day}T15:00:00`).getTime();
 describe('targets and days', () => {
   it("finds the domain or skill, and a skill follows its domain's days", () => {
     expect(targetOf({ domainId: 'ps', skillId: null }, context).name).toBe('Problem solving');
-    expect(targetOf({ domainId: null, skillId: 'cp' }, context).routine).toEqual([1, 4]);
+    expect(targetOf({ domainId: null, skillId: 'cp' }, context).routine).toMatchObject({
+      days: [1, 4],
+    });
     expect(targetOf({ domainId: null, skillId: 'gone' }, context)).toBe(GENERAL);
   });
 

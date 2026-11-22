@@ -55,6 +55,12 @@ export interface Skill {
    * domain, which plans for all its skills (`routineOf`).
    */
   routineDays: Weekday[];
+  /**
+   * Single days changed from the routine: added on top of it, or skipped.
+   * Used only where the routine is (a domain, or a tracker outside one).
+   */
+  addedDays?: DayKey[];
+  skippedDays?: DayKey[];
   createdAt: number;
 }
 

@@ -1,5 +1,14 @@
+import { useMemo, useState } from 'react';
 import { Button } from '../../components/Button';
-import { isPlannedOn, routineOf, weekdayOf } from '../../domain/routine';
+import {
+  buildDayPlan,
+  isPlannedOn,
+  planOf,
+  routineOf,
+  weekdayOf,
+  type DayPlanRow,
+} from '../../domain/routine';
+import { ChangeDayDialog } from '../routine/ChangeDayDialog';
 import type { DayKey } from '../../domain/dates';
 import type { Domain, DomainId } from '../../domain/domains';
 import { useTrackerStore } from '../../store/trackerStore';
@@ -35,20 +44,29 @@ export function TodayTab({
   const holdsMoreThanProjects = (domain: Domain) =>
     skills.some((skill) => skill.domainId === domain.id && skill.kind !== 'project');
   const plannedDomains = domains.filter(
-    (domain) => isPlannedOn(domain.routineDays, today) && holdsMoreThanProjects(domain),
+    (domain) => isPlannedOn(planOf(domain), today) && holdsMoreThanProjects(domain),
   );
-  const restingDomains = domains.filter((domain) => !isPlannedOn(domain.routineDays, today));
+  const restingDomains = domains.filter((domain) => !isPlannedOn(planOf(domain), today));
   // Projects come first, wherever they sit: they are the daily work.
   const plannedProjects = skills.filter(
     (skill) => skill.kind === 'project' && isPlannedOn(routineOf(skill, domains), today),
   );
   const plannedOwn = skills.filter(
     (skill) =>
-      skill.kind !== 'project' && skill.domainId === null && isPlannedOn(skill.routineDays, today),
+      skill.kind !== 'project' && skill.domainId === null && isPlannedOn(planOf(skill), today),
   );
   const weekday = new Date(2023, 0, 1 + weekdayOf(today)).toLocaleDateString(undefined, {
     weekday: 'long',
   });
+  const [changing, setChanging] = useState(false);
+  const dayPlan = useMemo(() => {
+    const { on, off } = buildDayPlan(domains, skills, today);
+    const names = (rows: DayPlanRow[]) => rows.map((row) => `${row.icon} ${row.name}`);
+    return {
+      added: names(on.filter((row) => row.state === 'added')),
+      skipped: names(off.filter((row) => row.state === 'skipped')),
+    };
+  }, [domains, skills, today]);
   const nothingPlanned =
     plannedProjects.length === 0 && plannedDomains.length === 0 && plannedOwn.length === 0;
 
@@ -66,18 +84,38 @@ export function TodayTab({
       )}
 
       <div>
-        <h2 className={styles.todayHeading}>Planned for {weekday}</h2>
+        <div className={styles.todayHead}>
+          <h2 className={styles.todayHeading}>Planned for {weekday}</h2>
+          <Button size="sm" variant="quiet" onClick={() => setChanging(true)}>
+            Change today
+          </Button>
+        </div>
+        {(dayPlan.added.length > 0 || dayPlan.skipped.length > 0) && (
+          <p className={styles.todayChanges}>
+            {dayPlan.added.length > 0 && (
+              <>
+                Added for today: <strong>{dayPlan.added.join(', ')}</strong>.{' '}
+              </>
+            )}
+            {dayPlan.skipped.length > 0 && (
+              <>
+                Skipped today: <strong>{dayPlan.skipped.join(', ')}</strong>, streaks kept.
+              </>
+            )}
+          </p>
+        )}
         {restingDomains.length > 0 && (
           <p className={styles.todayRest}>
             Not today: {restingDomains.map((domain) => `${domain.icon} ${domain.name}`).join(', ')}
           </p>
         )}
       </div>
+      {changing && <ChangeDayDialog onClose={() => setChanging(false)} />}
 
       {nothingPlanned ? (
         <p className={styles.empty}>
-          Nothing on your routine for {weekday}. Take the day off, or pick something from the other
-          tabs. Time you put in still counts.
+          Nothing on your plan for {weekday}. Take the day off, or use Change today to add
+          something. Time you put in always counts.
         </p>
       ) : (
         <>

@@ -19,7 +19,7 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
-import { isPlannedOn, routineOf } from '../../domain/routine';
+import { isPlannedOn, planOf, routineOf } from '../../domain/routine';
 import { RoutineCard } from '../routine/RoutineCard';
 import { TodayTab } from './TodayTab';
 import { TodayCard } from './TodayCard';
@@ -122,7 +122,7 @@ export function HomePage() {
   };
   // What the Today tab lists: domains, and trackers outside a domain, planned today.
   const plannedCount =
-    domains.filter((domain) => isPlannedOn(domain.routineDays, today)).length +
+    domains.filter((domain) => isPlannedOn(planOf(domain), today)).length +
     skills.filter(
       (skill) =>
         (skill.domainId === null || skill.kind === 'project') &&

@@ -2,7 +2,7 @@ import type { DayKey } from './dates';
 import { nextMilestone } from './milestones';
 import { dailyPace, minutesByDay, projectFinish, totalMinutes } from './stats';
 import { computeStreak, type Streak } from './streaks';
-import { isPlannedOn, type Weekday } from './routine';
+import { isPlannedOn, isRequiredOn, type Routine } from './routine';
 import type { Session } from './types';
 
 export interface Progress {
@@ -27,7 +27,7 @@ export function summarizeProgress(
   targetHours: number,
   dailyGoalMinutes: number,
   today: DayKey,
-  routine: readonly Weekday[] = [],
+  routine: Routine = [],
 ): Progress {
   const loggedMinutes = totalMinutes(sessions);
   const byDay = minutesByDay(sessions);
@@ -43,7 +43,7 @@ export function summarizeProgress(
     byDay,
     completedDays,
     goalMetToday: completedDays.has(today),
-    streak: computeStreak(completedDays, today, (day) => !isPlannedOn(routine, day)),
+    streak: computeStreak(completedDays, today, (day) => !isRequiredOn(routine, day)),
     plannedToday: isPlannedOn(routine, today),
     pace,
     finishDay: projectFinish(loggedMinutes, targetHours, pace, today),

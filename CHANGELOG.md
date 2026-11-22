@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-22
+
+- **Change a day without changing your routine.** "Change today" on the Today tab (and "Change a day" on the week card) lets you add any domain, skill, habit or project to today, tomorrow or any later day, or skip one. Doing competitive programming instead of machine learning today is: skip AI, add Problem solving. A skipped day never breaks a streak, and added work is a bonus: reaching its goal counts, missing it costs nothing. The week card shows added days dashed and skipped days struck through, and the to-do list follows the changed plan.
+
 ## 2026-11-21
 
 - **To-dos show what they belong to and how long they have been going.** Each group says Skill, Habit or Project, and each to-do shows its day count ("Day 3, added Thu, Nov 19"), which turns bold from day 3. Done to-dos say which day they were finished on.

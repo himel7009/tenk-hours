@@ -1,6 +1,6 @@
 import type { DayKey } from './dates';
 import { summarizeProgress } from './progress';
-import { isPlannedOn, type Weekday } from './routine';
+import { isPlannedOn, isRequiredOn, type Routine, type Weekday } from './routine';
 import { computeStreak, type Streak } from './streaks';
 import {
   hasDailyGoal,
@@ -25,6 +25,12 @@ export interface Domain {
   color: SkillColor;
   /** Weekdays the domain is studied on; empty is every day. Its skills follow it. */
   routineDays: Weekday[];
+  /**
+   * Single days changed from the routine: added on top of it, or skipped.
+   * Used only where the routine is (a domain, or a tracker outside one).
+   */
+  addedDays?: DayKey[];
+  skippedDays?: DayKey[];
   createdAt: number;
 }
 
@@ -90,7 +96,7 @@ export function summarizeDomain(
   skills: readonly Skill[],
   sessions: readonly Session[],
   today: DayKey,
-  routine: readonly Weekday[] = [],
+  routine: Routine = [],
 ): DomainProgress {
   const plannedToday = isPlannedOn(routine, today);
   const bySkill = new Map<SkillId, Session[]>(skills.map((skill) => [skill.id, []]));
@@ -136,7 +142,7 @@ export function summarizeDomain(
     completedDays,
     activeDays,
     byDay,
-    streak: computeStreak(completedDays, today, (day) => !isPlannedOn(routine, day)),
+    streak: computeStreak(completedDays, today, (day) => !isRequiredOn(routine, day)),
     keepsStreak: skills.some((skill) => hasDailyGoal(skill) && keepsStreak(skill)),
     plannedToday,
     plan: {

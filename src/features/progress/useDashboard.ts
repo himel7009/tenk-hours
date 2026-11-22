@@ -1,3 +1,4 @@
+import { planOf } from '../../domain/routine';
 import { useMemo } from 'react';
 import { combineByDay } from '../../domain/activity';
 import type { DayKey } from '../../domain/dates';
@@ -26,8 +27,8 @@ export function useDomainProgress(domain: Domain): { skills: Skill[]; progress: 
   const today = useToday();
   return useMemo(() => {
     const skills = allSkills.filter((skill) => skill.domainId === domain.id);
-    return { skills, progress: summarizeDomain(skills, sessions, today, domain.routineDays) };
-  }, [allSkills, sessions, today, domain.id, domain.routineDays]);
+    return { skills, progress: summarizeDomain(skills, sessions, today, planOf(domain)) };
+  }, [allSkills, sessions, today, domain]);
 }
 
 /** Minutes across every skill, habit and project, by day. */

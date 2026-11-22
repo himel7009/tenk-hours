@@ -1,7 +1,7 @@
 import { summarizeBadHabit, type BadHabit, type CheckIn } from './badHabits';
 import { addDays, daysBetween, fromDayKey, toDayKey, type DayKey } from './dates';
 import type { Domain } from './domains';
-import { isPlannedOn, routineOf } from './routine';
+import { isRequiredOn, routineOf } from './routine';
 import { hasDailyGoal, type Session, type Skill, type SkillId } from './types';
 
 export type PeriodKind = 'day' | 'week' | 'month';
@@ -162,7 +162,7 @@ export function buildReport(input: ReportInput, period: Period, today: DayKey): 
           .filter(([day, total]) => day <= today && total >= skill.dailyGoalMinutes)
           .map(([day]) => day);
         const created = toDayKey(new Date(skill.createdAt));
-        const planned = elapsed.filter((day) => day >= created && isPlannedOn(routine, day));
+        const planned = elapsed.filter((day) => day >= created && isRequiredOn(routine, day));
         // A goal met on a day off, or before the skill was created, is a bonus
         // on top of the planned days.
         const bonus = metDays.filter((day) => !planned.includes(day)).length;

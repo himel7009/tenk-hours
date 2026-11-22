@@ -64,6 +64,15 @@ migration plan.
   a streak (`computeStreak`'s `isDayOff`); time put in on a day off counts.
   Today's goals, a domain's daily plan and the report's goal days include only
   planned days. Changing a routine reinterprets past days too.
+- Single days can differ from the routine (`addedDays`, `skippedDays`, columns
+  `added_days`, `skipped_days`), stored where the routine is: on a domain or
+  a tracker outside one (`planOf`, `routineOf`, `changeDay`). `isPlannedOn`
+  (routine plus added, less skipped) decides what Today, the week card and
+  the to-do list show; `isRequiredOn` (routine less skipped) decides what a
+  missed goal costs, so skipping never breaks a streak and an added day is a
+  bonus. The lists are kept for good, since past streaks read them. Changed
+  from the Change a day dialog (`ChangeDayDialog`, `buildDayPlan`) on the
+  Today tab and the week card.
 - Streaks are per tracker, never app-wide. A day counts only when that
   day's minutes reach the item's `dailyGoalMinutes` (default 60).
 - Timers are countdowns by default (`ActiveTimer.durationSeconds`), saved
@@ -273,8 +282,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All fifteen migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-20.
+All sixteen migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-22.
 
 ## Releases
 

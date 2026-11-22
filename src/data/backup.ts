@@ -1,5 +1,5 @@
 import { DEBT_PERSON_MAX, type Debt, type DebtPayment } from '../domain/debts';
-import { normalizeRoutine } from '../domain/routine';
+import { normalizeDayList, normalizeRoutine } from '../domain/routine';
 import { cleanNote, MONEY_AMOUNT_MAX, type MoneyEntry, type MoneySection } from '../domain/money';
 import { cleanTodoTitle, type Todo } from '../domain/todos';
 import { isDayKey, toDayKey } from '../domain/dates';
@@ -161,6 +161,8 @@ function parseSkill(value: unknown): Skill {
     // Older backups have neither: keep what the app did before.
     keepStreak: typeof value.keepStreak === 'boolean' ? value.keepStreak : kind !== 'project',
     routineDays: normalizeRoutine(value.routineDays),
+    addedDays: normalizeDayList(value.addedDays),
+    skippedDays: normalizeDayList(value.skippedDays),
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }
@@ -228,6 +230,8 @@ function parseDomain(value: unknown): Domain {
     icon: typeof value.icon === 'string' && value.icon !== '' ? value.icon : '🧭',
     color: isSkillColor(value.color) ? value.color : SKILL_COLORS[0],
     routineDays: normalizeRoutine(value.routineDays),
+    addedDays: normalizeDayList(value.addedDays),
+    skippedDays: normalizeDayList(value.skippedDays),
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

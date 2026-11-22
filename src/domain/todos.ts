@@ -1,5 +1,5 @@
 import { addDays, daysBetween, toDayKey, type DayKey } from './dates';
-import { isPlannedOn, routineOf, type Weekday } from './routine';
+import { isPlannedOn, planOf, routineOf, type Routine, type Weekday } from './routine';
 import type { TrackerKind } from './types';
 
 /**
@@ -60,7 +60,7 @@ export interface TodoTarget {
   name: string;
   icon: string;
   color: string | null;
-  routine: readonly Weekday[];
+  routine: Routine;
   /** What it is, for grouping the picker. */
   kind: 'general' | 'domain' | TrackerKind;
 }
@@ -87,7 +87,7 @@ export function targetOf(
         name: domain.name,
         icon: domain.icon,
         color: domain.color,
-        routine: domain.routineDays,
+        routine: planOf(domain),
         kind: 'domain',
       };
     }
@@ -109,7 +109,7 @@ export function targetOf(
 }
 
 /** The first day on or after `from` that the routine plans for. */
-export function nextPlannedDay(routine: readonly Weekday[], from: DayKey): DayKey {
+export function nextPlannedDay(routine: Routine, from: DayKey): DayKey {
   for (let step = 0; step < 7; step += 1) {
     const day = addDays(from, step);
     if (isPlannedOn(routine, day)) return day;
@@ -141,7 +141,7 @@ export interface PlannedTodo {
 }
 
 /** Days the target was planned for from `from` up to, not including, `to`. */
-function plannedDaysBetween(routine: readonly Weekday[], from: DayKey, to: DayKey): DayKey[] {
+function plannedDaysBetween(routine: Routine, from: DayKey, to: DayKey): DayKey[] {
   const days: DayKey[] = [];
   for (let day = from; day < to; day = addDays(day, 1)) {
     if (isPlannedOn(routine, day)) days.push(day);

@@ -84,7 +84,7 @@ function SkillDetail({ skill }: { skill: Skill }) {
               Part of {domain.icon} {domain.name}.{' '}
             </>
           )}
-          Planned {plannedPhrase(routine)}
+          Planned {plannedPhrase(routine.days)}
           {streakOn ? '.' : '. No streak kept.'}
         </p>
         <p className={`tabular ${styles.total}`}>

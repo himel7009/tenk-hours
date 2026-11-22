@@ -184,3 +184,24 @@ describe('stored data from an older version', () => {
     expect(store().debts).toEqual([{ ...debt, inBudget: false }]);
   });
 });
+
+describe('changing one day of the plan', () => {
+  it('adds and skips days on a standalone tracker and syncs it', () => {
+    store().adoptAccount('user-1');
+    const id = newSkill();
+    store().changeDayPlan({ skillId: id }, '2026-11-23', 'skip');
+    expect(store().skills[0]).toMatchObject({ skippedDays: ['2026-11-23'], addedDays: [] });
+    expect(store().sync.pendingSkills[id]).toBeDefined();
+    store().changeDayPlan({ skillId: id }, '2026-11-23', 'reset');
+    expect(store().skills[0]).toMatchObject({ skippedDays: [], addedDays: [] });
+  });
+
+  it('adds a day to a domain', () => {
+    store().adoptAccount('user-1');
+    const domainId = store().addDomain({ name: 'Problem solving', icon: '🧩', color: 'moss' });
+    store().setRoutine({ domainId }, [1]);
+    store().changeDayPlan({ domainId }, '2026-11-24', 'add');
+    expect(store().domains[0]).toMatchObject({ addedDays: ['2026-11-24'] });
+    expect(store().sync.pendingDomains[domainId]).toBeDefined();
+  });
+});

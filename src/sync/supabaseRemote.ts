@@ -17,7 +17,7 @@ import {
   type LibraryStatus,
   type LibraryUnit,
 } from '../domain/library';
-import { normalizeRoutine } from '../domain/routine';
+import { normalizeDayList, normalizeRoutine } from '../domain/routine';
 import type { Session, Skill, SkillColor, TrackerKind } from '../domain/types';
 import type { PushBatch, RemoteChanges, RemoteRow, RemoteStore, SyncCursors } from './types';
 
@@ -44,6 +44,8 @@ interface SkillRow {
   domain_id: string | null;
   keep_streak: boolean;
   routine_days: number[];
+  added_days: string[] | null;
+  skipped_days: string[] | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -84,6 +86,8 @@ interface DomainRow {
   icon: string;
   color: SkillColor;
   routine_days: number[];
+  added_days: string[] | null;
+  skipped_days: string[] | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -142,8 +146,9 @@ const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
 
 const SKILL_COLUMNS =
-  'id,kind,name,icon,color,target_hours,daily_goal_minutes,domain_id,keep_streak,routine_days,created_at,updated_at,deleted_at';
-const DOMAIN_COLUMNS = 'id,name,icon,color,routine_days,created_at,updated_at,deleted_at';
+  'id,kind,name,icon,color,target_hours,daily_goal_minutes,domain_id,keep_streak,routine_days,added_days,skipped_days,created_at,updated_at,deleted_at';
+const DOMAIN_COLUMNS =
+  'id,name,icon,color,routine_days,added_days,skipped_days,created_at,updated_at,deleted_at';
 const SESSION_COLUMNS = 'id,skill_id,day,minutes,note,source,created_at,updated_at,deleted_at';
 
 const LIBRARY_COLUMNS =
@@ -167,6 +172,8 @@ function toSkillRow(skill: Skill) {
     domain_id: skill.domainId,
     keep_streak: skill.keepStreak,
     routine_days: normalizeRoutine(skill.routineDays),
+    added_days: normalizeDayList(skill.addedDays),
+    skipped_days: normalizeDayList(skill.skippedDays),
     created_at: new Date(skill.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -192,6 +199,8 @@ function toDomainRow(domain: Domain) {
     icon: domain.icon.slice(0, 16) || '🧭',
     color: domain.color,
     routine_days: normalizeRoutine(domain.routineDays),
+    added_days: normalizeDayList(domain.addedDays),
+    skipped_days: normalizeDayList(domain.skippedDays),
     created_at: new Date(domain.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -206,6 +215,8 @@ function fromDomainRow(row: DomainRow): RemoteRow<Domain> {
       icon: row.icon,
       color: row.color,
       routineDays: normalizeRoutine(row.routine_days),
+      addedDays: normalizeDayList(row.added_days),
+      skippedDays: normalizeDayList(row.skipped_days),
       createdAt: Date.parse(row.created_at),
     },
   };
@@ -521,6 +532,8 @@ function fromSkillRow(row: SkillRow): RemoteRow<Skill> {
       domainId: row.domain_id,
       keepStreak: row.keep_streak,
       routineDays: normalizeRoutine(row.routine_days),
+      addedDays: normalizeDayList(row.added_days),
+      skippedDays: normalizeDayList(row.skipped_days),
       createdAt: Date.parse(row.created_at),
     },
   };

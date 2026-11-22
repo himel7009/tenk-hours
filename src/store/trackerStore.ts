@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
 import { elapsedMs, pause, resume } from '../domain/timer';
-import { normalizeRoutine, type Weekday } from '../domain/routine';
+import { changeDay, normalizeRoutine, type Weekday } from '../domain/routine';
 import { DEBT_PERSON_MAX, type Debt, type DebtId, type DebtPayment } from '../domain/debts';
 import { stableUuid } from '../domain/ids';
 import {
@@ -153,6 +153,15 @@ interface TrackerActions {
   updateDomain: (id: DomainId, input: DomainInput) => void;
   /** Sets the weekdays a domain, or a tracker outside a domain, is planned for. */
   setRoutine: (target: { domainId: DomainId } | { skillId: SkillId }, days: Weekday[]) => void;
+  /**
+   * Changes one day of a domain's, or a standalone tracker's, plan: `add` it
+   * on top of the routine, `skip` it, or `reset` to the routine.
+   */
+  changeDayPlan: (
+    target: { domainId: DomainId } | { skillId: SkillId },
+    day: DayKey,
+    change: 'add' | 'skip' | 'reset',
+  ) => void;
   /** Removes the domain. Its skills are kept and become standalone. */
   deleteDomain: (id: DomainId) => void;
 
@@ -484,6 +493,26 @@ export const useTrackerStore = create<TrackerStore>()(
           ),
           sync: markPending(state.sync, 'pendingDomains', [id], 'upsert'),
         })),
+
+      changeDayPlan: (target, day, change) => {
+        if ('domainId' in target) {
+          set((state) => ({
+            domains: state.domains.map((domain) =>
+              domain.id === target.domainId
+                ? { ...domain, ...changeDay(domain, day, change) }
+                : domain,
+            ),
+            sync: markPending(state.sync, 'pendingDomains', [target.domainId], 'upsert'),
+          }));
+        } else {
+          set((state) => ({
+            skills: state.skills.map((skill) =>
+              skill.id === target.skillId ? { ...skill, ...changeDay(skill, day, change) } : skill,
+            ),
+            sync: markPending(state.sync, 'pendingSkills', [target.skillId], 'upsert'),
+          }));
+        }
+      },
 
       setRoutine: (target, days) => {
         const routineDays = normalizeRoutine(days);

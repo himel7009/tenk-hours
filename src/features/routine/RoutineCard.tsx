@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Button } from '../../components/Button';
+import { addDays } from '../../domain/dates';
 import { buildWeekPlan, weekdayOf } from '../../domain/routine';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from '../progress/useNow';
 import styles from './routine.module.css';
+import { ChangeDayDialog } from './ChangeDayDialog';
 import { RoutineDialog } from './RoutineDialog';
 
 const dayName = (weekday: number, style: 'narrow' | 'long') =>
@@ -16,9 +18,17 @@ export function RoutineCard() {
   const skills = useTrackerStore((state) => state.skills);
   const today = useToday();
   const [editing, setEditing] = useState(false);
-  const plan = useMemo(() => buildWeekPlan(domains, skills), [domains, skills]);
+  const [changing, setChanging] = useState(false);
   const todayWeekday = weekdayOf(today);
-  const todayEntries = plan.days[todayWeekday]?.entries ?? [];
+  // This week's real dates, Sunday first, so one-day changes show.
+  const plan = useMemo(() => {
+    const sunday = addDays(today, -todayWeekday);
+    const week = [0, 1, 2, 3, 4, 5, 6].map((offset) => addDays(sunday, offset));
+    return buildWeekPlan(domains, skills, week);
+  }, [domains, skills, today, todayWeekday]);
+  const todayAll = plan.days[todayWeekday]?.entries ?? [];
+  const todayEntries = todayAll.filter((entry) => entry.change !== 'skipped');
+  const todaySkipped = todayAll.filter((entry) => entry.change === 'skipped');
   const planned = plan.days.some((day) => day.entries.length > 0);
 
   return (
@@ -27,9 +37,16 @@ export function RoutineCard() {
         <h2 id="routine-title" className={styles.title}>
           Your week
         </h2>
-        <Button size="sm" variant="quiet" onClick={() => setEditing(true)}>
-          {planned ? 'Edit routine' : 'Plan your week'}
-        </Button>
+        <div className={styles.headActions}>
+          {planned && (
+            <Button size="sm" variant="quiet" onClick={() => setChanging(true)}>
+              Change a day
+            </Button>
+          )}
+          <Button size="sm" variant="quiet" onClick={() => setEditing(true)}>
+            {planned ? 'Edit routine' : 'Plan your week'}
+          </Button>
+        </div>
       </div>
 
       {planned ? (
@@ -41,7 +58,11 @@ export function RoutineCard() {
                 className={styles.day}
                 data-today={weekday === todayWeekday}
                 aria-label={`${dayName(weekday, 'long')}: ${
-                  entries.map((entry) => entry.name).join(', ') || 'nothing planned'
+                  entries
+                    .map((entry) =>
+                      entry.change ? `${entry.name} (${entry.change} this week)` : entry.name,
+                    )
+                    .join(', ') || 'nothing planned'
                 }`}
               >
                 <span className={styles.dayName} aria-hidden="true">
@@ -54,7 +75,8 @@ export function RoutineCard() {
                       className={styles.chip}
                       data-color={entry.color}
                       data-type={entry.type}
-                      title={entry.name}
+                      data-change={entry.change}
+                      title={entry.change ? `${entry.name}, ${entry.change} this week` : entry.name}
                     >
                       {entry.icon}
                     </span>
@@ -72,6 +94,8 @@ export function RoutineCard() {
               'Nothing on the routine today.'
             )}
             {plan.everyDay > 0 && ` Plus ${plan.everyDay} you do every day.`}
+            {todaySkipped.length > 0 &&
+              ` Skipped today: ${todaySkipped.map((entry) => entry.name).join(', ')}.`}
           </p>
         </>
       ) : (
@@ -82,6 +106,7 @@ export function RoutineCard() {
       )}
 
       {editing && <RoutineDialog onClose={() => setEditing(false)} />}
+      {changing && <ChangeDayDialog onClose={() => setChanging(false)} />}
     </section>
   );
 }

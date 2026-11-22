@@ -17,6 +17,8 @@ const skill: Skill = {
   dailyGoalMinutes: 60,
   keepStreak: true,
   routineDays: [],
+  addedDays: ['2026-11-23'],
+  skippedDays: [],
   domainId: DOMAIN_ID,
   createdAt: 1,
 };
@@ -26,6 +28,8 @@ const domain: Domain = {
   icon: '🤖',
   color: 'cobalt',
   routineDays: [],
+  addedDays: [],
+  skippedDays: [],
   createdAt: 0,
 };
 const session: Session = {

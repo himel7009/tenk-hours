@@ -41,8 +41,13 @@ export function RoutineCard() {
         </h2>
         <div className={styles.headActions}>
           {skills.length > 0 && (
-            <Button size="sm" variant="quiet" onClick={() => setViewing(true)}>
-              View routine
+            <Button
+              size="sm"
+              variant="quiet"
+              aria-label="View routine"
+              onClick={() => setViewing(true)}
+            >
+              View
             </Button>
           )}
           {planned && (
@@ -50,8 +55,13 @@ export function RoutineCard() {
               Change a day
             </Button>
           )}
-          <Button size="sm" variant="quiet" onClick={() => setEditing(true)}>
-            {planned ? 'Edit routine' : 'Plan your week'}
+          <Button
+            size="sm"
+            variant="quiet"
+            aria-label={planned ? 'Edit routine' : undefined}
+            onClick={() => setEditing(true)}
+          >
+            {planned ? 'Edit' : 'Plan your week'}
           </Button>
         </div>
       </div>

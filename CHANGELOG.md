@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-22
 
+- **Tidier week card and routine view.** The week card's title sits on its own line with View, Change a day and Edit in a row beneath it. In View routine every day is the same size and a busy day scrolls inside its own card.
 - **View your routine.** "View routine" on the week card shows the whole week to read: each day's skills, habits and projects by domain with their daily goals, how much time the day's goals add up to, and what you do every day listed once. "Edit routine" is a tap away.
 - **Fixed: ticking a day no longer jumps the window.** In "Plan your week" (and anywhere a box or option is drawn in place of the real checkbox) ticking could scroll the window to the bottom, again on every tick. Each hidden checkbox now stays inside the box drawn for it.
 - **Start over on your routine.** "Plan your week" is wider, and "Start over" clears every day so you can pick them from scratch. Nothing changes until you save; "Keep the old routine" leaves it as it was. Anything left without days is planned for every day.

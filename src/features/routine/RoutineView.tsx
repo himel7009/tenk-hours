@@ -86,13 +86,20 @@ export function RoutineView({ onClose, onEdit }: { onClose: () => void; onEdit: 
             <p className={`tabular ${styles.viewTotal}`}>
               {goalMinutes > 0 ? `${formatDuration(goalMinutes)} of goals` : 'No daily goals'}
             </p>
-            {groups.length > 0 ? (
-              <Groups groups={groups} />
-            ) : (
-              <p className={styles.viewEmpty}>
-                {view.everyDay.length > 0 ? 'Only the every-day ones.' : 'Nothing planned.'}
-              </p>
-            )}
+            <div
+              className={styles.viewBody}
+              // Scrollable, so it can be scrolled from the keyboard too.
+              tabIndex={0}
+              aria-label={`${dayName(weekday)}'s plan`}
+            >
+              {groups.length > 0 ? (
+                <Groups groups={groups} />
+              ) : (
+                <p className={styles.viewEmpty}>
+                  {view.everyDay.length > 0 ? 'Only the every-day ones.' : 'Nothing planned.'}
+                </p>
+              )}
+            </div>
           </li>
         ))}
       </ol>

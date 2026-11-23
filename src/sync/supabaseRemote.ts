@@ -121,6 +121,7 @@ interface TodoRow {
   domain_id: string | null;
   skill_id: string | null;
   day: string;
+  deadline: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -140,7 +141,7 @@ type Table =
   | 'money_debt_payments';
 
 const TODO_COLUMNS =
-  'id,title,done,done_at,domain_id,skill_id,day,created_at,updated_at,deleted_at';
+  'id,title,done,done_at,domain_id,skill_id,day,deadline,created_at,updated_at,deleted_at';
 
 const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
@@ -458,6 +459,7 @@ function toTodoRow(todo: Todo) {
     domain_id: todo.domainId,
     skill_id: todo.domainId === null ? todo.skillId : null,
     day: todo.day,
+    deadline: todo.deadline ?? null,
     created_at: new Date(todo.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -474,6 +476,7 @@ function fromTodoRow(row: TodoRow): RemoteRow<Todo> {
       domainId: row.domain_id,
       skillId: row.domain_id === null ? row.skill_id : null,
       day: row.day,
+      deadline: row.deadline ?? null,
       createdAt: Date.parse(row.created_at),
     },
   };

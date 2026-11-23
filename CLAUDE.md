@@ -179,6 +179,11 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   each to-do with its age (`PlannedTodo.age`): calendar days since it was
   added, counting that day as day 1, stopping when done. Worked out from
   `createdAt`, never stored.
+- An optional `deadline` (column `deadline`, null for none) is separate from
+  `day`, which moves on by itself. `PlannedTodo.daysLeft` and
+  `describeDeadline` give the countdown (soon from two days out, overdue
+  after). Today's list sorts by nearest deadline and also takes in any
+  to-do whose deadline has come, even if planned later.
 - Today's list scrolls inside its card (`todayList`, about eight rows) so a
   long day does not push the rest of the Today tab down.
 - The history (`buildTodoHistory`) reads `doneAt` and those planned days: what
@@ -298,8 +303,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All seventeen migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-22.
+All eighteen migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-23.
 
 ## Releases
 

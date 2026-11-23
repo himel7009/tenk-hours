@@ -24,6 +24,11 @@ export interface Todo {
   skillId: string | null;
   /** The day it was planned for. */
   day: DayKey;
+  /**
+   * The day it must be done by, if any. Separate from `day`, which moves on
+   * by itself; missing or null means no deadline.
+   */
+  deadline?: DayKey | null;
 }
 
 export const TODO_TITLE_MAX = 200;
@@ -138,6 +143,11 @@ export interface PlannedTodo {
    * every calendar day since. A done one stops at the day it was done.
    */
   age: number;
+  /**
+   * Days from today (from the day it was done, once done) to its deadline:
+   * 0 on the day, negative once passed. Null without a deadline.
+   */
+  daysLeft: number | null;
 }
 
 /** Days the target was planned for from `from` up to, not including, `to`. */
@@ -162,7 +172,9 @@ export function planTodo(todo: Todo, context: TodoContext, today: DayKey): Plann
   const moved = until > todo.day ? plannedDaysBetween(target.routine, todo.day, until).length : 0;
   const addedDay = toDayKey(new Date(todo.createdAt));
   const age = Math.max(1, daysBetween(addedDay, doneDay ?? today) + 1);
-  return { todo, target, due, moved, doneDay, addedDay, age };
+  const deadline = todo.deadline ?? null;
+  const daysLeft = deadline === null ? null : daysBetween(doneDay ?? today, deadline);
+  return { todo, target, due, moved, doneDay, addedDay, age, daysLeft };
 }
 
 export interface TodoBoard {
@@ -181,9 +193,16 @@ export function buildTodoBoard(
   today: DayKey,
 ): TodoBoard {
   const planned = todos.map((todo) => planTodo(todo, context, today));
+  // Today's list: what is planned for today or earlier, and anything whose
+  // deadline has come even if it was planned later. Nearest deadline first.
   const dueNow = planned
-    .filter((p) => !p.todo.done && p.due <= today)
-    .sort((a, b) => a.todo.day.localeCompare(b.todo.day) || a.todo.createdAt - b.todo.createdAt);
+    .filter((p) => !p.todo.done && (p.due <= today || (p.daysLeft !== null && p.daysLeft <= 0)))
+    .sort(
+      (a, b) =>
+        (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) ||
+        a.todo.day.localeCompare(b.todo.day) ||
+        a.todo.createdAt - b.todo.createdAt,
+    );
   const groups = new Map<string, { target: TodoTarget; items: PlannedTodo[] }>();
   for (const item of dueNow) {
     const group = groups.get(item.target.key) ?? { target: item.target, items: [] };
@@ -197,7 +216,7 @@ export function buildTodoBoard(
         a.target.name.localeCompare(b.target.name),
     ),
     upcoming: planned
-      .filter((p) => !p.todo.done && p.due > today)
+      .filter((p) => !p.todo.done && !dueNow.includes(p))
       .sort((a, b) => a.due.localeCompare(b.due) || a.todo.createdAt - b.todo.createdAt),
     doneToday: planned
       .filter((p) => p.doneDay === today)
@@ -308,4 +327,34 @@ const KIND_NAMES: Record<TodoTarget['kind'], string> = {
 /** "Skill", "Habit", "Project" or "Domain"; empty for General. */
 export function targetKindName(target: TodoTarget): string {
   return KIND_NAMES[target.kind];
+}
+
+/** How close a deadline is: past it, on it or within two days, or further off. */
+export type DeadlineTone = 'overdue' | 'soon' | 'later';
+
+export const DEADLINE_SOON_DAYS = 2;
+
+/**
+ * The deadline in words, or null without one. Open: "3 days left", "Due
+ * tomorrow", "Due today", "2 days overdue". Done: "Done 2 days early", "Done
+ * on its deadline", "Done 1 day late".
+ */
+export function describeDeadline(
+  item: Pick<PlannedTodo, 'daysLeft'> & { todo: Pick<Todo, 'done'> },
+): { text: string; tone: DeadlineTone } | null {
+  const { daysLeft } = item;
+  if (daysLeft === null) return null;
+  const days = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
+  if (item.todo.done) {
+    if (daysLeft > 0) return { text: `Done ${days(daysLeft)} early`, tone: 'later' };
+    if (daysLeft === 0) return { text: 'Done on its deadline', tone: 'later' };
+    return { text: `Done ${days(-daysLeft)} late`, tone: 'overdue' };
+  }
+  if (daysLeft < 0) return { text: `${days(-daysLeft)} overdue`, tone: 'overdue' };
+  if (daysLeft === 0) return { text: 'Due today', tone: 'soon' };
+  if (daysLeft === 1) return { text: 'Due tomorrow', tone: 'soon' };
+  return {
+    text: `${days(daysLeft)} left`,
+    tone: daysLeft <= DEADLINE_SOON_DAYS ? 'soon' : 'later',
+  };
 }

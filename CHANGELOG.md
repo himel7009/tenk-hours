@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-23
 
+- **Deadlines for to-dos, if you want them.** A new to-do has no deadline unless you add one ("No deadline" beside the day); change or remove it any time from Edit. Each to-do with a deadline shows a countdown: "5 days left", "Due tomorrow", "Due today", turning orange two days out and red once overdue. To-dos are ordered nearest deadline first, and one whose deadline arrives comes onto today's list even if it was planned for later. Done ones say whether they were early or late.
 - **Today's to-dos scroll.** A long list now scrolls inside the to-do card (fading at the bottom when there is more), so the add form, Coming up and Done today stay in place and the rest of the Today tab is no longer pushed far down.
 
 ## 2026-11-22

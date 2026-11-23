@@ -182,10 +182,13 @@ interface TrackerActions {
   deleteLibraryItem: (id: LibraryItemId) => void;
 
   /** Adds a to-do for a domain, a skill or neither, on a day; false if the title is empty. */
-  addTodo: (title: string, place: TodoPlace) => boolean;
+  addTodo: (title: string, place: TodoPlace, deadline?: DayKey | null) => boolean;
   toggleTodo: (id: TodoId) => void;
   /** Changes the title, where it belongs, or its day. */
-  updateTodo: (id: TodoId, patch: Partial<TodoPlace & { title: string }>) => void;
+  updateTodo: (
+    id: TodoId,
+    patch: Partial<TodoPlace & { title: string; deadline: DayKey | null }>,
+  ) => void;
   deleteTodo: (id: TodoId) => void;
 
   /**
@@ -616,7 +619,7 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingLibrary', [id], 'delete'),
         })),
 
-      addTodo: (title, place) => {
+      addTodo: (title, place, deadline = null) => {
         const clean = cleanTodoTitle(title);
         if (clean === null) return false;
         const todo: Todo = {
@@ -626,6 +629,7 @@ export const useTrackerStore = create<TrackerStore>()(
           createdAt: Date.now(),
           doneAt: null,
           ...onePlace(place),
+          deadline,
         };
         set((state) => ({
           todos: [...state.todos, todo],
@@ -655,7 +659,12 @@ export const useTrackerStore = create<TrackerStore>()(
               skillId: patch.skillId === undefined ? todo.skillId : patch.skillId,
               day: patch.day ?? todo.day,
             });
-            return { ...todo, ...place, title: title ?? todo.title };
+            return {
+              ...todo,
+              ...place,
+              title: title ?? todo.title,
+              deadline: patch.deadline === undefined ? (todo.deadline ?? null) : patch.deadline,
+            };
           }),
           sync: markPending(state.sync, 'pendingTodos', [id], 'upsert'),
         }));

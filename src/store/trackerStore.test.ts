@@ -205,3 +205,23 @@ describe('changing one day of the plan', () => {
     expect(store().sync.pendingDomains[domainId]).toBeDefined();
   });
 });
+
+describe('to-do deadlines', () => {
+  it('adds a to-do with a deadline, changes it and clears it', () => {
+    store().adoptAccount('user-1');
+    store().addTodo(
+      'Finish the thesis draft',
+      { domainId: null, skillId: null, day: '2026-11-23' },
+      '2026-12-01',
+    );
+    const id = store().todos[0]!.id;
+    expect(store().todos[0]?.deadline).toBe('2026-12-01');
+    store().updateTodo(id, { deadline: '2026-12-05' });
+    expect(store().todos[0]?.deadline).toBe('2026-12-05');
+    store().updateTodo(id, { title: 'Finish the draft' });
+    expect(store().todos[0]?.deadline).toBe('2026-12-05');
+    store().updateTodo(id, { deadline: null });
+    expect(store().todos[0]?.deadline).toBeNull();
+    expect(store().sync.pendingTodos[id]).toBeDefined();
+  });
+});

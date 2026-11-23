@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildTodoBoard,
+  describeDeadline,
   buildTodoHistory,
   cleanTodoTitle,
   defaultTodoDay,
@@ -220,4 +221,47 @@ it('names what a to-do belongs to', () => {
   expect(targetKindName(targetOf({ domainId: null, skillId: 'thesis' }, context))).toBe('Project');
   expect(targetKindName(targetOf({ domainId: null, skillId: 'os' }, context))).toBe('Skill');
   expect(targetKindName(GENERAL)).toBe('');
+});
+
+describe('deadlines', () => {
+  const general = { domainId: null, skillId: null };
+
+  it('counts the days left, and stops counting once done', () => {
+    const open = todo('2026-11-23', { ...general, deadline: '2026-11-27' });
+    expect(planTodo(open, context, '2026-11-23').daysLeft).toBe(4);
+    expect(planTodo(open, context, '2026-11-29').daysLeft).toBe(-2);
+    const done = { ...open, done: true, doneAt: at('2026-11-25') };
+    expect(planTodo(done, context, '2026-11-30').daysLeft).toBe(2);
+    expect(planTodo(todo('2026-11-23', general), context, '2026-11-23').daysLeft).toBeNull();
+  });
+
+  it('describes a deadline in words', () => {
+    const say = (daysLeft: number | null, done = false) =>
+      describeDeadline({ daysLeft, todo: { done } });
+    expect(say(null)).toBeNull();
+    expect(say(5)).toEqual({ text: '5 days left', tone: 'later' });
+    expect(say(2)).toEqual({ text: '2 days left', tone: 'soon' });
+    expect(say(1)?.text).toBe('Due tomorrow');
+    expect(say(0)).toEqual({ text: 'Due today', tone: 'soon' });
+    expect(say(-1)).toEqual({ text: '1 day overdue', tone: 'overdue' });
+    expect(say(3, true)?.text).toBe('Done 3 days early');
+    expect(say(0, true)?.text).toBe('Done on its deadline');
+    expect(say(-2, true)).toEqual({ text: 'Done 2 days late', tone: 'overdue' });
+  });
+
+  it('puts the nearest deadline first, and brings a due one forward to today', () => {
+    const relaxed = todo('2026-11-23', { ...general, title: 'no deadline' });
+    const later = todo('2026-11-23', { ...general, title: 'later', deadline: '2026-11-30' });
+    const soon = todo('2026-11-23', { ...general, title: 'soon', deadline: '2026-11-24' });
+    // Planned for next week, but due today.
+    const pressing = todo('2026-11-28', { ...general, title: 'pressing', deadline: '2026-11-23' });
+    const board = buildTodoBoard([relaxed, later, soon, pressing], context, '2026-11-23');
+    expect(board.today[0]?.items.map((i) => i.todo.title)).toEqual([
+      'pressing',
+      'soon',
+      'later',
+      'no deadline',
+    ]);
+    expect(board.upcoming).toEqual([]);
+  });
 });

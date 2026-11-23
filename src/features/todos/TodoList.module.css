@@ -396,3 +396,51 @@
 .todayList > .group:first-child {
   margin-top: var(--space-3);
 }
+
+/* ---- Deadlines ---- */
+
+.deadline {
+  display: inline-block;
+  width: fit-content;
+  margin-top: 2px;
+  margin-left: var(--space-2);
+  vertical-align: 1px;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.deadline[data-tone='soon'] {
+  background: color-mix(in srgb, var(--persimmon) 16%, transparent);
+  color: var(--persimmon);
+}
+
+.deadline[data-tone='overdue'] {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+
+.deadlineOff {
+  border: 1px dashed var(--line);
+  white-space: nowrap;
+}
+
+.deadlineOn {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.deadlineLabel {
+  margin-right: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.deadlineOn .place {
+  align-items: center;
+}

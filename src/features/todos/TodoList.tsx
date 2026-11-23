@@ -4,17 +4,27 @@ import {
   GENERAL,
   groupTodoTargets,
   isTargetOpenOn,
+  describeDeadline,
   targetKindName,
   TODO_TITLE_MAX,
   type PlannedTodo,
 } from '../../domain/todos';
+import { daysBetween, type DayKey } from '../../domain/dates';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from '../progress/useNow';
 import { useTodoBoard, useTodoTargets } from '../progress/useTodos';
 import { placeOf, shortDay } from './todoPlace';
+import { DeadlinePicker } from './DeadlinePicker';
 import { TodoEditDialog } from './TodoEditDialog';
 import { TodoHistoryDialog } from './TodoHistoryDialog';
 import styles from './TodoList.module.css';
+
+/** "7 days after", "the same day": the deadline counted from the planned day. */
+function daysFromNow(deadline: DayKey, from: DayKey): string {
+  const days = daysBetween(from, deadline);
+  if (days <= 0) return 'the same day';
+  return `${days} day${days === 1 ? '' : 's'} after`;
+}
 
 /**
  * Today's to-dos, by the domain or skill they belong to. One left undone
@@ -29,6 +39,7 @@ export function TodoList() {
   const [draft, setDraft] = useState('');
   const [targetKey, setTargetKey] = useState(GENERAL.key);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
+  const [deadline, setDeadline] = useState<DayKey | null>(null);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [editing, setEditing] = useState<PlannedTodo | null>(null);
@@ -42,9 +53,12 @@ export function TodoList() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (addTodo(draft, { ...placeOf(target), day })) {
+    // A deadline before the planned day moves up to it.
+    const due = deadline !== null && deadline < day ? day : deadline;
+    if (addTodo(draft, { ...placeOf(target), day }, due)) {
       setDraft('');
       setPickedDay(null);
+      setDeadline(null);
     }
   };
 
@@ -104,14 +118,19 @@ export function TodoList() {
               onChange={(event) => setPickedDay(event.target.value || null)}
             />
           </label>
+          <DeadlinePicker value={deadline} onChange={setDeadline} from={day} />
           <Button type="submit" size="sm" disabled={draft.trim() === ''}>
             Add
           </Button>
         </div>
         <p className={styles.addHint}>
           {day === today ? 'For today' : `For ${shortDay(day)}`}
-          {target === GENERAL ? '' : `, under ${target.name}`}. The list shows what your routine
-          plans for that day. Not done by then, it moves on to the next working day by itself.
+          {target === GENERAL ? '' : `, under ${target.name}`}
+          {deadline === null
+            ? ', no deadline'
+            : `, due ${shortDay(deadline)} (${daysFromNow(deadline, day)})`}
+          . The list shows what your routine plans for that day. Not done by then, it moves on to
+          the next working day by itself.
         </p>
       </form>
 
@@ -223,6 +242,7 @@ function TodoItem({
   const toggleTodo = useTrackerStore((state) => state.toggleTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
   const { todo, target, moved, due, addedDay, age } = item;
+  const deadline = describeDeadline(item);
   const today = useToday();
   const place = `${target.icon} ${target.name}${
     targetKindName(target) ? ` (${targetKindName(target).toLowerCase()})` : ''
@@ -253,6 +273,12 @@ function TodoItem({
         title="Edit, move or change its domain"
       >
         <span>{todo.title}</span>
+        {deadline && (
+          <span className={styles.deadline} data-tone={deadline.tone}>
+            {deadline.text}
+            {!todo.done && todo.deadline && `, ${shortDay(todo.deadline)}`}
+          </span>
+        )}
         <span className={styles.meta}>
           {showWhen && `${shortDay(due)}, ${place}. `}
           {showPlace && `${place}. `}

@@ -289,6 +289,7 @@ function parseTodo(value: unknown): Todo {
     domainId,
     skillId: domainId === null && isUuid(value.skillId) ? value.skillId : null,
     day: isDayKey(value.day) ? value.day : toDayKey(new Date(createdAt)),
+    deadline: isDayKey(value.deadline) ? value.deadline : null,
   };
 }
 

@@ -6,9 +6,13 @@ import {
   GENERAL,
   groupTodoTargets,
   isTargetOpenOn,
+  describeDeadline,
   TODO_TITLE_MAX,
   type PlannedTodo,
 } from '../../domain/todos';
+import { daysBetween, type DayKey } from '../../domain/dates';
+import { useToday } from '../progress/useNow';
+import { DeadlinePicker } from './DeadlinePicker';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useTodoTargets } from '../progress/useTodos';
@@ -19,6 +23,7 @@ import { placeOf } from './todoPlace';
 export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: () => void }) {
   const targets = useTodoTargets(item.target);
   const updateTodo = useTrackerStore((state) => state.updateTodo);
+  const today = useToday();
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
   const toast = useToastStore((state) => state.show);
 
@@ -26,6 +31,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
   const [targetKey, setTargetKey] = useState(item.target.key);
   // An open to-do is edited from where it shows now; a done one keeps its day.
   const [day, setDay] = useState(item.todo.done ? item.todo.day : item.due);
+  const [deadline, setDeadline] = useState<DayKey | null>(item.todo.deadline ?? null);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -36,6 +42,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
       ...placeOf(target),
       // Moving resets the plan; leaving it alone keeps the history of misses.
       day: moved ? day : item.todo.day,
+      deadline,
     });
     toast('Changes saved');
     onClose();
@@ -98,6 +105,25 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
             )}
           </Field>
         </div>
+        <Field
+          label="Deadline"
+          hint={
+            deadline === null
+              ? 'None. It can take as long as it takes.'
+              : `${describeDeadline({ daysLeft: daysBetween(today, deadline), todo: item.todo })?.text}.`
+          }
+        >
+          {(id) => (
+            <span>
+              <DeadlinePicker
+                id={id}
+                value={deadline}
+                onChange={setDeadline}
+                from={item.todo.done ? item.addedDay : today}
+              />
+            </span>
+          )}
+        </Field>
         <div className={formStyles.actions}>
           <Button
             variant="quiet"

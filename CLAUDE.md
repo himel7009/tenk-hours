@@ -184,6 +184,10 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   `describeDeadline` give the countdown (soon from two days out, overdue
   after). Today's list sorts by nearest deadline and also takes in any
   to-do whose deadline has come, even if planned later.
+- An optional `url` (column `url`, '' for none) links a video or page.
+  `cleanTodoUrl` adds https:// when missing and turns away anything else;
+  the store, sync and backups keep only `isWebUrl` links. It renders as a
+  link beside the edit button (never inside it), opening in a new tab.
 - Today's list scrolls inside its card (`todayList`, about eight rows) so a
   long day does not push the rest of the Today tab down.
 - The history (`buildTodoHistory`) reads `doneAt` and those planned days: what
@@ -267,9 +271,10 @@ chapters, pages or lessons, a free-text bookmark and notes. Its status is
 of skills and sessions and has its own sync cursor (`sync.libraryCursor`), as
 domains do (`sync.domainCursor`).
 
-- `url` is the only user-supplied value rendered as a link. It must pass
-  `isWebUrl` (http or https only) wherever it enters the app: the form, backup
-  import and rows pulled from the server. Keep `rel="noopener noreferrer"`.
+- `url` (here and on to-dos) is the only user-supplied value rendered as a
+  link. It must pass `isWebUrl` (http or https only) wherever it enters the
+  app: the form, backup import and rows pulled from the server, and the
+  column checks the same. Keep `rel="noopener noreferrer"`.
 - Adding another synced table means: a migration with RLS and a test case, a
   pending map and cursor in `SyncState`, entries in `PushBatch` and
   `RemoteChanges`, a storage `migrate` step, and live updates (the
@@ -303,8 +308,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All eighteen migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-23.
+All nineteen migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-24.
 
 ## Releases
 

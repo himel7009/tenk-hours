@@ -444,3 +444,68 @@
 .deadlineOn .place {
   align-items: center;
 }
+
+/* ---- Links ---- */
+
+.linkRow {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.linkRow .input {
+  flex: 1;
+  min-width: 0;
+}
+
+.linkError {
+  color: var(--danger);
+  font-size: var(--text-xs);
+}
+
+/* The link sits beside the to-do, outside its edit button. */
+.link {
+  flex: 0 1 auto;
+  max-width: 11rem;
+  padding: 0.2rem var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.link:hover {
+  border-color: var(--ink-soft);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* On a phone the link drops under the to-do instead of squeezing its title. */
+@media (max-width: 30rem) {
+  .item:has(.link) {
+    flex-wrap: wrap;
+  }
+
+  /* The title keeps the whole row, so the link wraps to the next line. */
+  .item:has(.link) .text {
+    flex: 1 1 calc(100% - 5rem);
+  }
+
+  /* The deadline sits on its own line under the title, lined up with it. */
+  .deadline {
+    display: block;
+    margin-left: 0;
+  }
+
+  .item .link {
+    order: 3;
+    max-width: none;
+    margin: calc(-1 * var(--space-2)) 0 var(--space-2) calc(1.25rem + var(--space-3));
+  }
+}

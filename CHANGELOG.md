@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-24
+
+- **Links on to-dos.** Add a link to a video or page with "🔗 Link" when writing a to-do, or from Edit. It shows as a small button with the site's name (youtube.com, overleaf.com) and opens in a new tab. Links without https:// get it added; anything that is not a web link is turned away.
+
 ## 2026-11-23
 
 - **Deadlines for to-dos, if you want them.** A new to-do has no deadline unless you add one ("No deadline" beside the day); change or remove it any time from Edit. Each to-do with a deadline shows a countdown: "5 days left", "Due tomorrow", "Due today", turning orange two days out and red once overdue. To-dos are ordered nearest deadline first, and one whose deadline arrives comes onto today's list even if it was planned for later. Done ones say whether they were early or late.

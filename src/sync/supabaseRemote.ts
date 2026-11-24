@@ -5,7 +5,7 @@ import {
   type MoneyEntryKind,
   type MoneySection,
 } from '../domain/money';
-import { cleanTodoTitle, type Todo } from '../domain/todos';
+import { cleanTodoTitle, TODO_URL_MAX, type Todo } from '../domain/todos';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BadHabit, CheckIn, CheckInStatus } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -122,6 +122,7 @@ interface TodoRow {
   skill_id: string | null;
   day: string;
   deadline: string | null;
+  url: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -141,7 +142,7 @@ type Table =
   | 'money_debt_payments';
 
 const TODO_COLUMNS =
-  'id,title,done,done_at,domain_id,skill_id,day,deadline,created_at,updated_at,deleted_at';
+  'id,title,done,done_at,domain_id,skill_id,day,deadline,url,created_at,updated_at,deleted_at';
 
 const BAD_HABIT_COLUMNS = 'id,name,icon,color,created_at,updated_at,deleted_at';
 const CHECK_IN_COLUMNS = 'id,habit_id,day,status,created_at,updated_at,deleted_at';
@@ -460,6 +461,7 @@ function toTodoRow(todo: Todo) {
     skill_id: todo.domainId === null ? todo.skillId : null,
     day: todo.day,
     deadline: todo.deadline ?? null,
+    url: todo.url && isWebUrl(todo.url) && todo.url.length <= TODO_URL_MAX ? todo.url : '',
     created_at: new Date(todo.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -477,6 +479,7 @@ function fromTodoRow(row: TodoRow): RemoteRow<Todo> {
       skillId: row.domain_id === null ? row.skill_id : null,
       day: row.day,
       deadline: row.deadline ?? null,
+      url: row.url && isWebUrl(row.url) ? row.url : '',
       createdAt: Date.parse(row.created_at),
     },
   };

@@ -1,7 +1,7 @@
 import { DEBT_PERSON_MAX, type Debt, type DebtPayment } from '../domain/debts';
 import { normalizeDayList, normalizeRoutine } from '../domain/routine';
 import { cleanNote, MONEY_AMOUNT_MAX, type MoneyEntry, type MoneySection } from '../domain/money';
-import { cleanTodoTitle, type Todo } from '../domain/todos';
+import { cleanTodoTitle, TODO_URL_MAX, type Todo } from '../domain/todos';
 import { isDayKey, toDayKey } from '../domain/dates';
 import { checkInId, type BadHabit, type CheckIn } from '../domain/badHabits';
 import type { Domain } from '../domain/domains';
@@ -290,6 +290,10 @@ function parseTodo(value: unknown): Todo {
     skillId: domainId === null && isUuid(value.skillId) ? value.skillId : null,
     day: isDayKey(value.day) ? value.day : toDayKey(new Date(createdAt)),
     deadline: isDayKey(value.deadline) ? value.deadline : null,
+    url:
+      typeof value.url === 'string' && isWebUrl(value.url) && value.url.length <= TODO_URL_MAX
+        ? value.url
+        : '',
   };
 }
 

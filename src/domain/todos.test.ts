@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildTodoBoard,
+  cleanTodoUrl,
+  linkSite,
   describeDeadline,
   buildTodoHistory,
   cleanTodoTitle,
@@ -263,5 +265,24 @@ describe('deadlines', () => {
       'no deadline',
     ]);
     expect(board.upcoming).toEqual([]);
+  });
+});
+
+describe('links', () => {
+  it('accepts web links and turns away anything else', () => {
+    expect(cleanTodoUrl('')).toBe('');
+    expect(cleanTodoUrl('  https://www.youtube.com/watch?v=x ')).toBe(
+      'https://www.youtube.com/watch?v=x',
+    );
+    expect(cleanTodoUrl('coursera.org/learn/ml')).toBe('https://coursera.org/learn/ml');
+    expect(cleanTodoUrl('javascript:alert(1)')).toBeNull();
+    expect(cleanTodoUrl('data:text/html,hi')).toBeNull();
+    expect(cleanTodoUrl('just some words')).toBeNull();
+    expect(cleanTodoUrl(`https://a.com/${'x'.repeat(2000)}`)).toBeNull();
+  });
+
+  it('names the site', () => {
+    expect(linkSite('https://www.youtube.com/watch?v=x')).toBe('youtube.com');
+    expect(linkSite('https://docs.python.org/3/')).toBe('docs.python.org');
   });
 });

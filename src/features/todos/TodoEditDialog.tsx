@@ -6,6 +6,7 @@ import {
   GENERAL,
   groupTodoTargets,
   isTargetOpenOn,
+  cleanTodoUrl,
   describeDeadline,
   TODO_TITLE_MAX,
   type PlannedTodo,
@@ -32,9 +33,16 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
   // An open to-do is edited from where it shows now; a done one keeps its day.
   const [day, setDay] = useState(item.todo.done ? item.todo.day : item.due);
   const [deadline, setDeadline] = useState<DayKey | null>(item.todo.deadline ?? null);
+  const [link, setLink] = useState(item.todo.url ?? '');
+  const [linkError, setLinkError] = useState(false);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    const url = cleanTodoUrl(link);
+    if (url === null) {
+      setLinkError(true);
+      return;
+    }
     const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
     const moved = day !== item.due || targetKey !== item.target.key;
     updateTodo(item.todo.id, {
@@ -43,6 +51,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
       // Moving resets the plan; leaving it alone keeps the history of misses.
       day: moved ? day : item.todo.day,
       deadline,
+      url,
     });
     toast('Changes saved');
     onClose();
@@ -105,6 +114,29 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
             )}
           </Field>
         </div>
+        <Field
+          label="Link"
+          hint={
+            linkError
+              ? 'That is not a web link. Use one that starts with https://.'
+              : 'A video or page to open for it. Leave empty for none.'
+          }
+        >
+          {(id) => (
+            <Input
+              id={id}
+              type="url"
+              inputMode="url"
+              value={link}
+              placeholder="https://youtube.com/watch?v=..."
+              aria-invalid={linkError || undefined}
+              onChange={(event) => {
+                setLink(event.target.value);
+                setLinkError(false);
+              }}
+            />
+          )}
+        </Field>
         <Field
           label="Deadline"
           hint={

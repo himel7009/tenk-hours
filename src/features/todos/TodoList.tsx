@@ -4,7 +4,9 @@ import {
   GENERAL,
   groupTodoTargets,
   isTargetOpenOn,
+  cleanTodoUrl,
   describeDeadline,
+  linkSite,
   targetKindName,
   TODO_TITLE_MAX,
   type PlannedTodo,
@@ -40,6 +42,9 @@ export function TodoList() {
   const [targetKey, setTargetKey] = useState(GENERAL.key);
   const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [deadline, setDeadline] = useState<DayKey | null>(null);
+  // Null while the link box is closed.
+  const [link, setLink] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState(false);
   const [showUpcoming, setShowUpcoming] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [editing, setEditing] = useState<PlannedTodo | null>(null);
@@ -55,10 +60,17 @@ export function TodoList() {
     event.preventDefault();
     // A deadline before the planned day moves up to it.
     const due = deadline !== null && deadline < day ? day : deadline;
-    if (addTodo(draft, { ...placeOf(target), day }, due)) {
+    const url = cleanTodoUrl(link ?? '');
+    if (url === null) {
+      setLinkError(true);
+      return;
+    }
+    if (addTodo(draft, { ...placeOf(target), day }, { deadline: due, url })) {
       setDraft('');
       setPickedDay(null);
       setDeadline(null);
+      setLink(null);
+      setLinkError(false);
     }
   };
 
@@ -80,7 +92,7 @@ export function TodoList() {
         </Button>
       </div>
 
-      <form className={styles.add} onSubmit={submit}>
+      <form className={styles.add} onSubmit={submit} noValidate>
         <label htmlFor="todo-new" className="visually-hidden">
           New to-do
         </label>
@@ -93,6 +105,44 @@ export function TodoList() {
           autoComplete="off"
           onChange={(event) => setDraft(event.target.value)}
         />
+        {link !== null && (
+          <div className={styles.linkRow}>
+            <label htmlFor="todo-link" className="visually-hidden">
+              Link
+            </label>
+            <input
+              id="todo-link"
+              type="url"
+              inputMode="url"
+              className={styles.input}
+              value={link}
+              placeholder="Paste a link to a video or page"
+              autoComplete="off"
+              aria-invalid={linkError || undefined}
+              aria-describedby={linkError ? 'todo-link-error' : undefined}
+              onChange={(event) => {
+                setLink(event.target.value);
+                setLinkError(false);
+              }}
+            />
+            <Button
+              size="sm"
+              variant="quiet"
+              aria-label="Remove the link"
+              onClick={() => {
+                setLink(null);
+                setLinkError(false);
+              }}
+            >
+              ✕
+            </Button>
+          </div>
+        )}
+        {linkError && (
+          <p id="todo-link-error" className={styles.linkError} role="alert">
+            That is not a web link. Paste one that starts with https://, or remove it.
+          </p>
+        )}
         <div className={styles.addRow}>
           <label className={styles.place}>
             <span className="visually-hidden">To-do belongs to</span>
@@ -119,6 +169,17 @@ export function TodoList() {
             />
           </label>
           <DeadlinePicker value={deadline} onChange={setDeadline} from={day} />
+          {link === null && (
+            <Button
+              size="sm"
+              variant="quiet"
+              className={styles.deadlineOff}
+              aria-label="Add a link"
+              onClick={() => setLink('')}
+            >
+              🔗 Link
+            </Button>
+          )}
           <Button type="submit" size="sm" disabled={draft.trim() === ''}>
             Add
           </Button>
@@ -293,6 +354,18 @@ function TodoItem({
           )}
         </span>
       </button>
+      {todo.url && (
+        <a
+          className={styles.link}
+          href={todo.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`Open the link for ${todo.title}, ${linkSite(todo.url)}, in a new tab`}
+          title={todo.url}
+        >
+          <span aria-hidden="true">🔗</span> {linkSite(todo.url)}
+        </a>
+      )}
       <button
         type="button"
         className={styles.remove}

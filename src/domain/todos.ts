@@ -1,3 +1,4 @@
+import { isWebUrl } from './library';
 import { addDays, daysBetween, toDayKey, type DayKey } from './dates';
 import { domainPlan, isPlannedOn, routineOf, type Routine, type Weekday } from './routine';
 import type { TrackerKind } from './types';
@@ -29,9 +30,34 @@ export interface Todo {
    * by itself; missing or null means no deadline.
    */
   deadline?: DayKey | null;
+  /** A video or page to open for it (http or https only). Missing or '' is none. */
+  url?: string;
 }
 
 export const TODO_TITLE_MAX = 200;
+export const TODO_URL_MAX = 2000;
+
+/**
+ * A link as typed or pasted, ready to store: '' for none, null when it is not
+ * a web link. "youtube.com/watch?v=..." gets https:// in front.
+ */
+export function cleanTodoUrl(value: string): string | null {
+  const text = value.trim();
+  if (text === '') return '';
+  const url = /^[a-z][a-z0-9+.-]*:/i.test(text) ? text : `https://${text}`;
+  return isWebUrl(url) && url.length <= TODO_URL_MAX && /^https?:\/\/[^/\s]+\.[^/\s]+/i.test(url)
+    ? url
+    : null;
+}
+
+/** The site a link points to, for its label: "youtube.com". */
+export function linkSite(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return 'Link';
+  }
+}
 
 /** Trims and shortens a title, or null if nothing is left. */
 export function cleanTodoTitle(value: string): string | null {

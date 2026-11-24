@@ -212,7 +212,7 @@ describe('to-do deadlines', () => {
     store().addTodo(
       'Finish the thesis draft',
       { domainId: null, skillId: null, day: '2026-11-23' },
-      '2026-12-01',
+      { deadline: '2026-12-01' },
     );
     const id = store().todos[0]!.id;
     expect(store().todos[0]?.deadline).toBe('2026-12-01');
@@ -223,5 +223,19 @@ describe('to-do deadlines', () => {
     store().updateTodo(id, { deadline: null });
     expect(store().todos[0]?.deadline).toBeNull();
     expect(store().sync.pendingTodos[id]).toBeDefined();
+  });
+});
+
+describe('to-do links', () => {
+  it('keeps web links only, adding https:// when it is left off', () => {
+    store().adoptAccount('user-1');
+    const place = { domainId: null, skillId: null, day: '2026-11-24' };
+    store().addTodo('Watch the lecture', place, { url: 'youtube.com/watch?v=abc' });
+    expect(store().todos[0]?.url).toBe('https://youtube.com/watch?v=abc');
+    const id = store().todos[0]!.id;
+    store().updateTodo(id, { url: 'javascript:alert(1)' });
+    expect(store().todos[0]?.url).toBe('');
+    store().updateTodo(id, { url: 'https://example.com/notes' });
+    expect(store().todos[0]?.url).toBe('https://example.com/notes');
   });
 });

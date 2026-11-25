@@ -10,6 +10,7 @@ import {
   GENERAL,
   nextPlannedDay,
   planTodo,
+  unplannedToday,
   targetKindName,
   targetOf,
   groupTodoTargets,
@@ -332,5 +333,36 @@ describe('working days left', () => {
         .workingDaysLeft,
     ).toBeNull();
     expect(planTodo(todo('2026-11-16', cp), context, '2026-11-16').workingDaysLeft).toBeNull();
+  });
+});
+
+describe('unplanned today', () => {
+  it('names what the routine plans today with nothing on the list', () => {
+    // Monday 2026-11-16: competitive programming and the every-day project are on.
+    const targets = todoTargets(context);
+    const none = buildTodoBoard([], context, '2026-11-16');
+    expect(unplannedToday(targets, none, '2026-11-16').map((t) => t.key)).toEqual([
+      'skill:thesis',
+      'skill:cp',
+    ]);
+    const open = buildTodoBoard(
+      [todo('2026-11-16', { domainId: null, skillId: 'cp' })],
+      context,
+      '2026-11-16',
+    );
+    expect(unplannedToday(targets, open, '2026-11-16').map((t) => t.key)).toEqual(['skill:thesis']);
+    const done = buildTodoBoard(
+      [
+        todo('2026-11-16', {
+          domainId: null,
+          skillId: 'thesis',
+          done: true,
+          doneAt: at('2026-11-16'),
+        }),
+      ],
+      context,
+      '2026-11-16',
+    );
+    expect(unplannedToday(targets, done, '2026-11-16').map((t) => t.key)).toEqual(['skill:cp']);
   });
 });

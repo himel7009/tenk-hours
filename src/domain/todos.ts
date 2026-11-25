@@ -228,6 +228,28 @@ export interface TodoBoard {
   openToday: number;
 }
 
+/**
+ * The projects, skills and habits the routine plans for `today` that have
+ * nothing on today's list: no open to-do showing today and none done today.
+ * Kind order as in the picker, then the order given.
+ */
+export function unplannedToday(
+  targets: readonly TodoTarget[],
+  board: Pick<TodoBoard, 'today' | 'doneToday'>,
+  today: DayKey,
+): TodoTarget[] {
+  const covered = new Set([
+    ...board.today.map((group) => group.target.key),
+    ...board.doneToday.map((item) => item.target.key),
+  ]);
+  return GROUPS.filter(({ kind }) => kind !== 'domain').flatMap(({ kind }) =>
+    targets.filter(
+      (target) =>
+        target.kind === kind && !covered.has(target.key) && isPlannedOn(target.routine, today),
+    ),
+  );
+}
+
 export function buildTodoBoard(
   todos: readonly Todo[],
   context: TodoContext,

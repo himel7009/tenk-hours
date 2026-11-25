@@ -204,6 +204,9 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   (`targetKindName`) and each to-do with the day it was added. The user
   asked not to see day counts or how often a to-do moved on ("it gives me
   pressure"); `age` and `moved` are still computed for the history.
+- Under today's list, one quiet line names what today's routine holds with
+  nothing on the list (`unplannedToday`: no open to-do showing today, none
+  done today). Each name picks that place in the add form and focuses it.
 - With a deadline, a to-do shows on every routine day of its place until
   done, and counts `workingDaysLeft` (planned days from today to the
   deadline, both included; null for General or an every-day routine, where

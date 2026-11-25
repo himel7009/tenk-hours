@@ -1,9 +1,10 @@
 import { Link } from 'react-router';
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '../../components/Button';
 import {
   GENERAL,
   groupTodoTargets,
+  unplannedToday,
   cleanTodoUrl,
   describeDeadline,
   linkSite,
@@ -39,6 +40,7 @@ export function TodoList() {
   const addTodo = useTrackerStore((state) => state.addTodo);
 
   const [draft, setDraft] = useState('');
+  const input = useRef<HTMLInputElement>(null);
   const [targetKey, setTargetKey] = useState(GENERAL.key);
   const [deadline, setDeadline] = useState<DayKey | null>(null);
   // Null while the link box is closed.
@@ -52,6 +54,8 @@ export function TodoList() {
   const day = today;
   const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
   const groups = groupTodoTargets(targets, day);
+  // A quiet reminder of what today's routine holds with no to-do yet.
+  const unplanned = unplannedToday(targets, board, today);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -94,6 +98,7 @@ export function TodoList() {
         </label>
         <input
           id="todo-new"
+          ref={input}
           className={styles.input}
           value={draft}
           maxLength={TODO_TITLE_MAX}
@@ -224,6 +229,28 @@ export function TodoList() {
             </div>
           ))}
         </div>
+      )}
+
+      {unplanned.length > 0 && (
+        <p className={styles.unplanned}>
+          On your routine with nothing planned:{' '}
+          {unplanned.map((t, i) => (
+            <span key={t.key}>
+              {i > 0 && ', '}
+              <button
+                type="button"
+                className={styles.unplannedName}
+                title={`Write a to-do for ${t.name}`}
+                onClick={() => {
+                  setTargetKey(t.key);
+                  input.current?.focus();
+                }}
+              >
+                <span aria-hidden="true">{t.icon}</span> {t.name}
+              </button>
+            </span>
+          ))}
+        </p>
       )}
 
       {board.doneToday.length > 0 && (

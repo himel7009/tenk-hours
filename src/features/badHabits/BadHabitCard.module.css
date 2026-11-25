@@ -131,3 +131,15 @@
   font-size: var(--text-xs);
   text-align: right;
 }
+
+/* The name opens the habit's own page, as a tracker's name does. */
+.nameLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nameLink:hover,
+.nameLink:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

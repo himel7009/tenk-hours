@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { Button } from '../../components/Button';
 import type { BadHabit, CheckInStatus } from '../../domain/badHabits';
 import { addDays, fromDayKey, type DayKey } from '../../domain/dates';
@@ -60,7 +61,11 @@ export function BadHabitCard({ habit }: BadHabitCardProps) {
           {habit.icon}
         </span>
         <div className={styles.heading}>
-          <h3 className={cardStyles.name}>{habit.name}</h3>
+          <h3 className={cardStyles.name}>
+            <Link to={`/bad-habits/${habit.id}`} className={styles.nameLink}>
+              {habit.name}
+            </Link>
+          </h3>
           <p className={`tabular ${styles.streak}`}>
             {currentStreak > 0 ? (
               <>

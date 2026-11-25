@@ -143,6 +143,12 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
   leaving the tab or page, on the app going to the background, and on reload.
   It is a privacy screen, not encryption: backups and storage still hold the
   data.
+- Each has a page (`/bad-habits/:id`, `BadHabitPage`), linked from the card's
+  name and hidden by the lock. Its figures come from `buildBadHabitReport`
+  (weekday slip rates, `riskiestWeekday` from two slips up, average gap,
+  last 30 against the 30 before, months, `statusOn` for the calendar),
+  derived from check-ins and never stored. Tracking starts at the habit's
+  creation or its earliest answer; today only counts as unanswered once over.
 
 ## Home dashboard
 

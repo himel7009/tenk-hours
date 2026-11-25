@@ -1,5 +1,12 @@
 import { useMemo } from 'react';
-import { summarizeBadHabit, type BadHabitId, type BadHabitProgress } from '../../domain/badHabits';
+import {
+  buildBadHabitReport,
+  summarizeBadHabit,
+  type BadHabit,
+  type BadHabitId,
+  type BadHabitProgress,
+  type BadHabitReport,
+} from '../../domain/badHabits';
 import { useTrackerStore } from '../../store/trackerStore';
 import { useToday } from '../progress/useNow';
 
@@ -25,4 +32,19 @@ export function useUnansweredBadHabits(): number {
     const answered = new Set(checkIns.filter((c) => c.day === today).map((c) => c.habitId));
     return badHabits.filter((habit) => !answered.has(habit.id)).length;
   }, [badHabits, checkIns, today]);
+}
+
+/** The full report for a bad habit's page. */
+export function useBadHabitReport(habit: BadHabit): BadHabitReport {
+  const checkIns = useTrackerStore((state) => state.checkIns);
+  const today = useToday();
+  return useMemo(
+    () =>
+      buildBadHabitReport(
+        habit,
+        checkIns.filter((checkIn) => checkIn.habitId === habit.id),
+        today,
+      ),
+    [checkIns, habit, today],
+  );
 }

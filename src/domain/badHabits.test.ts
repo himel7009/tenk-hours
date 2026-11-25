@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { checkInId, summarizeBadHabit, type CheckIn, type CheckInStatus } from './badHabits';
+import {
+  checkInId,
+  summarizeBadHabit,
+  buildBadHabitReport,
+  type CheckIn,
+  type CheckInStatus,
+} from './badHabits';
 
 const today = '2026-11-18';
 const answer = (day: string, status: CheckInStatus): CheckIn => ({
@@ -70,5 +76,67 @@ describe('summarizeBadHabit', () => {
     );
     expect(progress.cleanRate30).toBe(0.75);
     expect(summarizeBadHabit([], today).cleanRate30).toBeNull();
+  });
+});
+
+describe('buildBadHabitReport', () => {
+  const habit = { createdAt: new Date('2026-10-01T09:00:00').getTime() };
+  const answer = (day: string, status: 'clean' | 'slipped') => ({
+    id: day,
+    habitId: 'h',
+    day,
+    status,
+    createdAt: 0,
+  });
+  // Slips on three Fridays in November, clean otherwise on answered days.
+  const checkIns = [
+    answer('2026-11-06', 'slipped'),
+    answer('2026-11-13', 'slipped'),
+    answer('2026-11-20', 'slipped'),
+    answer('2026-11-21', 'clean'),
+    answer('2026-11-22', 'clean'),
+    answer('2026-11-23', 'clean'),
+    answer('2026-11-24', 'clean'),
+    answer('2026-10-15', 'clean'),
+  ];
+  const report = buildBadHabitReport(habit, checkIns, '2026-11-25');
+
+  it('says where it stands', () => {
+    expect(report).toMatchObject({
+      since: '2026-10-01',
+      currentStreak: 4,
+      daysSinceLastSlip: 5,
+      averageGap: 7,
+      slipsLast30: 3,
+      slipsPrevious30: 0,
+    });
+    // 1 Oct to 24 Nov is 55 days, 8 of them answered; today does not count yet.
+    expect(report.unansweredDays).toBe(47);
+  });
+
+  it('finds the weekday it slips most on', () => {
+    expect(report.riskiestWeekday).toMatchObject({ weekday: 5, slips: 3, slipRate: 1 });
+    expect(report.byWeekday[0]).toMatchObject({ answered: 1, slips: 0, slipRate: 0 });
+  });
+
+  it('breaks the months down, starting when tracking began', () => {
+    expect(report.months).toEqual([
+      { month: '2026-10', clean: 1, slipped: 0, unanswered: 30 },
+      { month: '2026-11', clean: 4, slipped: 3, unanswered: 17 },
+    ]);
+  });
+
+  it('labels each day of the calendar', () => {
+    expect(report.statusOn('2026-11-20')).toBe('slipped');
+    expect(report.statusOn('2026-11-21')).toBe('clean');
+    expect(report.statusOn('2026-11-10')).toBe('unanswered');
+    expect(report.statusOn('2026-09-30')).toBe('before');
+    expect(report.statusOn('2026-11-26')).toBe('future');
+  });
+
+  it('needs two slips on a weekday to call it the riskiest', () => {
+    const one = buildBadHabitReport(habit, [answer('2026-11-20', 'slipped')], '2026-11-25');
+    expect(one.riskiestWeekday).toBeNull();
+    expect(one.averageGap).toBeNull();
   });
 });

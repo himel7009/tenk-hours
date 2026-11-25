@@ -9,6 +9,7 @@ import { ReportPage } from '../features/report/ReportPage';
 import { MoneyPage } from '../features/money/MoneyPage';
 import { SettingsPage } from '../features/settings/SettingsPage';
 import { SkillPage } from '../features/skills/SkillPage';
+import { BadHabitPage } from '../features/badHabits/BadHabitPage';
 import { useAccountStore } from '../store/accountStore';
 import { useCloudSync } from '../sync/useCloudSync';
 import { AppLayout } from './AppLayout';
@@ -30,6 +31,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="skills/:skillId" element={<SkillPage />} />
+          <Route path="bad-habits/:habitId" element={<BadHabitPage />} />
           <Route path="report" element={<ReportPage />} />
           <Route path="money" element={<MoneyPage />} />
           <Route path="library" element={<LibraryPage />} />

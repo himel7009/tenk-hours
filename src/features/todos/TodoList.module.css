@@ -94,17 +94,6 @@
   text-decoration: none;
 }
 
-.moved {
-  color: var(--persimmon);
-  font-weight: 600;
-}
-
-/* Days a to-do has been going. From day 3 it draws a little more notice. */
-.age[data-long] {
-  color: var(--ink);
-  font-weight: 600;
-}
-
 .kind {
   margin-left: var(--space-2);
   padding: 1px var(--space-2);

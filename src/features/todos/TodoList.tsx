@@ -40,18 +40,16 @@ export function TodoList() {
 
   const [draft, setDraft] = useState('');
   const [targetKey, setTargetKey] = useState(GENERAL.key);
-  const [pickedDay, setPickedDay] = useState<string | null>(null);
   const [deadline, setDeadline] = useState<DayKey | null>(null);
   // Null while the link box is closed.
   const [link, setLink] = useState<string | null>(null);
   const [linkError, setLinkError] = useState(false);
-  const [showUpcoming, setShowUpcoming] = useState(false);
   const [showDone, setShowDone] = useState(false);
   const [editing, setEditing] = useState<PlannedTodo | null>(null);
   const [history, setHistory] = useState(false);
 
-  // The day orders the list: what the routine plans for it comes first.
-  const day = pickedDay ?? today;
+  // New to-dos are for today; one not done comes back on its next routine day.
+  const day = today;
   const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
   const groups = groupTodoTargets(targets, day);
 
@@ -66,7 +64,6 @@ export function TodoList() {
     }
     if (addTodo(draft, { ...placeOf(target), day }, { deadline: due, url })) {
       setDraft('');
-      setPickedDay(null);
       setDeadline(null);
       setLink(null);
       setLinkError(false);
@@ -159,15 +156,6 @@ export function TodoList() {
               ))}
             </select>
           </label>
-          <label className={styles.place}>
-            <span className="visually-hidden">To-do day</span>
-            <input
-              type="date"
-              value={day}
-              min={today}
-              onChange={(event) => setPickedDay(event.target.value || null)}
-            />
-          </label>
           <DeadlinePicker value={deadline} onChange={setDeadline} from={day} />
           {link === null && (
             <Button
@@ -185,13 +173,12 @@ export function TodoList() {
           </Button>
         </div>
         <p className={styles.addHint}>
-          {day === today ? 'For today' : `For ${shortDay(day)}`}
+          For today
           {target === GENERAL ? '' : `, under ${target.name}`}
           {deadline === null
             ? ', no deadline'
             : `, due ${shortDay(deadline)} (${daysFromNow(deadline, day)})`}
-          . Today's routine is listed first; anything else is under "Not on this day's routine". Not
-          done by then, it moves on to the next working day by itself.
+          . Not done today, it comes back on its next routine day until you tick it off.
         </p>
       </form>
 
@@ -237,21 +224,6 @@ export function TodoList() {
             </div>
           ))}
         </div>
-      )}
-
-      {board.upcoming.length > 0 && (
-        <Fold
-          label="Coming up"
-          count={board.upcoming.length}
-          open={showUpcoming}
-          onToggle={() => setShowUpcoming(!showUpcoming)}
-        >
-          <ul className={styles.items}>
-            {board.upcoming.map((item) => (
-              <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} showWhen />
-            ))}
-          </ul>
-        </Fold>
       )}
 
       {board.doneToday.length > 0 && (
@@ -314,21 +286,21 @@ function TodoItem({
 }) {
   const toggleTodo = useTrackerStore((state) => state.toggleTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
-  const { todo, target, moved, due, addedDay, age } = item;
+  const { todo, target, due, addedDay, age, workingDaysLeft } = item;
   const deadline = describeDeadline(item);
   const today = useToday();
   const place = `${target.icon} ${target.name}${
     targetKindName(target) ? ` (${targetKindName(target).toLowerCase()})` : ''
   }`;
-  // How long it has been going: "Day 3, added Thu, Nov 19". Done ones say how
-  // long they took.
+  // Only when it was written down: no counting of days or moves, which
+  // reads as pressure.
   const life = todo.done
     ? age === 1
       ? 'Done the day it was added'
-      : `Done on day ${age}, added ${shortDay(addedDay)}`
+      : `Done, added ${shortDay(addedDay)}`
     : addedDay === today
       ? 'Added today'
-      : `Day ${age}, added ${shortDay(addedDay)}`;
+      : `Added ${shortDay(addedDay)}`;
 
   return (
     <li className={styles.item} data-done={todo.done}>
@@ -348,22 +320,16 @@ function TodoItem({
         <span>{todo.title}</span>
         {deadline && (
           <span className={styles.deadline} data-tone={deadline.tone}>
-            {deadline.text}
-            {!todo.done && todo.deadline && `, ${shortDay(todo.deadline)}`}
+            {workingDaysLeft !== null
+              ? `${workingDaysLeft} working day${workingDaysLeft === 1 ? '' : 's'} left`
+              : deadline.text}
+            {!todo.done && todo.deadline && `, due ${shortDay(todo.deadline)}`}
           </span>
         )}
         <span className={styles.meta}>
           {showWhen && `${shortDay(due)}, ${place}. `}
           {showPlace && `${place}. `}
-          <span className={styles.age} data-long={(!todo.done && age >= 3) || undefined}>
-            {life}
-          </span>
-          {moved > 0 && (
-            <span className={styles.moved}>
-              , moved {moved === 1 ? 'once' : `${moved} times`}
-              {todo.day !== addedDay && `, planned ${shortDay(todo.day)}`}
-            </span>
-          )}
+          <span className={styles.age}>{life}</span>
         </span>
       </button>
       {todo.url && (

@@ -198,10 +198,16 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
   moves to the next day. Only the first planned day is stored: where it shows
   now and how often it moved are worked out, never written back.
-- The list labels each group Skill, Habit or Project (`targetKindName`) and
-  each to-do with its age (`PlannedTodo.age`): calendar days since it was
-  added, counting that day as day 1, stopping when done. Worked out from
-  `createdAt`, never stored.
+- The list shows today only: new to-dos are for today (the add form has no
+  day field), and there is no Coming up list; tomorrow takes care of itself
+  through the routine. Each group is labelled Skill, Habit or Project
+  (`targetKindName`) and each to-do with the day it was added. The user
+  asked not to see day counts or how often a to-do moved on ("it gives me
+  pressure"); `age` and `moved` are still computed for the history.
+- With a deadline, a to-do shows on every routine day of its place until
+  done, and counts `workingDaysLeft` (planned days from today to the
+  deadline, both included; null for General or an every-day routine, where
+  the plain days-left countdown shows).
 - An optional `deadline` (column `deadline`, null for none) is separate from
   `day`, which moves on by itself. `PlannedTodo.daysLeft` and
   `describeDeadline` give the countdown (soon from two days out, overdue

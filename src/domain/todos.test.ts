@@ -289,3 +289,48 @@ describe('links', () => {
     expect(linkSite('https://docs.python.org/3/')).toBe('docs.python.org');
   });
 });
+
+describe('working days left', () => {
+  // Competitive programming is on Mondays and Thursdays; 2026-11-16 is a Monday.
+  const cp = { domainId: null, skillId: 'cp' };
+  it('counts the routine days from today to the deadline, both included', () => {
+    const item = planTodo(
+      todo('2026-11-16', { ...cp, deadline: '2026-11-26' }),
+      context,
+      '2026-11-16',
+    );
+    // Mon 16, Thu 19, Mon 23, Thu 26.
+    expect(item.workingDaysLeft).toBe(4);
+    expect(item.daysLeft).toBe(10);
+  });
+
+  it('counts from the planned day when that is later, and stops at done or overdue', () => {
+    const later = planTodo(
+      todo('2026-11-19', { ...cp, deadline: '2026-11-23' }),
+      context,
+      '2026-11-17',
+    );
+    expect(later.workingDaysLeft).toBe(2);
+    const overdue = planTodo(
+      todo('2026-11-16', { ...cp, deadline: '2026-11-17' }),
+      context,
+      '2026-11-19',
+    );
+    expect(overdue.workingDaysLeft).toBeNull();
+    const done = planTodo(
+      todo('2026-11-16', { ...cp, deadline: '2026-11-26', done: true, doneAt: at('2026-11-16') }),
+      context,
+      '2026-11-16',
+    );
+    expect(done.workingDaysLeft).toBeNull();
+  });
+
+  it('says nothing extra where every day is planned, or without a deadline', () => {
+    const project = { domainId: null, skillId: 'thesis' };
+    expect(
+      planTodo(todo('2026-11-16', { ...project, deadline: '2026-11-20' }), context, '2026-11-16')
+        .workingDaysLeft,
+    ).toBeNull();
+    expect(planTodo(todo('2026-11-16', cp), context, '2026-11-16').workingDaysLeft).toBeNull();
+  });
+});

@@ -175,6 +175,12 @@ export interface PlannedTodo {
    * 0 on the day, negative once passed. Null without a deadline.
    */
   daysLeft: number | null;
+  /**
+   * Days its place's routine plans from today (from the start, if it is
+   * planned later) up to and including the deadline: how many sittings are
+   * left. Null without a deadline, once done, or when every day is planned.
+   */
+  workingDaysLeft: number | null;
 }
 
 /** Days the target was planned for from `from` up to, not including, `to`. */
@@ -201,7 +207,15 @@ export function planTodo(todo: Todo, context: TodoContext, today: DayKey): Plann
   const age = Math.max(1, daysBetween(addedDay, doneDay ?? today) + 1);
   const deadline = todo.deadline ?? null;
   const daysLeft = deadline === null ? null : daysBetween(doneDay ?? today, deadline);
-  return { todo, target, due, moved, doneDay, addedDay, age, daysLeft };
+  const everyDay =
+    target === GENERAL ||
+    [0, 1, 2, 3, 4, 5, 6].every((d) => isPlannedOn(target.routine, addDays(today, d)));
+  const start = due > today ? due : today;
+  const workingDaysLeft =
+    deadline === null || todo.done || everyDay || deadline < start
+      ? null
+      : plannedDaysBetween(target.routine, start, addDays(deadline, 1)).length;
+  return { todo, target, due, moved, doneDay, addedDay, age, daysLeft, workingDaysLeft };
 }
 
 export interface TodoBoard {

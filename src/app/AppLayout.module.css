@@ -80,7 +80,7 @@
   }
 }
 
-/* Aurora glass: the navigation floats as one glass pill. */
+/* Glass: the navigation floats as one glass capsule. */
 :global(:root[data-surface='glass']) .nav {
   padding: 4px;
   border: 1px solid var(--panel-border, var(--line));
@@ -98,7 +98,7 @@
 :global(:root[data-surface='glass']) .navLinkActive {
   background: var(--fill);
   color: var(--on-fill);
-  box-shadow: 0 2px 8px -2px rgb(60 40 140 / 0.18);
+  box-shadow: var(--fill-edge, none);
 }
 
 /* On a phone the pill spans the screen and its links tighten up. */

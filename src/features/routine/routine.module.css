@@ -60,6 +60,7 @@
 /* Today's letter is the one filled mark in the week. */
 .day[data-today='true'] .dayName {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 
@@ -67,7 +68,7 @@
 :global(:root[data-surface='glass']) .day[data-today='true'] {
   border: 1px solid var(--panel-border, transparent);
   background: color-mix(in srgb, var(--fill) 55%, transparent);
-  box-shadow: 0 6px 16px -10px rgb(60 40 140 / 0.35);
+  box-shadow: var(--fill-edge, none);
 }
 
 :global(:root[data-surface='glass']) .day[data-today='true'] .dayName {
@@ -473,6 +474,7 @@
   padding: 1px var(--space-2);
   border-radius: 999px;
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--surface);
   font-size: var(--text-xs);
 }

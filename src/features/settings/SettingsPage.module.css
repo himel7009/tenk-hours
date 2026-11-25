@@ -57,6 +57,7 @@
 
 .segment:has(input:checked) {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 

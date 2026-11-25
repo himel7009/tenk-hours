@@ -32,6 +32,7 @@
 .day:has(input:checked) {
   border-color: var(--ink);
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 

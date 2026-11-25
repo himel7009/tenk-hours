@@ -62,13 +62,19 @@
   background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
-/* Aurora glass: pill buttons, a glow under the primary gradient. */
+/* Glass: capsule buttons with a lit rim; the primary is aurora-tinted glass. */
 :global(:root[data-surface='glass']) .button {
   border-radius: 999px;
 }
 
 :global(:root[data-surface='glass']) .primary {
-  box-shadow: 0 8px 20px -8px var(--aurora-glow, transparent);
+  border-color: rgb(255 255 255 / 0.28);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+  backdrop-filter: blur(12px) saturate(1.6);
+  box-shadow:
+    0 8px 20px -8px var(--aurora-glow, transparent),
+    inset 1px 1px 0 rgb(255 255 255 / 0.45),
+    inset 0 10px 14px -10px rgb(255 255 255 / 0.5);
 }
 
 :global(:root[data-surface='glass']) .primary:hover:not(:disabled) {
@@ -78,6 +84,9 @@
 
 :global(:root[data-surface='glass']) .secondary {
   border-color: var(--panel-border, var(--line));
+  box-shadow:
+    inset 1px 1px 0 rgb(255 255 255 / 0.6),
+    0 2px 6px -2px rgb(30 40 100 / 0.12);
   -webkit-backdrop-filter: var(--glass-filter, none);
   backdrop-filter: var(--glass-filter, none);
 }

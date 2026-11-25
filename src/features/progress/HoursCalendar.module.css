@@ -6,6 +6,7 @@
 .card {
   --heat: var(--moss);
   --heat-top: var(--moss);
+  --heat-ink: var(--surface-solid);
   padding: var(--space-4);
   border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
@@ -18,6 +19,7 @@
 :global(:root[data-surface='glass']) .card {
   --heat: #8b3fc2;
   --heat-top: var(--aurora);
+  --heat-ink: #fff;
 }
 
 .head {
@@ -176,7 +178,7 @@
 }
 
 .day:is([data-level='4'], [data-level='5'], [data-level='6']) :is(.date, .amount) {
-  color: var(--surface-solid);
+  color: var(--heat-ink);
 }
 
 .day[data-future] {
@@ -300,6 +302,7 @@
 
 .looks button[aria-pressed='true'] {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 

@@ -35,6 +35,7 @@
 
 .tab[aria-selected='true'] {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 

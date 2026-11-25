@@ -55,6 +55,7 @@
 
 .switch label:has(input:checked) {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 
@@ -1056,6 +1057,7 @@
 
 .directions label:has(input:checked) {
   background: var(--fill);
+  box-shadow: var(--fill-edge, none);
   color: var(--on-fill);
 }
 
@@ -1094,24 +1096,24 @@
   color: var(--ink);
 }
 
-/* Aurora glass: the hero takes the gradient with a bright rim and a glow. */
+/* Glass: the hero is aurora-tinted glass with a lit rim and a glow. */
 :global(:root[data-surface='glass']) .quick {
-  border-color: rgb(255 255 255 / 0.35);
-  box-shadow:
-    0 18px 40px -18px var(--aurora-glow, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 0.35);
+  border-color: rgb(255 255 255 / 0.3);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--hero-edge, none);
 }
 
 :global(:root[data-surface='glass']) .hero {
-  border-color: rgb(255 255 255 / 0.35);
-  box-shadow:
-    0 18px 40px -18px var(--aurora-glow, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 0.35);
+  border-color: rgb(255 255 255 / 0.3);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--hero-edge, none);
 }
 
 :global(:root[data-surface='glass']) .debtTotal {
-  border-color: rgb(255 255 255 / 0.35);
-  box-shadow:
-    0 18px 40px -18px var(--aurora-glow, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 0.35);
+  border-color: rgb(255 255 255 / 0.3);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--hero-edge, none);
 }

@@ -40,9 +40,12 @@ var(--line))` and `box-shadow: var(--glass-edge, none)`. Filled surfaces
   days), `--accent-fill`/`--on-accent` (primary actions), `--hero-fill`/
   `--on-hero` (the one big card on a page, which also resets `--on-ink`).
   In the solid style all of these resolve to the old values. The Glass
-  style ("Aurora glass": `surface` in the store, per device, `<html
+  style ("Liquid glass", after Apple's: `surface` in the store, per device, `<html
 data-surface>`, `styles/glass.css`, plus `:global(:root[data-surface='glass'])`
-  rules in Button, AppLayout and the hero cards) restyles each role. A new
+  rules in Button, AppLayout and the hero cards) restyles each role.
+  Glass adds `--glass-edge` (the lit rim and sheen), `--fill-edge` (on
+  anything filled with `--fill`) and `--hero-edge` (heroes, which are
+  tinted glass with their own blur); all are unset in solid. A new
   panel or filled control should follow the same tokens. Glass is skipped
   where blur is unsupported or the system asks for reduced transparency.
 - UI copy is plain sentence case. Buttons say what they do ("Save changes").

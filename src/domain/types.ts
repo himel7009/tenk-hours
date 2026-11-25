@@ -90,6 +90,9 @@ export interface ActiveTimer {
 
 export type Theme = 'system' | 'light' | 'dark';
 
+/** How panels look: plain, or see-through frosted glass over a colour field. */
+export type SurfaceStyle = 'solid' | 'glass';
+
 /**
  * The named colours, in the order new items are given them, so neighbours in
  * a list look as different as possible. Each has light and dark values in

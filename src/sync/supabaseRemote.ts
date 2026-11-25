@@ -75,6 +75,7 @@ interface LibraryRow {
   position: string;
   notes: string;
   status: LibraryStatus;
+  deadline: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -154,7 +155,7 @@ const DOMAIN_COLUMNS =
 const SESSION_COLUMNS = 'id,skill_id,day,minutes,note,source,created_at,updated_at,deleted_at';
 
 const LIBRARY_COLUMNS =
-  'id,kind,title,author,url,unit,total_units,done_units,position,notes,status,created_at,updated_at,deleted_at';
+  'id,kind,title,author,url,unit,total_units,done_units,position,notes,status,deadline,created_at,updated_at,deleted_at';
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, Math.round(value)));
@@ -498,6 +499,7 @@ function toLibraryRow(item: LibraryItem) {
     position: item.position.slice(0, LIBRARY_LIMITS.position),
     notes: item.notes.slice(0, LIBRARY_LIMITS.notes),
     status: item.status,
+    deadline: item.deadline ?? null,
     created_at: new Date(item.createdAt).toISOString(),
     deleted_at: null,
   };
@@ -519,6 +521,7 @@ function fromLibraryRow(row: LibraryRow): RemoteRow<LibraryItem> {
       position: row.position,
       notes: row.notes,
       status: row.status,
+      deadline: row.deadline ?? null,
       createdAt: Date.parse(row.created_at),
     },
   };

@@ -1,3 +1,4 @@
+import { describeDaysLeft, type DeadlineWords } from './deadline';
 import { isWebUrl } from './library';
 import { addDays, daysBetween, toDayKey, type DayKey } from './dates';
 import { domainPlan, isPlannedOn, routineOf, type Routine, type Weekday } from './routine';
@@ -355,32 +356,11 @@ export function targetKindName(target: TodoTarget): string {
   return KIND_NAMES[target.kind];
 }
 
-/** How close a deadline is: past it, on it or within two days, or further off. */
-export type DeadlineTone = 'overdue' | 'soon' | 'later';
-
-export const DEADLINE_SOON_DAYS = 2;
-
 /**
- * The deadline in words, or null without one. Open: "3 days left", "Due
- * tomorrow", "Due today", "2 days overdue". Done: "Done 2 days early", "Done
- * on its deadline", "Done 1 day late".
+ * The deadline in words, or null without one (see `describeDaysLeft`).
  */
 export function describeDeadline(
   item: Pick<PlannedTodo, 'daysLeft'> & { todo: Pick<Todo, 'done'> },
-): { text: string; tone: DeadlineTone } | null {
-  const { daysLeft } = item;
-  if (daysLeft === null) return null;
-  const days = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
-  if (item.todo.done) {
-    if (daysLeft > 0) return { text: `Done ${days(daysLeft)} early`, tone: 'later' };
-    if (daysLeft === 0) return { text: 'Done on its deadline', tone: 'later' };
-    return { text: `Done ${days(-daysLeft)} late`, tone: 'overdue' };
-  }
-  if (daysLeft < 0) return { text: `${days(-daysLeft)} overdue`, tone: 'overdue' };
-  if (daysLeft === 0) return { text: 'Due today', tone: 'soon' };
-  if (daysLeft === 1) return { text: 'Due tomorrow', tone: 'soon' };
-  return {
-    text: `${days(daysLeft)} left`,
-    tone: daysLeft <= DEADLINE_SOON_DAYS ? 'soon' : 'later',
-  };
+): DeadlineWords | null {
+  return describeDaysLeft(item.daysLeft, item.todo.done);
 }

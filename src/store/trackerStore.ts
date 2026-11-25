@@ -51,6 +51,7 @@ import type {
   Skill,
   SkillColor,
   SkillId,
+  SurfaceStyle,
   Theme,
 } from '../domain/types';
 import {
@@ -108,6 +109,8 @@ interface TrackerState {
   debtPayments: DebtPayment[];
   activeTimer: ActiveTimer | null;
   theme: Theme;
+  /** Per device, like the theme; never synced. */
+  surface: SurfaceStyle;
   /**
    * Hides the bad habits behind a PIN on this device. Never synced: each
    * device has its own lock, and signing out removes it.
@@ -223,6 +226,7 @@ interface TrackerActions {
   ) => { entries: number; sections: number };
 
   setTheme: (theme: Theme) => void;
+  setSurface: (surface: SurfaceStyle) => void;
   setBadHabitLock: (lock: PinLock | null) => void;
   replaceData: (
     data: Pick<
@@ -270,6 +274,7 @@ const initialState: TrackerState = {
   debtPayments: [],
   activeTimer: null,
   theme: 'system',
+  surface: 'solid',
   badHabitLock: null,
   sync: initialSyncState,
 };
@@ -907,6 +912,7 @@ export const useTrackerStore = create<TrackerStore>()(
       },
 
       setTheme: (theme) => set({ theme }),
+      setSurface: (surface) => set({ surface }),
 
       setBadHabitLock: (badHabitLock) => set({ badHabitLock }),
 
@@ -1156,7 +1162,8 @@ export const useTrackerStore = create<TrackerStore>()(
           },
         })),
 
-      clearLocalData: () => set((state) => ({ ...initialState, theme: state.theme })),
+      clearLocalData: () =>
+        set((state) => ({ ...initialState, theme: state.theme, surface: state.surface })),
     }),
     {
       name: STORAGE_KEY,
@@ -1175,6 +1182,7 @@ export const useTrackerStore = create<TrackerStore>()(
         debtPayments,
         activeTimer,
         theme,
+        surface,
         sync,
         badHabitLock,
       }) => ({
@@ -1191,6 +1199,7 @@ export const useTrackerStore = create<TrackerStore>()(
         debtPayments,
         activeTimer,
         theme,
+        surface,
         sync,
         badHabitLock,
       }),

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  libraryDeadline,
   isWebUrl,
   libraryProgress,
   nextUnitLabel,
@@ -156,5 +157,59 @@ describe('summarizeLibrary', () => {
     expect(
       summarizeLibrary([item('a', { status: 'active', totalUnits: null })]).averagePercent,
     ).toBeNull();
+  });
+});
+
+describe('libraryDeadline', () => {
+  const book = {
+    id: 'b',
+    kind: 'book' as const,
+    title: 'Deep learning',
+    author: '',
+    url: '',
+    unit: 'chapter' as const,
+    totalUnits: 20,
+    doneUnits: 8,
+    position: '',
+    notes: '',
+    status: 'active' as const,
+    createdAt: 0,
+  };
+
+  it('has nothing to say without a deadline or once finished', () => {
+    expect(libraryDeadline(book, '2026-11-25')).toBeNull();
+    expect(
+      libraryDeadline({ ...book, deadline: '2026-11-30', status: 'done' }, '2026-11-25'),
+    ).toBeNull();
+  });
+
+  it('counts down and works out the pace, today included', () => {
+    // 12 chapters left over 6 days (25th to 30th).
+    expect(libraryDeadline({ ...book, deadline: '2026-11-30' }, '2026-11-25')).toEqual({
+      text: '5 days left',
+      tone: 'later',
+      daysLeft: 5,
+      pace: 'About 2 chapters a day',
+    });
+    expect(
+      libraryDeadline({ ...book, doneUnits: 18, deadline: '2026-11-30' }, '2026-11-25')?.pace,
+    ).toBe('About 1 chapter every 3 days');
+    expect(
+      libraryDeadline({ ...book, doneUnits: 15, deadline: '2026-11-30' }, '2026-11-25')?.pace,
+    ).toBe('About 1 chapter a day');
+  });
+
+  it('marks a passed deadline and drops the pace', () => {
+    expect(libraryDeadline({ ...book, deadline: '2026-11-23' }, '2026-11-25')).toMatchObject({
+      text: '2 days overdue',
+      tone: 'overdue',
+      pace: null,
+    });
+  });
+
+  it('has no pace when the total is unknown', () => {
+    expect(
+      libraryDeadline({ ...book, totalUnits: null, deadline: '2026-11-26' }, '2026-11-25'),
+    ).toMatchObject({ text: 'Due tomorrow', tone: 'soon', pace: null });
   });
 });

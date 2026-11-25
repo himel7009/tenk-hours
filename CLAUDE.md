@@ -33,6 +33,12 @@ failure blocks the deploy.
   and a case in `supabase/tests/rls_test.sql`.
 - Styling uses the tokens in `src/styles/tokens.css`. No new colours, fonts or
   UI libraries without asking. (Item colours are the exception, below.)
+- Panels use `background: var(--surface)` with `backdrop-filter:
+var(--glass-filter, none)`. The Glass style (`surface` in the store, per
+  device, `<html data-surface>`, `styles/glass.css`) makes `--surface` a
+  translucent mix of `--surface-solid` and sets the blur over a fixed colour
+  field. A new panel should follow the same pair. Glass is skipped where
+  blur is unsupported or the system asks for reduced transparency.
 - UI copy is plain sentence case. Buttons say what they do ("Save changes").
 - Names wrap (`overflow-wrap: anywhere`); never cut user text off with an
   ellipsis. The running timer bar alone clamps to two lines.
@@ -271,6 +277,10 @@ chapters, pages or lessons, a free-text bookmark and notes. Its status is
 of skills and sessions and has its own sync cursor (`sync.libraryCursor`), as
 domains do (`sync.domainCursor`).
 
+- An optional `deadline` (column `deadline`) to finish by. `libraryDeadline`
+  gives the countdown (wording shared with to-dos in `domain/deadline.ts`)
+  and, with a known total, the pace to finish on time; nothing once done.
+  Lists sort by nearest deadline.
 - `url` (here and on to-dos) is the only user-supplied value rendered as a
   link. It must pass `isWebUrl` (http or https only) wherever it enters the
   app: the form, backup import and rows pulled from the server, and the
@@ -308,8 +318,8 @@ connector. If the code goes first, sync
 fails for signed-in users until the migration is applied (their data stays
 safe on the device and syncs afterwards).
 
-All nineteen migrations in `supabase/migrations/` are applied to the live project
-as of 2026-11-24.
+All twenty migrations in `supabase/migrations/` are applied to the live project
+as of 2026-11-25.
 
 ## Releases
 

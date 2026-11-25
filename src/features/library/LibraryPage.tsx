@@ -78,7 +78,10 @@ export function LibraryPage() {
         </p>
       ) : (
         SECTIONS.map(({ status, title, note }) => {
-          const items = library.filter((item) => item.status === status);
+          // Nearest deadline first; the rest keep the order they were added in.
+          const items = library
+            .filter((item) => item.status === status)
+            .sort((a, b) => (a.deadline ?? '9999-12-31').localeCompare(b.deadline ?? '9999-12-31'));
           if (items.length === 0) return null;
           return (
             <section key={status} className={styles.section}>

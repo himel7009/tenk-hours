@@ -1,4 +1,8 @@
 import { useState, type FormEvent } from 'react';
+import { daysBetween, type DayKey } from '../../domain/dates';
+import { describeDaysLeft } from '../../domain/deadline';
+import { useToday } from '../progress/useNow';
+import { DeadlinePicker } from '../todos/DeadlinePicker';
 import { Button } from '../../components/Button';
 import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select, Textarea } from '../../components/Field';
@@ -75,6 +79,8 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
   const [done, setDone] = useState(item ? String(item.doneUnits) : '');
   const [position, setPosition] = useState(item?.position ?? '');
   const [notes, setNotes] = useState(item?.notes ?? '');
+  const [deadline, setDeadline] = useState<DayKey | null>(item?.deadline ?? null);
+  const today = useToday();
   const [status, setStatus] = useState<LibraryStatus>(
     props.item ? props.item.status : (props.status ?? 'active'),
   );
@@ -132,6 +138,7 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
       position: position.trim(),
       notes: notes.trim(),
       status: finished ? 'done' : status,
+      deadline,
     } satisfies Omit<LibraryItem, 'id' | 'createdAt'>;
 
     if (item) {
@@ -283,6 +290,21 @@ export function LibraryItemDialog(props: LibraryItemDialogProps) {
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
             />
+          )}
+        </Field>
+
+        <Field
+          label="Finish by (optional)"
+          hint={
+            deadline === null
+              ? 'No deadline. Take as long as it takes.'
+              : `${describeDaysLeft(daysBetween(today, deadline), false)?.text}.`
+          }
+        >
+          {(id) => (
+            <span>
+              <DeadlinePicker id={id} value={deadline} onChange={setDeadline} from={today} />
+            </span>
           )}
         </Field>
 

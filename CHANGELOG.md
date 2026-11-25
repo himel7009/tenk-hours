@@ -2,6 +2,11 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-25
+
+- **Deadlines for books and courses.** "Finish by" in a book's or course's form sets an optional deadline; the library shows the countdown ("10 days left", "Due tomorrow", red once overdue) and, when the total is known, the pace it takes ("About 2 chapters a day to finish on time"). Each list puts the nearest deadline first.
+- **Glass style.** Settings, Appearance, Style: Glass makes cards see-through and frosted over a soft wash of the app's colours, in light and dark. It is per device, dialogs stay easy to read, and it switches itself off when your system asks for less transparency or the browser cannot blur.
+
 ## 2026-11-24
 
 - **Links on to-dos.** Add a link to a video or page with "🔗 Link" when writing a to-do, or from Edit. It shows as a small button with the site's name (youtube.com, overleaf.com) and opens in a new tab. Links without https:// get it added; anything that is not a web link is turned away.

@@ -1,0 +1,69 @@
+/*
+ * The glass style (Settings, Appearance): see-through, frosted surfaces over
+ * a soft field of the app's own colours. Each panel keeps its theme colour
+ * as `--surface-solid`; here it is made translucent and blurs what is
+ * behind it (`--glass-filter`, applied by every panel that uses --surface).
+ * Off for anyone who asks for less transparency, and where blur is missing.
+ */
+
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  :root[data-surface='glass'] {
+    --surface: color-mix(in srgb, var(--surface-solid) 58%, transparent);
+    --line: color-mix(in srgb, var(--ink) 13%, transparent);
+    --glass-filter: blur(18px) saturate(1.6);
+  }
+
+  /* The colour field everything floats over, fixed so it does not scroll. */
+  :root[data-surface='glass'] body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(
+        42% 38% at 10% 6%,
+        color-mix(in srgb, var(--cobalt) 34%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        36% 42% at 92% 14%,
+        color-mix(in srgb, var(--plum) 30%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        48% 40% at 72% 96%,
+        color-mix(in srgb, var(--teal) 30%, transparent),
+        transparent 72%
+      ),
+      radial-gradient(
+        30% 32% at 16% 84%,
+        color-mix(in srgb, var(--persimmon) 18%, transparent),
+        transparent 72%
+      ),
+      var(--bg);
+  }
+
+  /* Dialogs hold forms: more solid, so the page behind does not compete. */
+  :root[data-surface='glass'] dialog {
+    background: color-mix(in srgb, var(--surface-solid) 84%, transparent);
+  }
+
+  /* Phones blur less: the same look for less work. */
+  @media (max-width: 40rem) {
+    :root[data-surface='glass'] {
+      --glass-filter: blur(12px) saturate(1.5);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    :root[data-surface='glass'] {
+      --surface: var(--surface-solid);
+      --glass-filter: none;
+    }
+
+    :root[data-surface='glass'] body::before {
+      content: none;
+    }
+  }
+}

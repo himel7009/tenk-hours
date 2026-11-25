@@ -1,3 +1,5 @@
+import { daysBetween, type DayKey } from './dates';
+import { describeDaysLeft, type DeadlineWords } from './deadline';
 /** A book or course being worked through, tracked by how far along it is. */
 export type LibraryItemId = string;
 export type LibraryKind = 'book' | 'course';
@@ -25,6 +27,8 @@ export interface LibraryItem {
   position: string;
   notes: string;
   status: LibraryStatus;
+  /** The day to finish it by, if any. Missing or null is no deadline. */
+  deadline?: DayKey | null;
   createdAt: number;
 }
 
@@ -161,4 +165,34 @@ export function summarizeLibrary(items: readonly LibraryItem[]): LibrarySummary 
       known.length > 0 ? Math.round(known.reduce((a, b) => a + b, 0) / known.length) : null,
     almostDone: known.filter((percent) => percent >= ALMOST_DONE_PERCENT).length,
   };
+}
+
+export interface LibraryDeadline extends DeadlineWords {
+  daysLeft: number;
+  /**
+   * What finishing on time takes: "About 2 chapters a day", or null when the
+   * total is unknown, the day has passed or nothing is left.
+   */
+  pace: string | null;
+}
+
+/** Where a book or course stands against its deadline, or null without one or once done. */
+export function libraryDeadline(item: LibraryItem, today: DayKey): LibraryDeadline | null {
+  if (!item.deadline || item.status === 'done') return null;
+  const daysLeft = daysBetween(today, item.deadline);
+  const words = describeDaysLeft(daysLeft, false)!;
+  const progress = libraryProgress(item);
+  let pace: string | null = null;
+  if (progress && progress.remaining > 0 && daysLeft >= 0) {
+    // Today counts as a day to work in.
+    const perDay = progress.remaining / (daysLeft + 1);
+    const { one, many } = UNIT_LABELS[item.unit];
+    pace =
+      perDay <= 1
+        ? perDay >= 0.5
+          ? `About 1 ${one} a day`
+          : `About 1 ${one} every ${Math.round(1 / perDay)} days`
+        : `About ${Math.ceil(perDay)} ${many} a day`;
+  }
+  return { ...words, daysLeft, pace };
 }

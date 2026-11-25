@@ -1,5 +1,6 @@
 import { Button } from '../../components/Button';
 import {
+  libraryDeadline,
   libraryProgress,
   nextUnitLabel,
   progressLabel,
@@ -10,7 +11,15 @@ import {
 } from '../../domain/library';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
+import { useToday } from '../progress/useNow';
 import styles from './library.module.css';
+
+const shortDate = (day: string) =>
+  new Date(`${day}T12:00:00`).toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
 
 const ICONS = { book: '📖', course: '🎓' } as const;
 const COLORS = { book: 'teal', course: 'plum' } as const;
@@ -25,6 +34,8 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
   const toast = useToastStore((state) => state.show);
 
   const progress = libraryProgress(item);
+  const today = useToday();
+  const deadline = libraryDeadline(item, today);
   const left = remainingLabel(item);
   const next = nextUnitLabel(item);
   // Pages move too slowly one at a time.
@@ -51,6 +62,16 @@ export function LibraryRow({ item, onEdit }: LibraryRowProps) {
 
       <div className={styles.main}>
         <h3 className={styles.title}>{item.title}</h3>
+        {deadline && (
+          <p className={styles.deadline} data-tone={deadline.tone}>
+            <span className={styles.deadlineBadge}>
+              {deadline.text}, {shortDate(item.deadline!)}
+            </span>
+            {deadline.pace && (
+              <span className={styles.pace}>{deadline.pace} to finish on time</span>
+            )}
+          </p>
+        )}
         {(item.author || item.url) && (
           <p className={styles.byline}>
             {item.author}

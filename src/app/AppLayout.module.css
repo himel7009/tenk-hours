@@ -65,6 +65,8 @@
 .navLinkActive {
   color: var(--ink);
   background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
 }
 
 .main {

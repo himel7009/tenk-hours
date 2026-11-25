@@ -2,7 +2,7 @@ import { useRef, useState, type ChangeEvent } from 'react';
 import { Button } from '../../components/Button';
 import { BackupError, createBackup, parseBackup } from '../../data/backup';
 import { todayKey } from '../../domain/dates';
-import type { Theme } from '../../domain/types';
+import type { SurfaceStyle, Theme } from '../../domain/types';
 import { isCloudEnabled } from '../../sync/supabaseClient';
 import { useAccountStore } from '../../store/accountStore';
 import { useToastStore } from '../../store/toastStore';
@@ -11,6 +11,11 @@ import { AccountSection } from '../account/AccountSection';
 import { useRepeatedLooks } from '../appearance/useRepeatedLooks';
 import { PinDialog, type PinDialogMode } from '../badHabits/PinDialog';
 import styles from './SettingsPage.module.css';
+
+const SURFACES: { value: SurfaceStyle; label: string }[] = [
+  { value: 'solid', label: 'Solid' },
+  { value: 'glass', label: 'Glass' },
+];
 
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'system', label: 'Match device' },
@@ -21,6 +26,8 @@ const THEMES: { value: Theme; label: string }[] = [
 export function SettingsPage() {
   const theme = useTrackerStore((state) => state.theme);
   const setTheme = useTrackerStore((state) => state.setTheme);
+  const surface = useTrackerStore((state) => state.surface);
+  const setSurface = useTrackerStore((state) => state.setSurface);
   const replaceData = useTrackerStore((state) => state.replaceData);
   const toast = useToastStore((state) => state.show);
   const signedIn = useAccountStore((state) => state.user !== null);
@@ -107,6 +114,25 @@ export function SettingsPage() {
             </label>
           ))}
         </div>
+        <h3 className={styles.subhead}>Style</h3>
+        <div className={styles.segmented} role="radiogroup" aria-label="Style">
+          {SURFACES.map(({ value, label }) => (
+            <label key={value} className={styles.segment}>
+              <input
+                type="radio"
+                name="surface"
+                className="visually-hidden"
+                checked={surface === value}
+                onChange={() => setSurface(value)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+        <p className={styles.styleHint}>
+          Glass makes cards see-through and frosted, over a soft wash of colour. It is set for this
+          device only, and turns itself off if your system asks for less transparency.
+        </p>
         <RepeatedLooks />
       </section>
 

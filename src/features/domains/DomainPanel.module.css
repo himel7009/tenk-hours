@@ -162,6 +162,8 @@
   padding: var(--space-4);
   border-radius: var(--radius-panel);
   background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
 }
 
 .planHead {

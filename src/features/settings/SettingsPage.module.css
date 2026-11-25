@@ -41,6 +41,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
 }
 
 .segment {
@@ -80,6 +82,19 @@
 }
 
 .version {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.subhead {
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-md);
+}
+
+.styleHint {
+  max-width: 36rem;
+  margin-top: var(--space-2);
   color: var(--ink-soft);
   font-size: var(--text-sm);
 }

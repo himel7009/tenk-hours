@@ -54,6 +54,7 @@ const item: LibraryItem = {
   position: 'Video 4 at 12:30',
   notes: 'Redo the backprop exercise',
   status: 'active',
+  deadline: '2026-12-15',
   createdAt: 3,
 };
 

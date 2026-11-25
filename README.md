@@ -8,7 +8,7 @@
 
 **[✨ Open Tenk ✨](https://himel7009.github.io/tenk-hours/)**
 
-Tenk is a web app and installable PWA for getting seriously good at things. Add a skill, group related skills under a domain, keep daily habits, and time every session with a countdown timer. Each skill fills a grid of 10,000 squares hour by hour, every skill, habit and domain can keep its own streak, and a weekly routine sets which days you work on what. A Library keeps your place in the books and courses you are working through, and the ones you want to take up next.
+Tenk is a web app and installable PWA for getting seriously good at things. Add a skill, group related skills under a domain, keep daily habits, and time every session with a countdown timer. Each skill fills a grid of 10,000 squares hour by hour, every skill, habit and domain can keep its own streak, and a weekly routine sets which days you work on what. A Library keeps your place in the books and courses you are working through, and the ones you want to take up next. Books, courses and to-dos can carry an optional deadline with a countdown, and the whole app can switch to a frosted glass style.
 
 Tenk works without an account, storing everything in your browser. Sign in with Google or an email and password and your data syncs across your devices.
 

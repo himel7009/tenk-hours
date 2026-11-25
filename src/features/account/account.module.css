@@ -51,6 +51,8 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-control);
   background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
   font-size: var(--text-sm);
 }
 

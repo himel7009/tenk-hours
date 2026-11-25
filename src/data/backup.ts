@@ -255,6 +255,7 @@ function parseLibraryItem(value: unknown): LibraryItem {
     position: text(value.position),
     notes: text(value.notes),
     status: LIBRARY_STATUSES.find((status) => status === value.status) ?? 'active',
+    deadline: isDayKey(value.deadline) ? value.deadline : null,
     createdAt: typeof value.createdAt === 'number' ? value.createdAt : Date.now(),
   };
 }

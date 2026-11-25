@@ -3,10 +3,11 @@
   gap: var(--space-1);
   overflow-x: auto;
   padding: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: calc(var(--radius-control) + 4px);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   scrollbar-width: none;
 }
@@ -33,8 +34,8 @@
 }
 
 .tab[aria-selected='true'] {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .count {

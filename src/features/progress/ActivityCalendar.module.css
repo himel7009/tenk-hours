@@ -42,8 +42,8 @@
 }
 
 .ranges button[aria-pressed='true'] {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .ranges button:focus-visible {

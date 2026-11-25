@@ -31,8 +31,8 @@
 
 .day:has(input:checked) {
   border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .day:has(input:disabled) {

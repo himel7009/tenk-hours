@@ -5,10 +5,11 @@
   gap: var(--space-4);
   min-width: 0;
   padding: var(--space-4);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 

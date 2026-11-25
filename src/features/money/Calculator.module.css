@@ -10,9 +10,10 @@
 .screen {
   padding: var(--space-4);
   border-radius: var(--radius-panel);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
   text-align: right;
+  --on-ink: var(--on-hero);
 }
 
 .sum {
@@ -37,10 +38,11 @@
 
 .key {
   height: 3.25rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-control);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink);
   font: inherit;
@@ -73,8 +75,8 @@
 
 .key[data-kind='equals'] {
   border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 /* Delete last sits under the bottom row, across all four columns. */

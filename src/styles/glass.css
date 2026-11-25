@@ -1,58 +1,145 @@
 /*
- * The glass style (Settings, Appearance): see-through, frosted surfaces over
- * a soft field of the app's own colours. Each panel keeps its theme colour
- * as `--surface-solid`; here it is made translucent and blurs what is
- * behind it (`--glass-filter`, applied by every panel that uses --surface).
- * Off for anyone who asks for less transparency, and where blur is missing.
+ * Aurora glass (Settings, Appearance, Style). Panels turn to frosted glass
+ * with a bright edge over a field of soft colour and two glossy spheres.
+ * Selected things become lifted, clearer glass; primary actions and the one
+ * hero card on each page take the aurora gradient, the single loud moment.
+ *
+ * Everything hangs off tokens the solid style also defines (--surface,
+ * --fill, --accent-fill, --hero-fill...), so nothing here changes the solid
+ * look. Off where blur is missing, or the system asks for less transparency.
  */
 
 @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
   :root[data-surface='glass'] {
-    --surface: color-mix(in srgb, var(--surface-solid) 58%, transparent);
-    --line: color-mix(in srgb, var(--ink) 13%, transparent);
-    --glass-filter: blur(18px) saturate(1.6);
+    --aurora: linear-gradient(150deg, #4f46e5 0%, #8b3fc2 52%, #d1477f 100%);
+    --aurora-button: linear-gradient(135deg, #5b4fe0, #a03fbf);
+    --aurora-glow: rgb(124 77 214 / 0.32);
+
+    --bg: #efeafa;
+    --surface: rgb(255 255 255 / 0.44);
+    --panel-border: rgb(255 255 255 / 0.7);
+    --line: rgb(40 30 90 / 0.12);
+    --glass-filter: blur(22px) saturate(1.7);
+    --glass-edge: 0 10px 30px -12px rgb(76 52 160 / 0.22), inset 0 1px 0 rgb(255 255 255 / 0.75);
+    --radius-panel: 22px;
+    --radius-control: 12px;
+
+    --fill: rgb(255 255 255 / 0.92);
+    --on-fill: var(--ink);
+    --accent-fill: var(--aurora-button);
+    --on-accent: #fff;
+    --hero-fill: var(--aurora);
+    --on-hero: #fff;
+    --field: rgb(255 255 255 / 0.55);
+  }
+
+  :root[data-surface='glass'][data-theme='dark'] {
+    --bg: #0b0f22;
+    --surface: rgb(30 38 70 / 0.42);
+    --panel-border: rgb(255 255 255 / 0.12);
+    --line: rgb(255 255 255 / 0.1);
+    --glass-edge: 0 14px 40px -16px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.1);
+    --fill: rgb(255 255 255 / 0.17);
+    --field: rgb(255 255 255 / 0.06);
+    --aurora-glow: rgb(139 63 194 / 0.45);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-surface='glass']:not([data-theme='light']) {
+      --bg: #0b0f22;
+      --surface: rgb(30 38 70 / 0.42);
+      --panel-border: rgb(255 255 255 / 0.12);
+      --line: rgb(255 255 255 / 0.1);
+      --glass-edge: 0 14px 40px -16px rgb(0 0 0 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.1);
+      --fill: rgb(255 255 255 / 0.17);
+      --field: rgb(255 255 255 / 0.06);
+      --aurora-glow: rgb(139 63 194 / 0.45);
+    }
   }
 
   /* The colour field everything floats over, fixed so it does not scroll. */
-  :root[data-surface='glass'] body::before {
+  :root[data-surface='glass'] body::before,
+  :root[data-surface='glass'] body::after {
     content: '';
     position: fixed;
-    inset: 0;
     z-index: -1;
     pointer-events: none;
+  }
+
+  :root[data-surface='glass'] body::before {
+    inset: 0;
+    background:
+      radial-gradient(46% 42% at 8% 4%, rgb(130 110 255 / 0.42), transparent 70%),
+      radial-gradient(40% 46% at 96% 10%, rgb(236 120 214 / 0.36), transparent 70%),
+      radial-gradient(52% 44% at 74% 98%, rgb(94 170 255 / 0.34), transparent 70%),
+      radial-gradient(34% 34% at 14% 88%, rgb(255 150 110 / 0.22), transparent 70%), var(--bg);
+  }
+
+  /*
+   * Two glossy spheres, half off the edges, for the glass to catch: a lit
+   * side, a shaded side and a rim, all in one gradient each.
+   */
+  :root[data-surface='glass'] body::after {
+    inset: 0;
     background:
       radial-gradient(
-        42% 38% at 10% 6%,
-        color-mix(in srgb, var(--cobalt) 34%, transparent),
-        transparent 72%
-      ),
+          circle at 30% 28%,
+          rgb(255 255 255 / 0.85) 0 6%,
+          rgb(214 170 255 / 0.75) 22%,
+          rgb(148 96 238 / 0.7) 52%,
+          rgb(120 70 220 / 0.35) 68%,
+          transparent 70.5%
+        )
+        calc(100% + 9rem) 58% / 24rem 24rem no-repeat,
       radial-gradient(
-        36% 42% at 92% 14%,
-        color-mix(in srgb, var(--plum) 30%, transparent),
-        transparent 72%
-      ),
-      radial-gradient(
-        48% 40% at 72% 96%,
-        color-mix(in srgb, var(--teal) 30%, transparent),
-        transparent 72%
-      ),
-      radial-gradient(
-        30% 32% at 16% 84%,
-        color-mix(in srgb, var(--persimmon) 18%, transparent),
-        transparent 72%
-      ),
-      var(--bg);
+          circle at 34% 30%,
+          rgb(255 255 255 / 0.8) 0 6%,
+          rgb(255 190 225 / 0.7) 24%,
+          rgb(236 110 190 / 0.6) 54%,
+          rgb(210 80 160 / 0.3) 68%,
+          transparent 70.5%
+        ) -7rem
+        calc(100% + 6rem) / 20rem 20rem no-repeat;
+  }
+
+  :root[data-surface='glass'][data-theme='dark'] body::after {
+    opacity: 0.55;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-surface='glass']:not([data-theme='light']) body::after {
+      opacity: 0.55;
+    }
+  }
+
+  /* Fields: a clearer pane set into the glass. */
+  :root[data-surface='glass']
+    :is(
+      input:not([type='checkbox'], [type='radio'], [type='range'], [type='color']),
+      select,
+      textarea
+    ) {
+    border-color: var(--panel-border);
+    background-color: var(--field);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
   }
 
   /* Dialogs hold forms: more solid, so the page behind does not compete. */
   :root[data-surface='glass'] dialog {
-    background: color-mix(in srgb, var(--surface-solid) 84%, transparent);
+    background: color-mix(in srgb, var(--surface-solid) 86%, transparent);
   }
 
   /* Phones blur less: the same look for less work. */
   @media (max-width: 40rem) {
     :root[data-surface='glass'] {
-      --glass-filter: blur(12px) saturate(1.5);
+      --glass-filter: blur(14px) saturate(1.6);
+    }
+
+    :root[data-surface='glass'] body::after {
+      background-size:
+        15rem 15rem,
+        13rem 13rem;
     }
   }
 
@@ -62,7 +149,8 @@
       --glass-filter: none;
     }
 
-    :root[data-surface='glass'] body::before {
+    :root[data-surface='glass'] body::before,
+    :root[data-surface='glass'] body::after {
       content: none;
     }
   }

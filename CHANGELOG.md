@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-25
 
+- **Aurora glass.** The Glass style is redesigned: frosted white cards with bright edges float over a lavender wash with two glossy spheres; the navigation is a floating glass pill; tabs, segments and the current page light up as clearer glass; buttons are pills, the main ones in a violet gradient with a soft glow; and the one big card on each page (Today, Money, Report) takes the aurora gradient. Dark mode gets the same in deep navy. Solid stays exactly as it was.
 - **Deadlines for books and courses.** "Finish by" in a book's or course's form sets an optional deadline; the library shows the countdown ("10 days left", "Due tomorrow", red once overdue) and, when the total is known, the pace it takes ("About 2 chapters a day to finish on time"). Each list puts the nearest deadline first.
 - **Glass style.** Settings, Appearance, Style: Glass makes cards see-through and frosted over a soft wash of the app's colours, in light and dark. It is per device, dialogs stay easy to read, and it switches itself off when your system asks for less transparency or the browser cannot blur.
 

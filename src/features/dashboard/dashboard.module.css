@@ -1,10 +1,11 @@
 .card {
   min-width: 0;
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -35,8 +36,9 @@
   display: flex;
   flex-direction: column;
   border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
+  --on-ink: var(--on-hero);
 }
 
 .date {
@@ -256,4 +258,18 @@
 .barLabel[data-today='true'] {
   fill: var(--ink);
   font-weight: 700;
+}
+
+/* Aurora glass: the hero takes the gradient with a bright rim and a glow. */
+:global(:root[data-surface='glass']) .todayCard {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 18px 40px -18px var(--aurora-glow, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+/* Glass numerals are light, as large type on glass reads best thin. */
+:global(:root[data-surface='glass']) .headline {
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }

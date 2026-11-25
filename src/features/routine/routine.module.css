@@ -1,10 +1,11 @@
 .card {
   min-width: 0;
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -110,6 +111,7 @@
   padding: var(--space-1) 0 var(--space-2);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink-soft);
   font-size: var(--text-xs);
@@ -272,10 +274,11 @@
 .dateInput {
   min-height: 2.25rem;
   padding: 0 var(--space-2);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: 8px;
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink);
   font: inherit;
@@ -311,6 +314,7 @@
   border-left-color: var(--line);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -448,7 +452,7 @@
 .viewToday {
   padding: 1px var(--space-2);
   border-radius: 999px;
-  background: var(--ink);
+  background: var(--fill);
   color: var(--surface);
   font-size: var(--text-xs);
 }

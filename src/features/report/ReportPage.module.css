@@ -30,10 +30,11 @@
   display: flex;
   margin: 0;
   padding: 3px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: 999px;
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -47,8 +48,8 @@
 }
 
 .switch label:has(input:checked) {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .switch label:has(input:focus-visible) {
@@ -67,10 +68,11 @@
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: 999px;
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink);
   font-size: var(--text-lg);
@@ -115,10 +117,11 @@
 .card {
   min-width: 0;
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -159,8 +162,9 @@
   justify-content: space-between;
   gap: var(--space-4);
   border-color: var(--ink);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
+  --on-ink: var(--on-hero);
 }
 
 .heroLabel {
@@ -566,4 +570,12 @@
   .row .bar {
     display: none;
   }
+}
+
+/* Aurora glass: the hero takes the gradient with a bright rim and a glow. */
+:global(:root[data-surface='glass']) .hero {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 18px 40px -18px var(--aurora-glow, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
 }

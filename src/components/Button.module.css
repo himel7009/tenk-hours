@@ -26,8 +26,8 @@
 }
 
 .primary {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent-fill);
+  color: var(--on-accent);
 }
 
 .primary:hover:not(:disabled) {
@@ -60,4 +60,24 @@
 
 .danger:hover:not(:disabled) {
   background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+/* Aurora glass: pill buttons, a glow under the primary gradient. */
+:global(:root[data-surface='glass']) .button {
+  border-radius: 999px;
+}
+
+:global(:root[data-surface='glass']) .primary {
+  box-shadow: 0 8px 20px -8px var(--aurora-glow, transparent);
+}
+
+:global(:root[data-surface='glass']) .primary:hover:not(:disabled) {
+  background: var(--accent-fill);
+  filter: brightness(1.08);
+}
+
+:global(:root[data-surface='glass']) .secondary {
+  border-color: var(--panel-border, var(--line));
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
 }

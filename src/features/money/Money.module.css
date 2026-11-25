@@ -36,10 +36,11 @@
   display: flex;
   margin: 0;
   padding: 3px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: 999px;
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -53,8 +54,8 @@
 }
 
 .switch label:has(input:checked) {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .switch label:has(input:focus-visible) {
@@ -67,10 +68,11 @@
 .setup {
   max-width: 44rem;
   padding: var(--space-6);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -98,8 +100,9 @@
   gap: var(--space-3);
   padding: var(--space-5);
   border-radius: var(--radius-panel);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
+  --on-ink: var(--on-hero);
 }
 
 .kinds {
@@ -243,10 +246,11 @@
   place-items: center;
   width: 2.25rem;
   height: 2.25rem;
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: 999px;
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink);
   font-size: var(--text-lg);
@@ -287,11 +291,12 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-top: 4px solid var(--skill);
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -430,10 +435,11 @@
 
 .day {
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -590,8 +596,9 @@
   gap: var(--space-2);
   padding: var(--space-5);
   border-radius: var(--radius-panel);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
+  --on-ink: var(--on-hero);
 }
 
 .heroLabel {
@@ -633,10 +640,11 @@
 
 .stats > div {
   padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -667,15 +675,17 @@
   border-left: 3px solid var(--ink);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
 .card {
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -889,14 +899,16 @@
   gap: var(--space-1);
   padding: var(--space-5);
   border-radius: var(--radius-panel);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--hero-fill);
+  color: var(--on-hero);
+  --on-ink: var(--on-hero);
 }
 
 .debtTotal[data-direction='lent'] {
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   color: var(--ink);
 }
@@ -940,10 +952,11 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-5);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-panel);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -1042,8 +1055,8 @@
 }
 
 .directions label:has(input:checked) {
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--fill);
+  color: var(--on-fill);
 }
 
 .directions label:has(input:focus-visible) {
@@ -1079,4 +1092,26 @@
   border-color: var(--on-ink);
   background: var(--on-ink);
   color: var(--ink);
+}
+
+/* Aurora glass: the hero takes the gradient with a bright rim and a glow. */
+:global(:root[data-surface='glass']) .quick {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 18px 40px -18px var(--aurora-glow, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+:global(:root[data-surface='glass']) .hero {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 18px 40px -18px var(--aurora-glow, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
+}
+
+:global(:root[data-surface='glass']) .debtTotal {
+  border-color: rgb(255 255 255 / 0.35);
+  box-shadow:
+    0 18px 40px -18px var(--aurora-glow, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.35);
 }

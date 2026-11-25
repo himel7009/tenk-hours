@@ -66,6 +66,7 @@
   color: var(--ink);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
 }
 
@@ -76,5 +77,38 @@
 @media (max-width: 40rem) {
   .shell {
     padding-inline: var(--space-4);
+  }
+}
+
+/* Aurora glass: the navigation floats as one glass pill. */
+:global(:root[data-surface='glass']) .nav {
+  padding: 4px;
+  border: 1px solid var(--panel-border, var(--line));
+  border-radius: 999px;
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
+}
+
+:global(:root[data-surface='glass']) .navLink {
+  border-radius: 999px;
+}
+
+:global(:root[data-surface='glass']) .navLinkActive {
+  background: var(--fill);
+  color: var(--on-fill);
+  box-shadow: 0 2px 8px -2px rgb(60 40 140 / 0.18);
+}
+
+/* On a phone the pill spans the screen and its links tighten up. */
+@media (max-width: 30rem) {
+  :global(:root[data-surface='glass']) .nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  :global(:root[data-surface='glass']) .navLink {
+    padding: var(--space-2) var(--space-2);
   }
 }

@@ -48,10 +48,11 @@
 
 .notice {
   padding: var(--space-3);
-  border: 1px solid var(--line);
+  border: 1px solid var(--panel-border, var(--line));
   border-radius: var(--radius-control);
   background: var(--surface);
   -webkit-backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
   backdrop-filter: var(--glass-filter, none);
   font-size: var(--text-sm);
 }
@@ -110,8 +111,8 @@
   display: inline-flex;
   padding: 0.6rem 1rem;
   border-radius: var(--radius-control);
-  background: var(--ink);
-  color: var(--on-ink);
+  background: var(--accent-fill);
+  color: var(--on-accent);
   font-size: var(--text-sm);
   font-weight: 600;
   text-decoration: none;

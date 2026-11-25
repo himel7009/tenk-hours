@@ -33,12 +33,18 @@ failure blocks the deploy.
   and a case in `supabase/tests/rls_test.sql`.
 - Styling uses the tokens in `src/styles/tokens.css`. No new colours, fonts or
   UI libraries without asking. (Item colours are the exception, below.)
-- Panels use `background: var(--surface)` with `backdrop-filter:
-var(--glass-filter, none)`. The Glass style (`surface` in the store, per
-  device, `<html data-surface>`, `styles/glass.css`) makes `--surface` a
-  translucent mix of `--surface-solid` and sets the blur over a fixed colour
-  field. A new panel should follow the same pair. Glass is skipped where
-  blur is unsupported or the system asks for reduced transparency.
+- Panels use `background: var(--surface)`, `backdrop-filter:
+var(--glass-filter, none)`, `border: 1px solid var(--panel-border,
+var(--line))` and `box-shadow: var(--glass-edge, none)`. Filled surfaces
+  go by role, never raw ink: `--fill`/`--on-fill` (selected tabs, segments,
+  days), `--accent-fill`/`--on-accent` (primary actions), `--hero-fill`/
+  `--on-hero` (the one big card on a page, which also resets `--on-ink`).
+  In the solid style all of these resolve to the old values. The Glass
+  style ("Aurora glass": `surface` in the store, per device, `<html
+data-surface>`, `styles/glass.css`, plus `:global(:root[data-surface='glass'])`
+  rules in Button, AppLayout and the hero cards) restyles each role. A new
+  panel or filled control should follow the same tokens. Glass is skipped
+  where blur is unsupported or the system asks for reduced transparency.
 - UI copy is plain sentence case. Buttons say what they do ("Save changes").
 - Names wrap (`overflow-wrap: anywhere`); never cut user text off with an
   ellipsis. The running timer bar alone clamps to two lines.

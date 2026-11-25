@@ -25,6 +25,17 @@
   --sky: #1670ab;
   --cocoa: #8a5a3c;
 
+  /*
+   * Filled surfaces by role. Solid style: all ink. The glass style restyles
+   * each role on its own (styles/glass.css).
+   */
+  --fill: var(--ink); /* selected tabs, segments and days */
+  --on-fill: var(--on-ink);
+  --accent-fill: var(--ink); /* primary actions */
+  --on-accent: var(--on-ink);
+  --hero-fill: var(--ink); /* the one big card on a page */
+  --on-hero: var(--on-ink);
+
   --font-display: 'Bricolage Grotesque Variable', 'Instrument Sans Variable', system-ui, sans-serif;
   --font-body: 'Instrument Sans Variable', system-ui, sans-serif;
 

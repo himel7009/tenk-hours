@@ -62,6 +62,7 @@ export function HoursCalendar({ byDay, today }: HoursCalendarProps) {
             type="button"
             className={styles.arrow}
             aria-label="Previous month"
+            title={month <= earliest ? 'No earlier months with time yet' : 'Previous month'}
             disabled={month <= earliest}
             onClick={() => setMonth(shiftMonth(month, -1))}
           >
@@ -76,6 +77,7 @@ export function HoursCalendar({ byDay, today }: HoursCalendarProps) {
             type="button"
             className={styles.arrow}
             aria-label="Next month"
+            title={month >= thisMonth ? 'This is the current month' : 'Next month'}
             disabled={month >= thisMonth}
             onClick={() => setMonth(shiftMonth(month, 1))}
           >
@@ -120,6 +122,13 @@ export function HoursCalendar({ byDay, today }: HoursCalendarProps) {
           ))}
         </tbody>
       </table>
+
+      {earliest === thisMonth && (
+        <p className={styles.best}>
+          Your time starts this month. Once a new month begins, the arrows take you back to this one
+          and every month after it.
+        </p>
+      )}
 
       {data.best && (
         <p className={styles.best}>

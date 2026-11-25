@@ -14,6 +14,8 @@ import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
 import { usePomodoroPlan } from '../timer/usePomodoroPlan';
 import { useTimer } from '../timer/useTimer';
+import { SessionNoteField } from '../timer/SessionNoteField';
+import { cleanSessionNote } from '../../domain/timer';
 import styles from './SkillCard.module.css';
 import { SkillFormDialog } from './SkillFormDialog';
 
@@ -72,6 +74,11 @@ function summarizeProject(progress: Progress, today: DayKey): CardSummary {
   };
 }
 
+/** The quick start runs a countdown of the daily goal, or a stopwatch without one. */
+function withGoalSeconds(skill: Skill): number | null {
+  return hasDailyGoal(skill) ? skill.dailyGoalMinutes * 60 : null;
+}
+
 const NOUNS = { skill: 'skill', habit: 'habit', project: 'project' } as const;
 
 export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
@@ -102,6 +109,9 @@ export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
   const toast = useToastStore((state) => state.show);
   const [editing, setEditing] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // Null until Start is pressed; then the note asked for before the timer runs.
+  const [startNote, setStartNote] = useState<string | null>(null);
+  const goalSeconds = withGoalSeconds(skill);
   const noun = NOUNS[skill.kind];
   const withGoal = hasDailyGoal(skill);
   const streakOn = withGoal && keepsStreak(skill);
@@ -196,6 +206,36 @@ export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
             </Button>
           </div>
         </div>
+      ) : startNote !== null ? (
+        <form
+          className={styles.confirm}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (cleanSessionNote(startNote) === '' || activeTimer) return;
+            start(skill.id, goalSeconds, plan, startNote);
+            setStartNote(null);
+          }}
+        >
+          <SessionNoteField
+            skillId={skill.id}
+            value={startNote}
+            onChange={setStartNote}
+            autoFocus
+          />
+          <div className={styles.confirmActions}>
+            <Button size="sm" variant="quiet" onClick={() => setStartNote(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              variant="primary"
+              disabled={cleanSessionNote(startNote) === '' || Boolean(activeTimer)}
+            >
+              {goalSeconds === null ? 'Start timer' : `Start ${formatDuration(goalSeconds / 60)}`}
+            </Button>
+          </div>
+        </form>
       ) : (
         <div className={styles.footer}>
           <div className={styles.streak}>
@@ -220,7 +260,8 @@ export function SkillCard({ skill, showDomain = false }: SkillCardProps) {
           </div>
           <Button
             size="sm"
-            onClick={() => start(skill.id, withGoal ? skill.dailyGoalMinutes * 60 : null, plan)}
+            // Asks what the session is about before the timer starts.
+            onClick={() => setStartNote('')}
             disabled={Boolean(activeTimer)}
           >
             {running

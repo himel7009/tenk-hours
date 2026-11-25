@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-25
 
+- **Say what you are working on.** Starting a timer now asks what the session is about (today's to-dos for that skill are offered as suggestions), and it will not start without an answer. The note shows in the running timer, is saved with the session, and appears in **Today's log** under your to-dos: every session today with its time, note, skill and length. A skill's Sessions list now scrolls inside its section.
 - **Nothing planned yet.** Under today's to-dos, a quiet line lists the skills, projects and habits on today's routine that have no to-do ("On your routine with nothing planned: Deep Learning, DSA…"). Tap a name to start a to-do for it.
 - **Just today.** The to-do list shows only today: no Coming up list and no day to pick when adding, since anything not done comes back on its next routine day by itself. To-dos no longer say how many days they have been going or how often they moved on, only the day they were added. A to-do with a deadline counts the working days its skill has left before it ("6 working days left, due Fri, Dec 4") and turns up on each of them until you tick it off.
 - **Every skill in the to-do picker.** The "belongs to" list now offers every skill (those in a domain too), project and habit. The ones your routine plans for that day come first; the rest are under "Not on this day's routine", so you can still write a to-do for Machine learning on a day it is off, and it shows on the day you pick.

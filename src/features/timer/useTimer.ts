@@ -29,11 +29,17 @@ export function useTimer() {
     phase: activeTimer?.pomodoro?.phase ?? null,
     /**
      * Starts a countdown of the given length in seconds, or a stopwatch if
-     * null. With a plan, the countdown is focus time split into rounds.
+     * null. With a plan, the countdown is focus time split into rounds. The
+     * note says what the session is about and is required by the forms.
      */
-    start: (skillId: SkillId, durationSeconds: number | null, plan?: PomodoroPlan | null) => {
+    start: (
+      skillId: SkillId,
+      durationSeconds: number | null,
+      plan: PomodoroPlan | null,
+      note: string,
+    ) => {
       if (durationSeconds !== null) requestNotificationPermission();
-      startTimer(skillId, durationSeconds, plan);
+      startTimer(skillId, durationSeconds, plan, note);
     },
     nextRound: startNextRound,
     pause: pauseTimer,

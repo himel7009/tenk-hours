@@ -33,7 +33,7 @@ export function SessionList({ sessions }: SessionListProps) {
 
   return (
     <>
-      <ul className={styles.list}>
+      <ul className={styles.list} tabIndex={0} aria-label="Sessions, newest first">
         {newestFirst.slice(0, limit).map((session) => (
           <li key={session.id} className={styles.row}>
             <span className={styles.day}>{formatDay(session.day, today)}</span>

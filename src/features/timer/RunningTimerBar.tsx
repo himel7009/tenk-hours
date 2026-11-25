@@ -27,6 +27,7 @@ export function RunningTimerBar() {
       <span className={styles.pulse} aria-hidden="true" />
       <Link to={`/skills/${activeSkill.id}`} className={styles.name}>
         <span aria-hidden="true">{activeSkill.icon}</span> {activeSkill.name}
+        {activeTimer.note && <span className={styles.note}>: {activeTimer.note}</span>}
       </Link>
       <Clock timer={activeTimer} className={styles.clock} />
       <span className={styles.left}>

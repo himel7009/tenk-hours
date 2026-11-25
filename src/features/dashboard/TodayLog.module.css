@@ -1,0 +1,101 @@
+.card {
+  margin-top: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--panel-border, var(--line));
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  -webkit-backdrop-filter: var(--glass-filter, none);
+  backdrop-filter: var(--glass-filter, none);
+  box-shadow: var(--glass-edge, none);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--text-lg);
+}
+
+.total {
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.empty {
+  margin-top: var(--space-2);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+/* A long day scrolls inside the card, about seven rows at a time. */
+.list {
+  max-height: 24rem;
+  margin-top: var(--space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border-top: 1px solid var(--line);
+}
+
+.list:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.time {
+  padding-top: 1px;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+
+.what {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.note {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.skill {
+  align-self: flex-start;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  text-decoration: none;
+}
+
+.skill:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The tracker's own colour marks the time spent. */
+.minutes {
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--skill) 16%, transparent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}

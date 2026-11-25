@@ -7,11 +7,12 @@ import {
   scheduleLengthSeconds,
   type PomodoroPlan,
 } from '../../domain/pomodoro';
-import { elapsedMs } from '../../domain/timer';
 import type { ActiveTimer, Skill } from '../../domain/types';
 import { useNow } from '../progress/useNow';
 import { Clock } from './Clock';
 import { RoundsTrack } from './RoundsTrack';
+import { SessionNoteField } from './SessionNoteField';
+import { cleanSessionNote, elapsedMs } from '../../domain/timer';
 import styles from './TimerPanel.module.css';
 import { usePomodoroPlan, type PomodoroChoice } from './usePomodoroPlan';
 import { useTimer } from './useTimer';
@@ -38,6 +39,7 @@ export function TimerPanel({ skill }: TimerPanelProps) {
     return (
       <div className={styles.panel}>
         <div>
+          {activeTimer.note && <p className={styles.workingOn}>{activeTimer.note}</p>}
           <Clock timer={activeTimer} className={styles.clock} />
           <p className={styles.caption}>
             {paused
@@ -67,7 +69,7 @@ export function TimerPanel({ skill }: TimerPanelProps) {
     <TimerSetup
       skill={skill}
       blockedBy={activeTimer ? (activeSkill?.name ?? 'something else') : null}
-      onStart={(seconds, plan) => start(skill.id, seconds, plan)}
+      onStart={(seconds, plan, note) => start(skill.id, seconds, plan, note)}
     />
   );
 }
@@ -76,7 +78,7 @@ interface TimerSetupProps {
   skill: Skill;
   /** Name of whatever already has a timer running, if anything. */
   blockedBy: string | null;
-  onStart: (durationSeconds: number | null, plan: PomodoroPlan | null) => void;
+  onStart: (durationSeconds: number | null, plan: PomodoroPlan | null, note: string) => void;
 }
 
 function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
@@ -91,6 +93,8 @@ function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
   const [customMinutes, setCustomMinutes] = useState('');
   const [customSeconds, setCustomSeconds] = useState('');
   const pomodoro = usePomodoroPlan();
+  const [note, setNote] = useState('');
+  const hasNote = cleanSessionNote(note) !== '';
 
   const parts = [customHours, customMinutes, customSeconds].map((value) => Number(value || 0));
   const [h = 0, m = 0, sec = 0] = parts;
@@ -102,10 +106,12 @@ function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
   const customTooShort = choice === 'custom' && customTotal > 0 && customTotal < MIN_SECONDS;
   // Presets are in minutes; everything from here on is in seconds.
   const duration = choice === 'open' ? null : choice === 'custom' ? customTotal : choice * 60;
-  const canStart = blockedBy === null && (choice !== 'custom' || customValid);
+  const canSet = blockedBy === null && (choice !== 'custom' || customValid);
+  // Every session says what it was about, so the log on the home page reads.
+  const canStart = canSet && hasNote;
   // Rounds need a length to split, so a stopwatch never has them.
   const plan = duration === null ? null : pomodoro.plan;
-  const rounds = plan && duration !== null && canStart ? buildSchedule(duration, plan) : [];
+  const rounds = plan && duration !== null && canSet ? buildSchedule(duration, plan) : [];
 
   const options: { value: Choice; label: string }[] = [
     ...presets.map((minutes) => ({ value: minutes, label: formatDuration(minutes) })),
@@ -114,7 +120,15 @@ function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
   ];
 
   return (
-    <div className={styles.setup}>
+    <form
+      className={styles.setup}
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (canStart) onStart(duration, plan, note);
+      }}
+    >
+      <SessionNoteField skillId={skill.id} value={note} onChange={setNote} />
+
       <fieldset className={styles.durations}>
         <legend>Set a timer for</legend>
         {options.map(({ value, label }) => (
@@ -195,7 +209,7 @@ function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
 
       {rounds.length > 0 && <SchedulePreview rounds={rounds} />}
 
-      <Button variant="primary" disabled={!canStart} onClick={() => onStart(duration, plan)}>
+      <Button type="submit" variant="primary" disabled={!canStart}>
         {duration === null
           ? 'Start stopwatch'
           : choice === 'custom' && !customValid
@@ -210,13 +224,15 @@ function TimerSetup({ skill, blockedBy, onStart }: TimerSetupProps) {
           ? `A timer is running for ${blockedBy}. Stop it to start one here.`
           : customTooShort
             ? 'Set at least a minute. Sessions are saved in whole minutes.'
-            : duration === null
-              ? 'Counts up until you stop it.'
-              : rounds.length > 0
-                ? 'Only focus time is saved. Breaks never count.'
-                : 'Counts down and saves the session when it ends. Stop early to save what you did.'}
+            : !hasNote
+              ? 'Write what you are working on to start. It is saved with the session.'
+              : duration === null
+                ? 'Counts up until you stop it.'
+                : rounds.length > 0
+                  ? 'Only focus time is saved. Breaks never count.'
+                  : 'Counts down and saves the session when it ends. Stop early to save what you did.'}
       </p>
-    </div>
+    </form>
   );
 }
 
@@ -272,6 +288,7 @@ function PomodoroPanel({ timer }: { timer: ActiveTimer }) {
   return (
     <div className={styles.panel} data-phase={phase}>
       <div>
+        {timer.note && <p className={styles.workingOn}>{timer.note}</p>}
         <p className={styles.phase}>
           {phase === 'focus'
             ? `Round ${roundNumber} of ${total}`

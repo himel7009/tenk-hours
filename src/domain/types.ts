@@ -86,6 +86,11 @@ export interface ActiveTimer {
   pausedMs: number;
   /** Rounds and breaks, when the countdown is split Pomodoro style. */
   pomodoro: PomodoroState | null;
+  /**
+   * What the session is about, asked for before the timer starts and saved
+   * as the session's note. Missing on timers started before notes existed.
+   */
+  note?: string;
 }
 
 export type Theme = 'system' | 'light' | 'dark';

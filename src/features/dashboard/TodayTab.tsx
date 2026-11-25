@@ -1,5 +1,6 @@
 import { Button } from '../../components/Button';
 import { TodoList } from '../todos/TodoList';
+import { TodayLog } from './TodayLog';
 import styles from './HomePage.module.css';
 
 interface TodayTabProps {
@@ -9,7 +10,7 @@ interface TodayTabProps {
 }
 
 /**
- * The Today tab: the day's to-dos and nothing else. Each group's name opens
+ * The Today tab: the day's to-dos, then the log of what was worked on. Each group's name opens
  * its skill, habit or project; domains, skills, projects and habits have
  * their own tabs.
  */
@@ -17,6 +18,7 @@ export function TodayTab({ unanswered, onOpenBadHabits }: TodayTabProps) {
   return (
     <div className={styles.todayTab}>
       <TodoList />
+      <TodayLog />
 
       {unanswered > 0 && (
         <p className={styles.todayNudge}>

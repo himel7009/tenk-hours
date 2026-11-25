@@ -107,6 +107,14 @@ migration plan.
   automatically when they end; `null` means an open-ended stopwatch. Timers
   can be paused (`pausedAt`, `pausedMs`); paused time never counts. All timer
   maths lives in `domain/timer.ts`. Sessions are stored in whole minutes.
+- Every timer asks "What are you working on?" before it starts
+  (`SessionNoteField`, required by `TimerSetup` and the card's quick start,
+  offering today's open to-dos for that tracker). It is kept on
+  `ActiveTimer.note` (optional, so timers from before it still load),
+  shown in the running bar and panel, and saved as the session's note
+  (`cleanSessionNote`, 140 characters like the column). Today's sessions
+  with their notes are the Today tab's log (`TodayLog`, `buildDayLog`);
+  a tracker's session list scrolls inside its section.
 - Pomodoro (`ActiveTimer.pomodoro`, `domain/pomodoro.ts`) splits a countdown's
   focus time into rounds with breaks (`buildSchedule`). A break is the timer
   paused at the exact end of the round, so breaks never count; after a break

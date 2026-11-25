@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { toDayKey, type DayKey } from '../domain/dates';
 import type { PinLock } from '../domain/pin';
-import { elapsedMs, pause, resume } from '../domain/timer';
+import { cleanSessionNote, elapsedMs, pause, resume } from '../domain/timer';
 import {
   changeDay,
   inheritDomainRoutines,
@@ -141,6 +141,8 @@ interface TrackerActions {
     skillId: SkillId,
     durationSeconds: number | null,
     plan?: PomodoroPlan | null,
+    /** What the session is about; saved as the session's note. */
+    note?: string,
   ) => void;
   /** Moves a Pomodoro session to its next phase if one is due. */
   advancePomodoro: () => PomodoroEvent;
@@ -420,10 +422,11 @@ export const useTrackerStore = create<TrackerStore>()(
           sync: markPending(state.sync, 'pendingSessions', [id], 'delete'),
         })),
 
-      startTimer: (skillId, durationSeconds, plan = null) =>
+      startTimer: (skillId, durationSeconds, plan = null, note = '') =>
         set({
           activeTimer: {
             skillId,
+            note: cleanSessionNote(note),
             startedAt: Date.now(),
             durationSeconds,
             pausedAt: null,
@@ -475,7 +478,7 @@ export const useTrackerStore = create<TrackerStore>()(
           // A run that crosses midnight counts towards the day it started.
           day: toDayKey(new Date(timer.startedAt)),
           minutes: Math.min(MAX_SESSION_MINUTES, Math.round(elapsed / 60_000)),
-          note: '',
+          note: cleanSessionNote(timer.note ?? ''),
           source: 'timer',
           createdAt: Date.now(),
         };

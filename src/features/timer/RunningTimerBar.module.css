@@ -84,3 +84,9 @@
     flex: 1;
   }
 }
+
+/* What the session is about, after the name and quieter than it. */
+.note {
+  font-weight: 400;
+  opacity: 0.8;
+}

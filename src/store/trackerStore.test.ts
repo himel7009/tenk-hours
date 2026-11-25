@@ -51,6 +51,24 @@ describe('sessions', () => {
 });
 
 describe('timer', () => {
+  it('saves what the session was about as its note', () => {
+    const skillId = newSkill();
+    store().startTimer(skillId, null, null, '  Module 11,\n gradient descent  ');
+    expect(store().activeTimer?.note).toBe('Module 11, gradient descent');
+    vi.advanceTimersByTime(30 * 60_000);
+    expect(store().stopTimer()).toMatchObject({ note: 'Module 11, gradient descent' });
+  });
+
+  it('keeps a timer from before notes working, with an empty note', () => {
+    const skillId = newSkill();
+    store().startTimer(skillId, null);
+    useTrackerStore.setState((state) => ({
+      activeTimer: state.activeTimer && { ...state.activeTimer, note: undefined },
+    }));
+    vi.advanceTimersByTime(30 * 60_000);
+    expect(store().stopTimer()).toMatchObject({ note: '', minutes: 30 });
+  });
+
   it('saves the elapsed time as a session on the day it started', () => {
     const skillId = newSkill();
     vi.setSystemTime(new Date(2026, 2, 10, 23, 30));

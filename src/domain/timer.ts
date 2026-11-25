@@ -40,3 +40,11 @@ export function resume(timer: ActiveTimer, now: number): ActiveTimer {
   if (timer.pausedAt === null) return timer;
   return { ...timer, pausedAt: null, pausedMs: timer.pausedMs + (now - timer.pausedAt) };
 }
+
+/** A session note is at most this long (the database checks the same). */
+export const SESSION_NOTE_MAX = 140;
+
+/** A note as stored: one line, trimmed, within the limit. */
+export function cleanSessionNote(text: string): string {
+  return text.replace(/\s+/g, ' ').trim().slice(0, SESSION_NOTE_MAX);
+}

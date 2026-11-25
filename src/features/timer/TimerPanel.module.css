@@ -142,3 +142,10 @@
 .panel[data-phase='ready'] .clock {
   color: var(--ink-soft);
 }
+
+/* What the running session is about, above the clock. */
+.workingOn {
+  margin-bottom: var(--space-1);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}

@@ -11,6 +11,7 @@ import {
   targetKindName,
   TODO_TITLE_MAX,
   type PlannedTodo,
+  type TodoTarget,
 } from '../../domain/todos';
 import { daysBetween, type DayKey } from '../../domain/dates';
 import { useTrackerStore } from '../../store/trackerStore';
@@ -199,35 +200,13 @@ export function TodoList() {
           className={styles.todayList}
           tabIndex={0}
           aria-label="Today's to-dos"
-          data-long={board.today.reduce((n, g) => n + g.items.length, 0) > 6 || undefined}
+          data-long={board.todayItems.length > 6 || undefined}
         >
-          {board.today.map(({ target: group, items }) => (
-            <div key={group.key} className={styles.group} data-color={group.color ?? undefined}>
-              <h3 className={styles.groupName}>
-                {group.key.startsWith('skill:') ? (
-                  // Opens the skill, habit or project the to-dos belong to.
-                  <Link
-                    className={styles.groupLink}
-                    to={`/skills/${group.key.slice('skill:'.length)}`}
-                  >
-                    <span aria-hidden="true">{group.icon}</span> {group.name}
-                  </Link>
-                ) : (
-                  <>
-                    <span aria-hidden="true">{group.icon}</span> {group.name}
-                  </>
-                )}
-                {targetKindName(group) && (
-                  <span className={styles.kind}>{targetKindName(group)}</span>
-                )}
-              </h3>
-              <ul className={styles.items}>
-                {items.map((item) => (
-                  <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} />
-                ))}
-              </ul>
-            </div>
-          ))}
+          <ul className={styles.items}>
+            {board.todayItems.map((item) => (
+              <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} placeTag />
+            ))}
+          </ul>
         </div>
       )}
 
@@ -305,11 +284,14 @@ function TodoItem({
   onEdit,
   showWhen = false,
   showPlace = false,
+  placeTag = false,
 }: {
   item: PlannedTodo;
   onEdit: () => void;
   showWhen?: boolean;
   showPlace?: boolean;
+  /** Names its skill, habit or project above the title, linked to its page. */
+  placeTag?: boolean;
 }) {
   const toggleTodo = useTrackerStore((state) => state.toggleTodo);
   const deleteTodo = useTrackerStore((state) => state.deleteTodo);
@@ -330,35 +312,41 @@ function TodoItem({
       : `Added ${shortDay(addedDay)}`;
 
   return (
-    <li className={styles.item} data-done={todo.done}>
+    <li className={styles.item} data-done={todo.done} data-color={target.color ?? undefined}>
       <label className={styles.check}>
         <input type="checkbox" checked={todo.done} onChange={() => toggleTodo(todo.id)} />
         <span className="visually-hidden">
           {todo.done ? 'Mark as not done' : 'Mark as done'}: {todo.title}
         </span>
       </label>
-      <button
-        type="button"
-        className={styles.text}
-        onClick={onEdit}
-        aria-label={`Edit ${todo.title}`}
-        title="Edit, move or change its domain"
-      >
-        <span>{todo.title}</span>
-        {deadline && (
-          <span className={styles.deadline} data-tone={deadline.tone}>
-            {workingDaysLeft !== null
-              ? `${workingDaysLeft} working day${workingDaysLeft === 1 ? '' : 's'} left`
-              : deadline.text}
-            {!todo.done && todo.deadline && `, due ${shortDay(todo.deadline)}`}
+      <div className={styles.body}>
+        {placeTag && target !== GENERAL && <PlaceTag target={target} />}
+        <button
+          type="button"
+          className={styles.text}
+          onClick={onEdit}
+          aria-label={`Edit ${todo.title}`}
+          title="Edit, move or change its domain"
+        >
+          <span>{todo.title}</span>
+          {deadline && (
+            <span className={styles.deadline} data-tone={deadline.tone}>
+              {workingDaysLeft !== null
+                ? `${workingDaysLeft} working day${workingDaysLeft === 1 ? '' : 's'} left`
+                : deadline.text}
+              {!todo.done &&
+                todo.deadline &&
+                // "Due tomorrow" and "Overdue" already say it is a due date.
+                `, ${workingDaysLeft === null && /due/i.test(deadline.text) ? '' : 'due '}${shortDay(todo.deadline)}`}
+            </span>
+          )}
+          <span className={styles.meta}>
+            {showWhen && `${shortDay(due)}, ${place}. `}
+            {showPlace && `${place}. `}
+            <span className={styles.age}>{life}</span>
           </span>
-        )}
-        <span className={styles.meta}>
-          {showWhen && `${shortDay(due)}, ${place}. `}
-          {showPlace && `${place}. `}
-          <span className={styles.age}>{life}</span>
-        </span>
-      </button>
+        </button>
+      </div>
       {todo.url && (
         <a
           className={styles.link}
@@ -383,5 +371,22 @@ function TodoItem({
         </svg>
       </button>
     </li>
+  );
+}
+
+/** The skill, habit or project a to-do belongs to; opens its page. */
+function PlaceTag({ target }: { target: TodoTarget }) {
+  const label = (
+    <>
+      <span aria-hidden="true">{target.icon}</span> {target.name}
+      {targetKindName(target) && <span className={styles.kind}>{targetKindName(target)}</span>}
+    </>
+  );
+  return target.key.startsWith('skill:') ? (
+    <Link className={styles.placeTag} to={`/skills/${target.key.slice('skill:'.length)}`}>
+      {label}
+    </Link>
+  ) : (
+    <span className={styles.placeTag}>{label}</span>
   );
 }

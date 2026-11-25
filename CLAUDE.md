@@ -167,9 +167,9 @@ per habit per day. Logic lives in `domain/badHabits.ts`.
 overview rail (Today card, the week from the routine, day and year progress
 from `domain/timeProgress.ts`, the 7-day chart) and the trackers in tabs
 (`TrackerTabs`: today, domains, skills, projects, habits, bad habits). The
-Today tab (`TodayTab`) is the to-do list alone (and a nudge for unanswered bad
-habits); its count is to-dos left today. Each group's name links to its
-skill, habit or project page (`/skills/:id`). Domains, skills, projects and
+Today tab (`TodayTab`) is the to-do list, today's log and a nudge for
+unanswered bad habits; its count is to-dos left today. Each to-do's place
+links to its skill, habit or project page (`/skills/:id`). Domains, skills, projects and
 habits each have their own tab. The Projects tab
 lists every project, tagged with its domain (`SkillCard`'s `showDomain`).
 New trackers, projects included, start with `keepStreak` on.
@@ -208,8 +208,11 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   now and how often it moved are worked out, never written back.
 - The list shows today only: new to-dos are for today (the add form has no
   day field), and there is no Coming up list; tomorrow takes care of itself
-  through the routine. Each group is labelled Skill, Habit or Project
-  (`targetKindName`) and each to-do with the day it was added. The user
+  through the routine. It is one run (`TodoBoard.todayItems`), not grouped:
+  least time to the deadline first, no deadline last, ties in the order
+  added. Each to-do names its place above the title (`PlaceTag`, linked
+  to its page, labelled Skill, Habit or Project by `targetKindName`) and
+  the day it was added below. The user
   asked not to see day counts or how often a to-do moved on ("it gives me
   pressure"); `age` and `moved` are still computed for the history.
 - Under today's list, one quiet line names what today's routine holds with
@@ -222,7 +225,7 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
 - An optional `deadline` (column `deadline`, null for none) is separate from
   `day`, which moves on by itself. `PlannedTodo.daysLeft` and
   `describeDeadline` give the countdown (soon from two days out, overdue
-  after). Today's list sorts by nearest deadline and also takes in any
+  after). Today's list takes in any
   to-do whose deadline has come, even if planned later.
 - An optional `url` (column `url`, '' for none) links a video or page.
   `cleanTodoUrl` adds https:// when missing and turns away anything else;

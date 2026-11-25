@@ -366,3 +366,32 @@ describe('unplanned today', () => {
     expect(unplannedToday(targets, done, '2026-11-16').map((t) => t.key)).toEqual(['skill:cp']);
   });
 });
+
+describe("today's order", () => {
+  it('puts the least time left first, then the rest in the order they were added', () => {
+    const general = { domainId: null, skillId: null };
+    const board = buildTodoBoard(
+      [
+        todo('2026-11-16', { ...general, title: 'none 1' }),
+        todo('2026-11-16', { ...general, title: 'five days', deadline: '2026-11-21' }),
+        todo('2026-11-16', {
+          domainId: null,
+          skillId: 'thesis',
+          title: 'two days',
+          deadline: '2026-11-18',
+        }),
+        todo('2026-11-16', { ...general, title: 'five days, later', deadline: '2026-11-21' }),
+        todo('2026-11-16', { ...general, title: 'none 2' }),
+      ],
+      context,
+      '2026-11-16',
+    );
+    expect(board.todayItems.map((p) => p.todo.title)).toEqual([
+      'two days',
+      'five days',
+      'five days, later',
+      'none 1',
+      'none 2',
+    ]);
+  });
+});

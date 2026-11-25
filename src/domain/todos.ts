@@ -219,7 +219,12 @@ export function planTodo(todo: Todo, context: TodoContext, today: DayKey): Plann
 }
 
 export interface TodoBoard {
-  /** Open and due today or earlier, grouped by target, General first. */
+  /**
+   * Today's list in one run: least time to its deadline first, to-dos
+   * without a deadline last, and ties in the order they were added.
+   */
+  todayItems: PlannedTodo[];
+  /** The same, grouped by target, General first. */
   today: { target: TodoTarget; items: PlannedTodo[] }[];
   /** Open and due later, soonest first. */
   upcoming: PlannedTodo[];
@@ -257,14 +262,13 @@ export function buildTodoBoard(
 ): TodoBoard {
   const planned = todos.map((todo) => planTodo(todo, context, today));
   // Today's list: what is planned for today or earlier, and anything whose
-  // deadline has come even if it was planned later. Nearest deadline first.
+  // deadline has come even if it was planned later. Nearest deadline first;
+  // equal ones (and those without) stay in the order they were added.
   const dueNow = planned
     .filter((p) => !p.todo.done && (p.due <= today || (p.daysLeft !== null && p.daysLeft <= 0)))
     .sort(
       (a, b) =>
-        (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) ||
-        a.todo.day.localeCompare(b.todo.day) ||
-        a.todo.createdAt - b.todo.createdAt,
+        (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) || a.todo.createdAt - b.todo.createdAt,
     );
   const groups = new Map<string, { target: TodoTarget; items: PlannedTodo[] }>();
   for (const item of dueNow) {
@@ -273,6 +277,7 @@ export function buildTodoBoard(
     groups.set(item.target.key, group);
   }
   return {
+    todayItems: dueNow,
     today: [...groups.values()].sort(
       (a, b) =>
         Number(b.target === GENERAL) - Number(a.target === GENERAL) ||

@@ -5,7 +5,7 @@ import { Field, Input, Select } from '../../components/Field';
 import {
   GENERAL,
   groupTodoTargets,
-  isTargetOpenOn,
+  targetKindName,
   cleanTodoUrl,
   describeDeadline,
   TODO_TITLE_MAX,
@@ -87,6 +87,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
                     {group.targets.map((target) => (
                       <option key={target.key} value={target.key}>
                         {target.icon} {target.name}
+                        {group.offRoutine ? ` (${targetKindName(target).toLowerCase()})` : ''}
                       </option>
                     ))}
                   </optgroup>
@@ -102,13 +103,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
                 value={day}
                 disabled={item.todo.done}
                 onChange={(event) => {
-                  const next = event.target.value || day;
-                  setDay(next);
-                  // A skill not on the routine that day gives way to General.
-                  const current = targets.find((t) => t.key === targetKey) ?? GENERAL;
-                  if (targetKey !== item.target.key && !isTargetOpenOn(current, next)) {
-                    setTargetKey(GENERAL.key);
-                  }
+                  setDay(event.target.value || day);
                 }}
               />
             )}

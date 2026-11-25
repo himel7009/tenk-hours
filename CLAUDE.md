@@ -187,11 +187,13 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
 
 - New to-dos are offered General and every skill, habit and project
   (`todoTargets`), not domains; a to-do already under a domain keeps it.
-  The picker follows the routine: it lists only the projects, skills and
-  habits planned for the chosen day, grouped by kind (`groupTodoTargets`;
-  an empty routine means every day). Changing the day drops a pick that is
-  off that day back to General (`isTargetOpenOn`); the edit dialog keeps the
-  to-do's own place listed.
+  The picker lists the projects, skills (domain ones included) and habits
+  planned for the chosen day first, grouped by kind, then every other one
+  under "Not on this day's routine" (`groupTodoTargets`, `offRoutine`; an
+  empty routine means every day). Anything can be picked on any day: a
+  to-do shows on the day it is given whatever the routine says. Domains are
+  listed only as an old to-do's own place. (Until 2026-11-25 off-routine
+  items were hidden; users found that read as missing skills.)
 - An undone to-do whose day has passed shows on the next working day of its
   domain or skill (`planTodo`, `nextPlannedDay` from the routine); General
   moves to the next day. Only the first planned day is stored: where it shows

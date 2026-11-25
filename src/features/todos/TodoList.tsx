@@ -4,7 +4,6 @@ import { Button } from '../../components/Button';
 import {
   GENERAL,
   groupTodoTargets,
-  isTargetOpenOn,
   cleanTodoUrl,
   describeDeadline,
   linkSite,
@@ -51,10 +50,9 @@ export function TodoList() {
   const [editing, setEditing] = useState<PlannedTodo | null>(null);
   const [history, setHistory] = useState(false);
 
-  // The day decides the list: only what the routine plans for it is offered.
+  // The day orders the list: what the routine plans for it comes first.
   const day = pickedDay ?? today;
-  const picked = targets.find((t) => t.key === targetKey) ?? GENERAL;
-  const target = isTargetOpenOn(picked, day) ? picked : GENERAL;
+  const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
   const groups = groupTodoTargets(targets, day);
 
   const submit = (event: FormEvent) => {
@@ -154,6 +152,7 @@ export function TodoList() {
                   {group.targets.map((t) => (
                     <option key={t.key} value={t.key}>
                       {t.icon} {t.name}
+                      {group.offRoutine ? ` (${targetKindName(t).toLowerCase()})` : ''}
                     </option>
                   ))}
                 </optgroup>
@@ -191,8 +190,8 @@ export function TodoList() {
           {deadline === null
             ? ', no deadline'
             : `, due ${shortDay(deadline)} (${daysFromNow(deadline, day)})`}
-          . The list shows what your routine plans for that day. Not done by then, it moves on to
-          the next working day by itself.
+          . Today's routine is listed first; anything else is under "Not on this day's routine". Not
+          done by then, it moves on to the next working day by itself.
         </p>
       </form>
 

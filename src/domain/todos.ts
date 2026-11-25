@@ -308,6 +308,8 @@ export function todoTargets(context: TodoContext, keep?: TodoTarget): TodoTarget
 export interface TodoTargetGroup {
   label: string;
   targets: TodoTarget[];
+  /** The group of everything the routine does not plan for that day. */
+  offRoutine?: boolean;
 }
 
 const GROUPS: { kind: TodoTarget['kind']; label: string }[] = [
@@ -319,9 +321,11 @@ const GROUPS: { kind: TodoTarget['kind']; label: string }[] = [
 ];
 
 /**
- * The picker's groups, General left out: the projects, skills and habits the
- * routine plans for `day`, so a to-do only goes where that day's work is.
- * `keepKey` stays listed whatever the day (the place a to-do already has).
+ * The picker's groups, General left out. First the projects, skills and
+ * habits the routine plans for `day` (skills in a domain included), then
+ * every other one under "Not on this day's routine", so anything can still
+ * be picked: a to-do keeps the day it is given whatever the routine says.
+ * Domains are offered only as `keepKey` (the place a to-do already has).
  * Empty groups are dropped.
  */
 export function groupTodoTargets(
@@ -329,13 +333,21 @@ export function groupTodoTargets(
   day: DayKey,
   keepKey?: string,
 ): TodoTargetGroup[] {
-  return GROUPS.map(({ kind, label }) => ({
+  const offered = targets.filter(
+    (target) => target.kind !== 'general' && (target.kind !== 'domain' || target.key === keepKey),
+  );
+  const onDay = (target: TodoTarget) => isPlannedOn(target.routine, day);
+  const planned = GROUPS.map(({ kind, label }) => ({
     label,
-    targets: targets.filter(
-      (target) =>
-        target.kind === kind && (target.key === keepKey || isPlannedOn(target.routine, day)),
-    ),
-  })).filter((group) => group.targets.length > 0);
+    targets: offered.filter((target) => target.kind === kind && onDay(target)),
+  }));
+  const rest = GROUPS.flatMap(({ kind }) =>
+    offered.filter((target) => target.kind === kind && !onDay(target)),
+  );
+  return [
+    ...planned,
+    { label: "Not on this day's routine", targets: rest, offRoutine: true },
+  ].filter((group) => group.targets.length > 0);
 }
 
 /** Whether a to-do can be planned under `target` on `day`. General always can. */

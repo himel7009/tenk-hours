@@ -153,17 +153,6 @@
   gap: var(--space-4);
 }
 
-.todayHeading {
-  font-size: var(--text-lg);
-  letter-spacing: -0.01em;
-}
-
-.todayRest {
-  margin-top: var(--space-1);
-  color: var(--ink-soft);
-  font-size: var(--text-sm);
-}
-
 .todayNudge {
   display: flex;
   flex-wrap: wrap;
@@ -174,26 +163,4 @@
   background: color-mix(in srgb, var(--danger) 10%, var(--surface));
   font-size: var(--text-sm);
   font-weight: 600;
-}
-
-.todaySubheading {
-  margin-bottom: var(--space-3);
-  color: var(--ink-soft);
-  font-family: var(--font-body);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.todayHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.todayChanges {
-  margin-top: var(--space-1);
-  font-size: var(--text-sm);
 }

@@ -19,8 +19,8 @@ import { SkillCard } from '../skills/SkillCard';
 import { SkillFormDialog } from '../skills/SkillFormDialog';
 import styles from './HomePage.module.css';
 import { DayCard, YearCard } from './TimeCards';
-import { isDomainPlannedOn, isPlannedOn, routineOf } from '../../domain/routine';
 import { RoutineCard } from '../routine/RoutineCard';
+import { useTodoBoard } from '../progress/useTodos';
 import { TodayTab } from './TodayTab';
 import { TodayCard } from './TodayCard';
 import { TrackerTabs } from './TrackerTabs';
@@ -38,7 +38,7 @@ type TabId = 'today' | 'domains' | 'skills' | 'projects' | 'habits' | 'bad';
 const TAB_COPY: Record<TabId, { label: string; note: string; empty: string; add: string }> = {
   today: {
     label: 'Today',
-    note: 'Your to-dos, and what your weekly routine plans for today.',
+    note: "Your to-dos for today. Tap a skill's name to open it.",
     empty: '',
     add: '',
   },
@@ -120,19 +120,8 @@ export function HomePage() {
     projects: skills.filter((skill) => skill.kind === 'project'),
     habits: skills.filter((skill) => skill.kind === 'habit'),
   };
-  // What the Today tab lists: domains, and trackers outside a domain, planned today.
-  const plannedCount =
-    domains.filter((domain) =>
-      isDomainPlannedOn(
-        skills.filter((skill) => skill.domainId === domain.id && skill.kind !== 'project'),
-        today,
-      ),
-    ).length +
-    skills.filter(
-      (skill) =>
-        (skill.domainId === null || skill.kind === 'project') &&
-        isPlannedOn(routineOf(skill), today),
-    ).length;
+  // The Today tab is the to-do list: its count is what is left to do today.
+  const todoBoard = useTodoBoard();
   const isEmpty = skills.length === 0 && domains.length === 0 && badHabits.length === 0;
   const copy = TAB_COPY[tab];
 
@@ -209,7 +198,7 @@ export function HomePage() {
           </section>
           <TrackerTabs
             tabs={[
-              { id: 'today', label: 'Today', count: plannedCount },
+              { id: 'today', label: 'Today', count: todoBoard.openToday },
               { id: 'domains', label: 'Domains', count: domains.length },
               { id: 'skills', label: 'Skills', count: lists.skills.length },
               { id: 'projects', label: 'Projects', count: lists.projects.length },
@@ -253,10 +242,7 @@ export function HomePage() {
 
             {tab === 'today' ? (
               <TodayTab
-                today={today}
                 unanswered={locked ? 0 : unanswered}
-                onEditDomain={(domain) => setDialog({ type: 'domain', domain })}
-                onAddSkill={(domainId) => addTracker('skill', domainId)}
                 onOpenBadHabits={() => setTab('bad')}
               />
             ) : tab === 'bad' ? (

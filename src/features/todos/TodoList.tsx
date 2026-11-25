@@ -1,3 +1,4 @@
+import { Link } from 'react-router';
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { Button } from '../../components/Button';
 import {
@@ -212,7 +213,19 @@ export function TodoList() {
           {board.today.map(({ target: group, items }) => (
             <div key={group.key} className={styles.group} data-color={group.color ?? undefined}>
               <h3 className={styles.groupName}>
-                <span aria-hidden="true">{group.icon}</span> {group.name}
+                {group.key.startsWith('skill:') ? (
+                  // Opens the skill, habit or project the to-dos belong to.
+                  <Link
+                    className={styles.groupLink}
+                    to={`/skills/${group.key.slice('skill:'.length)}`}
+                  >
+                    <span aria-hidden="true">{group.icon}</span> {group.name}
+                  </Link>
+                ) : (
+                  <>
+                    <span aria-hidden="true">{group.icon}</span> {group.name}
+                  </>
+                )}
                 {targetKindName(group) && (
                   <span className={styles.kind}>{targetKindName(group)}</span>
                 )}

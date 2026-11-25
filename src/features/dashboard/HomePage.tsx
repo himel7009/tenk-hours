@@ -13,6 +13,7 @@ import { useUnansweredBadHabits } from '../badHabits/useBadHabitProgress';
 import { DomainFormDialog } from '../domains/DomainFormDialog';
 import { DomainPanel } from '../domains/DomainPanel';
 import { ActivityCalendar } from '../progress/ActivityCalendar';
+import { HoursCalendar } from '../progress/HoursCalendar';
 import { useDashboard, useOverallActivity } from '../progress/useDashboard';
 import { useToday } from '../progress/useNow';
 import { SkillCard } from '../skills/SkillCard';
@@ -181,6 +182,7 @@ export function HomePage() {
           </div>
           <RoutineCard />
           <div className={styles.insights}>
+            <HoursCalendar byDay={overallActivity} today={today} />
             <div className={styles.timePair}>
               <DayCard />
               <YearCard />

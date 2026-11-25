@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-25
 
+- **Hours calendar.** A month calendar on the home page lights up each day by the total time you put in across everything: under 2 hours is faint, and every 2 hours brighter, until 10 hours or more glows. Switch to Emoji to see 🌱 🌿 🌳 🔥 🚀 👑 instead. It shows the month's total, days worked and time per day worked, plus your best day. Arrows step back through earlier months.
 - **A page for each bad habit.** Tap a bad habit's name to open its own page: answer today, see your clean streak, best streak, days since the last slip and clean rate, and a calendar of every day since you started (tap a day to change its answer). Weak spots shows which weekday catches you most, how often slips tend to come, and whether the last 30 days went better than the 30 before. Month by month sums up clean, slipped and unanswered days. The PIN lock hides it like the rest.
 - **Today is just your to-dos.** The Today tab now holds only the to-do list (its count is how many are left), without the project cards and domain panels under it, which still have their own tabs. Tap a skill's, habit's or project's name in the list to open its page. The activity map stays at the top.
 - **Cleaner week card.** Each day's column now ends with its own items instead of stretching to the busiest day, and today is a soft capsule with its letter in a filled badge, rather than a dark outline running down the card.

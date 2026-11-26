@@ -255,6 +255,25 @@ export function unplannedToday(
   );
 }
 
+/**
+ * Places that may not take a new to-do: a skill, habit, project or domain
+ * with an open to-do whose deadline has passed. Each maps to that to-do
+ * (the most overdue one); it unblocks once it is done or deleted. General
+ * is never blocked. Overdue to-dos are always on today's list, so
+ * `todayItems` is enough.
+ */
+export function overdueBlocks(items: readonly PlannedTodo[]): Map<string, PlannedTodo> {
+  const blocks = new Map<string, PlannedTodo>();
+  for (const item of items) {
+    if (item.todo.done || item.target === GENERAL || item.daysLeft === null || item.daysLeft >= 0) {
+      continue;
+    }
+    const current = blocks.get(item.target.key);
+    if (!current || (current.daysLeft ?? 0) > item.daysLeft) blocks.set(item.target.key, item);
+  }
+  return blocks;
+}
+
 export function buildTodoBoard(
   todos: readonly Todo[],
   context: TodoContext,

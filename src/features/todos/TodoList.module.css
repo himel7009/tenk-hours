@@ -70,6 +70,14 @@
   font-size: var(--text-xs);
 }
 
+/* Why Add is off: the chosen place has an overdue to-do to clear first. */
+.blocked {
+  color: var(--danger);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .group {
   margin-top: var(--space-4);
 }

@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-26
+
+- **Clear what is overdue first.** When a to-do's deadline has passed, its skill, habit or project takes no new to-do until you tick that one off or delete it. The picker marks it "overdue to-do" and the form says which one is holding it up. General to-dos are never held back.
+
 ## 2026-11-25
 
 - **Soonest deadline first.** Today's to-dos are now one list in order of time left: the nearest deadline at the top, to-dos with the same deadline in the order you added them, and those without a deadline last. Each one names its skill, habit or project above it, still a link to its page.

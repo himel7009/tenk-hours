@@ -227,6 +227,11 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   `describeDeadline` give the countdown (soon from two days out, overdue
   after). Today's list takes in any
   to-do whose deadline has come, even if planned later.
+- A place with an open to-do past its deadline takes no new to-do until
+  that one is ticked off or deleted (`overdueBlocks`, from `todayItems`;
+  deadline today is not past). The add form turns Add off and says why,
+  the picker marks it "overdue to-do", and the edit dialog will not move a
+  to-do into it. General is never blocked. Enforced in the UI only.
 - An optional `url` (column `url`, '' for none) links a video or page.
   `cleanTodoUrl` adds https:// when missing and turns away anything else;
   the store, sync and backups keep only `isWebUrl` links. It renders as a

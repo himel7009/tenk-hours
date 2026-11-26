@@ -4,6 +4,7 @@ import { Dialog } from '../../components/Dialog';
 import { Field, Input, Select } from '../../components/Field';
 import {
   GENERAL,
+  overdueBlocks,
   groupTodoTargets,
   targetKindName,
   cleanTodoUrl,
@@ -16,7 +17,7 @@ import { useToday } from '../progress/useNow';
 import { DeadlinePicker } from './DeadlinePicker';
 import { useToastStore } from '../../store/toastStore';
 import { useTrackerStore } from '../../store/trackerStore';
-import { useTodoTargets } from '../progress/useTodos';
+import { useTodoBoard, useTodoTargets } from '../progress/useTodos';
 import formStyles from '../skills/SkillFormDialog.module.css';
 import { placeOf } from './todoPlace';
 
@@ -35,6 +36,9 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
   const [deadline, setDeadline] = useState<DayKey | null>(item.todo.deadline ?? null);
   const [link, setLink] = useState(item.todo.url ?? '');
   const [linkError, setLinkError] = useState(false);
+  // Moving it to another place is held back while that place has an overdue to-do.
+  const blocks = overdueBlocks(useTodoBoard().todayItems);
+  const blocker = targetKey === item.target.key ? undefined : blocks.get(targetKey);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -43,6 +47,7 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
       setLinkError(true);
       return;
     }
+    if (blocker) return;
     const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
     const moved = day !== item.due || targetKey !== item.target.key;
     updateTodo(item.todo.id, {
@@ -72,7 +77,14 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
           )}
         </Field>
         <div className={formStyles.numbers}>
-          <Field label="Belongs to">
+          <Field
+            label="Belongs to"
+            hint={
+              blocker
+                ? `It has an overdue to-do, “${blocker.todo.title}”. Tick it off or delete it first.`
+                : undefined
+            }
+          >
             {(id) => (
               <Select
                 id={id}
@@ -88,6 +100,9 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
                       <option key={target.key} value={target.key}>
                         {target.icon} {target.name}
                         {group.offRoutine ? ` (${targetKindName(target).toLowerCase()})` : ''}
+                        {target.key !== item.target.key && blocks.has(target.key)
+                          ? ', overdue to-do'
+                          : ''}
                       </option>
                     ))}
                   </optgroup>
@@ -162,7 +177,16 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
           >
             Delete
           </Button>
-          <Button type="submit" variant="primary" disabled={title.trim() === ''}>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={title.trim() === '' || Boolean(blocker)}
+            title={
+              blocker
+                ? `That place has an overdue to-do, “${blocker.todo.title}”. Clear it first.`
+                : undefined
+            }
+          >
             Save changes
           </Button>
         </div>

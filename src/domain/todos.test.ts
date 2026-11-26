@@ -11,6 +11,7 @@ import {
   nextPlannedDay,
   planTodo,
   unplannedToday,
+  overdueBlocks,
   targetKindName,
   targetOf,
   groupTodoTargets,
@@ -393,5 +394,47 @@ describe("today's order", () => {
       'none 1',
       'none 2',
     ]);
+  });
+});
+
+describe('overdue blocks', () => {
+  it('blocks a place while one of its to-dos is past its deadline', () => {
+    const thesis = { domainId: null, skillId: 'thesis' };
+    const general = { domainId: null, skillId: null };
+    const board = buildTodoBoard(
+      [
+        todo('2026-11-10', { ...thesis, title: 'late', deadline: '2026-11-14' }),
+        todo('2026-11-10', { ...thesis, title: 'later', deadline: '2026-11-12' }),
+        todo('2026-11-10', {
+          domainId: null,
+          skillId: 'cp',
+          title: 'due today',
+          deadline: '2026-11-16',
+        }),
+        todo('2026-11-10', { ...general, title: 'general late', deadline: '2026-11-11' }),
+      ],
+      context,
+      '2026-11-16',
+    );
+    const blocks = overdueBlocks(board.todayItems);
+    expect([...blocks.keys()]).toEqual(['skill:thesis']);
+    expect(blocks.get('skill:thesis')?.todo.title).toBe('later');
+  });
+
+  it('lifts once the overdue to-do is done', () => {
+    const done = buildTodoBoard(
+      [
+        todo('2026-11-10', {
+          domainId: null,
+          skillId: 'thesis',
+          deadline: '2026-11-12',
+          done: true,
+          doneAt: at('2026-11-16'),
+        }),
+      ],
+      context,
+      '2026-11-16',
+    );
+    expect(overdueBlocks(done.todayItems).size).toBe(0);
   });
 });

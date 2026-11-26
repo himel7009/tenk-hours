@@ -5,6 +5,7 @@ import {
   GENERAL,
   groupTodoTargets,
   unplannedToday,
+  overdueBlocks,
   cleanTodoUrl,
   describeDeadline,
   linkSite,
@@ -54,6 +55,9 @@ export function TodoList() {
   // New to-dos are for today; one not done comes back on its next routine day.
   const day = today;
   const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
+  // A place with an overdue to-do takes no new one until that is cleared.
+  const blocks = overdueBlocks(board.todayItems);
+  const blocker = blocks.get(target.key);
   const groups = groupTodoTargets(targets, day);
   // A quiet reminder of what today's routine holds with no to-do yet.
   const unplanned = unplannedToday(targets, board, today);
@@ -67,6 +71,7 @@ export function TodoList() {
       setLinkError(true);
       return;
     }
+    if (blocker) return;
     if (addTodo(draft, { ...placeOf(target), day }, { deadline: due, url })) {
       setDraft('');
       setDeadline(null);
@@ -156,6 +161,7 @@ export function TodoList() {
                     <option key={t.key} value={t.key}>
                       {t.icon} {t.name}
                       {group.offRoutine ? ` (${targetKindName(t).toLowerCase()})` : ''}
+                      {blocks.has(t.key) ? ', overdue to-do' : ''}
                     </option>
                   ))}
                 </optgroup>
@@ -174,18 +180,25 @@ export function TodoList() {
               🔗 Link
             </Button>
           )}
-          <Button type="submit" size="sm" disabled={draft.trim() === ''}>
+          <Button type="submit" size="sm" disabled={draft.trim() === '' || Boolean(blocker)}>
             Add
           </Button>
         </div>
-        <p className={styles.addHint}>
-          For today
-          {target === GENERAL ? '' : `, under ${target.name}`}
-          {deadline === null
-            ? ', no deadline'
-            : `, due ${shortDay(deadline)} (${daysFromNow(deadline, day)})`}
-          . Not done today, it comes back on its next routine day until you tick it off.
-        </p>
+        {blocker ? (
+          <p className={styles.blocked} role="status">
+            {target.name} has an overdue to-do, “{blocker.todo.title}”. Tick it off or delete it
+            before adding another here.
+          </p>
+        ) : (
+          <p className={styles.addHint}>
+            For today
+            {target === GENERAL ? '' : `, under ${target.name}`}
+            {deadline === null
+              ? ', no deadline'
+              : `, due ${shortDay(deadline)} (${daysFromNow(deadline, day)})`}
+            . Not done today, it comes back on its next routine day until you tick it off.
+          </p>
+        )}
       </form>
 
       {board.today.length === 0 ? (

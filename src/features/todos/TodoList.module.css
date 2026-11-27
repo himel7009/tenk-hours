@@ -599,3 +599,21 @@ a.placeTag:focus-visible {
 .placeTag .kind {
   margin-left: var(--space-1);
 }
+
+/* One place's to-dos under its name; the name sits on the group's first row. */
+.todayGroup {
+  padding: var(--space-3) 0 var(--space-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.todayGroup:last-child {
+  border-bottom: 0;
+}
+
+.todayGroup > .placeTag {
+  margin-bottom: var(--space-1);
+}
+
+.todayGroup .items > li:last-child {
+  border-bottom: 0;
+}

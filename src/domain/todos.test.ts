@@ -137,9 +137,10 @@ describe('buildTodoBoard', () => {
       context,
       today,
     );
+    // No deadlines, so places come in the order their to-dos were added.
     expect(board.today.map((g) => [g.target.name, g.items.map((p) => p.todo.title)])).toEqual([
-      ['General', ['Email supervisor']],
       ['Problem solving', ['Solve 5 loop problems']],
+      ['General', ['Email supervisor']],
     ]);
     // Operating systems missed Tuesday and waits for next Tuesday.
     expect(board.upcoming.map((p) => [p.todo.title, p.due])).toEqual([
@@ -448,5 +449,32 @@ describe('overdue blocks', () => {
       '2026-11-16',
     );
     expect(overdueBlocks(done.todayItems).size).toBe(0);
+  });
+});
+
+describe('grouped by place', () => {
+  it("keeps a place's to-dos together, places in order of their nearest deadline", () => {
+    const thesis = { domainId: null, skillId: 'thesis' };
+    const general = { domainId: null, skillId: null };
+    const board = buildTodoBoard(
+      [
+        todo('2026-11-16', { ...thesis, title: 'thesis, late', deadline: '2026-11-30' }),
+        todo('2026-11-16', { ...general, title: 'general, soon', deadline: '2026-11-18' }),
+        todo('2026-11-16', { ...thesis, title: 'thesis, soonest', deadline: '2026-11-17' }),
+        todo('2026-11-16', { ...general, title: 'general, none' }),
+      ],
+      context,
+      '2026-11-16',
+    );
+    expect(board.today.map((g) => [g.target.key, g.items.map((p) => p.todo.title)])).toEqual([
+      ['skill:thesis', ['thesis, soonest', 'thesis, late']],
+      ['general', ['general, soon', 'general, none']],
+    ]);
+    expect(board.todayItems.map((p) => p.todo.title)).toEqual([
+      'thesis, soonest',
+      'thesis, late',
+      'general, soon',
+      'general, none',
+    ]);
   });
 });

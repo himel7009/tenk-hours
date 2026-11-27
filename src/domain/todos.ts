@@ -219,12 +219,13 @@ export function planTodo(todo: Todo, context: TodoContext, today: DayKey): Plann
 }
 
 export interface TodoBoard {
-  /**
-   * Today's list in one run: least time to its deadline first, to-dos
-   * without a deadline last, and ties in the order they were added.
-   */
+  /** Every to-do in `today`, in the same order. */
   todayItems: PlannedTodo[];
-  /** The same, grouped by target, General first. */
+  /**
+   * Today's list grouped by place. Within a place: least time to its
+   * deadline first, none last, ties in the order added. Places are ordered
+   * by their first (most pressing) to-do, the same way.
+   */
   today: { target: TodoTarget; items: PlannedTodo[] }[];
   /** Open and due later, soonest first. */
   upcoming: PlannedTodo[];
@@ -297,13 +298,13 @@ export function buildTodoBoard(
     group.items.push(item);
     groups.set(item.target.key, group);
   }
+  // A place's to-dos stay together. Places come in the order of their most
+  // pressing to-do (dueNow is sorted, and a Map keeps first-seen order), and
+  // each keeps its own to-dos in that same order.
+  const todayGroups = [...groups.values()];
   return {
-    todayItems: dueNow,
-    today: [...groups.values()].sort(
-      (a, b) =>
-        Number(b.target === GENERAL) - Number(a.target === GENERAL) ||
-        a.target.name.localeCompare(b.target.name),
-    ),
+    todayItems: todayGroups.flatMap((group) => group.items),
+    today: todayGroups,
     upcoming: planned
       .filter((p) => !p.todo.done && !dueNow.includes(p))
       .sort((a, b) => a.due.localeCompare(b.due) || a.todo.createdAt - b.todo.createdAt),

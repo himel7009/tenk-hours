@@ -208,11 +208,12 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   now and how often it moved are worked out, never written back.
 - The list shows today only: new to-dos are for today (the add form has no
   day field), and there is no Coming up list; tomorrow takes care of itself
-  through the routine. It is one run (`TodoBoard.todayItems`), not grouped:
-  least time to the deadline first, no deadline last, ties in the order
-  added. Each to-do names its place above the title (`PlaceTag`, linked
-  to its page, labelled Skill, Habit or Project by `targetKindName`) and
-  the day it was added below. The user
+  through the routine. A place's to-dos stay together under its name
+  (`TodoBoard.today`, headed by `PlaceTag`, linked to its page, labelled
+  Skill, Habit or Project by `targetKindName`). Within a place: least time
+  to the deadline first, no deadline last, ties in the order added; places
+  are ordered by their most pressing to-do the same way (`todayItems` is
+  the same order flattened). Each to-do shows the day it was added. The user
   asked not to see day counts or how often a to-do moved on ("it gives me
   pressure"); `age` and `moved` are still computed for the history.
 - Under today's list, one quiet line names what today's routine holds with

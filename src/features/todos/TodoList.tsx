@@ -215,11 +215,22 @@ export function TodoList() {
           aria-label="Today's to-dos"
           data-long={board.todayItems.length > 6 || undefined}
         >
-          <ul className={styles.items}>
-            {board.todayItems.map((item) => (
-              <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} placeTag />
-            ))}
-          </ul>
+          {board.today.map(({ target: place, items }) => (
+            // One place's to-dos together, under its name; places come in
+            // order of their nearest deadline.
+            <section
+              key={place.key}
+              className={styles.todayGroup}
+              data-color={place.color ?? undefined}
+            >
+              <PlaceTag target={place} />
+              <ul className={styles.items}>
+                {items.map((item) => (
+                  <TodoItem key={item.todo.id} item={item} onEdit={() => setEditing(item)} />
+                ))}
+              </ul>
+            </section>
+          ))}
         </div>
       )}
 
@@ -333,7 +344,7 @@ function TodoItem({
         </span>
       </label>
       <div className={styles.body}>
-        {placeTag && target !== GENERAL && <PlaceTag target={target} />}
+        {placeTag && <PlaceTag target={target} />}
         <button
           type="button"
           className={styles.text}

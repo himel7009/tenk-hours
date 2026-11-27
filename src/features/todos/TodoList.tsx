@@ -355,13 +355,17 @@ function TodoItem({
           <span>{todo.title}</span>
           {deadline && (
             <span className={styles.deadline} data-tone={deadline.tone}>
-              {workingDaysLeft !== null
-                ? `${workingDaysLeft} working day${workingDaysLeft === 1 ? '' : 's'} left`
-                : deadline.text}
+              {/* Calendar days first, then how many of them are its routine days
+                  (today included), so "13 days left" and "8 on your routine"
+                  are never mistaken for each other. */}
+              {deadline.text}
+              {workingDaysLeft !== null &&
+                (item.daysLeft ?? 0) > 1 &&
+                ` (${workingDaysLeft} on your routine)`}
               {!todo.done &&
                 todo.deadline &&
                 // "Due tomorrow" and "Overdue" already say it is a due date.
-                `, ${workingDaysLeft === null && /due/i.test(deadline.text) ? '' : 'due '}${shortDay(todo.deadline)}`}
+                `, ${/due/i.test(deadline.text) ? '' : 'due '}${shortDay(todo.deadline)}`}
             </span>
           )}
           <span className={styles.meta}>

@@ -221,8 +221,10 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
   done today). Each name picks that place in the add form and focuses it.
 - With a deadline, a to-do shows on every routine day of its place until
   done, and counts `workingDaysLeft` (planned days from today to the
-  deadline, both included; null for General or an every-day routine, where
-  the plain days-left countdown shows).
+  deadline, both included; null for General or an every-day routine). The
+  label is calendar days first, then the routine count: "13 days left (8 on
+  your routine), due Thu, Dec 10"; the count is left off from tomorrow on.
+  (A bare "8 working days left" read as a miscount.)
 - An optional `deadline` (column `deadline`, null for none) is separate from
   `day`, which moves on by itself. `PlannedTodo.daysLeft` and
   `describeDeadline` give the countdown (soon from two days out, overdue

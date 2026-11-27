@@ -4,6 +4,7 @@ Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
 ## 2026-11-27
 
+- **Clearer deadlines.** A to-do's deadline now shows the calendar days left first, then how many of them are on the skill's routine: "13 days left (8 on your routine), due Thu, Dec 10".
 - **To-dos kept together by skill.** Several to-dos for one skill, habit or project now sit together under its name, soonest deadline first. The skill with the most pressing to-do comes first, so the order by deadline still holds.
 - **Today follows the routine exactly.** A to-do whose deadline has passed no longer shows on days its skill is off; it waits for that skill's next routine day. It still holds back new to-dos for that skill until you clear it.
 

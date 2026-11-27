@@ -225,11 +225,14 @@ tracker (`skillId`) or neither (General), never both, and is planned for a
 - An optional `deadline` (column `deadline`, null for none) is separate from
   `day`, which moves on by itself. `PlannedTodo.daysLeft` and
   `describeDeadline` give the countdown (soon from two days out, overdue
-  after). Today's list takes in any
-  to-do whose deadline has come, even if planned later.
+  after). A deadline never pulls a to-do onto a day off its place's
+  routine: today's list is exactly what the routine brings to today
+  (`due <= today`). Until 2026-11-27 an overdue to-do showed every day;
+  the user found off-routine skills on the list confusing.
 - A place with an open to-do past its deadline takes no new to-do until
-  that one is ticked off or deleted (`overdueBlocks`, from `todayItems`;
-  deadline today is not past). The add form turns Add off and says why,
+  that one is ticked off or deleted (`overdueBlocks`, from `todayItems` and
+  `upcoming`, since an overdue to-do may be off today's routine; deadline
+  today is not past). The add form turns Add off and says why,
   the picker marks it "overdue to-do", and the edit dialog will not move a
   to-do into it. General is never blocked. Enforced in the UI only.
 - An optional `url` (column `url`, '' for none) links a video or page.

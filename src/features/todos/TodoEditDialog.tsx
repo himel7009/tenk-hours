@@ -37,7 +37,8 @@ export function TodoEditDialog({ item, onClose }: { item: PlannedTodo; onClose: 
   const [link, setLink] = useState(item.todo.url ?? '');
   const [linkError, setLinkError] = useState(false);
   // Moving it to another place is held back while that place has an overdue to-do.
-  const blocks = overdueBlocks(useTodoBoard().todayItems);
+  const board = useTodoBoard();
+  const blocks = overdueBlocks([...board.todayItems, ...board.upcoming]);
   const blocker = targetKey === item.target.key ? undefined : blocks.get(targetKey);
 
   const submit = (event: FormEvent) => {

@@ -2,6 +2,10 @@
 
 Releases are deployed from `main` to https://himel7009.github.io/tenk-hours/.
 
+## 2026-11-27
+
+- **Today follows the routine exactly.** A to-do whose deadline has passed no longer shows on days its skill is off; it waits for that skill's next routine day. It still holds back new to-dos for that skill until you clear it.
+
 ## 2026-11-26
 
 - **Clear what is overdue first.** When a to-do's deadline has passed, its skill, habit or project takes no new to-do until you tick that one off or delete it. The picker marks it "overdue to-do" and the form says which one is holding it up. General to-dos are never held back.

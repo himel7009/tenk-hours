@@ -256,20 +256,32 @@ describe('deadlines', () => {
     expect(say(-2, true)).toEqual({ text: 'Done 2 days late', tone: 'overdue' });
   });
 
-  it('puts the nearest deadline first, and brings a due one forward to today', () => {
+  it('puts the nearest deadline first, and never pulls a to-do off its day', () => {
     const relaxed = todo('2026-11-23', { ...general, title: 'no deadline' });
     const later = todo('2026-11-23', { ...general, title: 'later', deadline: '2026-11-30' });
     const soon = todo('2026-11-23', { ...general, title: 'soon', deadline: '2026-11-24' });
-    // Planned for next week, but due today.
+    // Planned for later in the week: its deadline does not bring it to today.
     const pressing = todo('2026-11-28', { ...general, title: 'pressing', deadline: '2026-11-23' });
     const board = buildTodoBoard([relaxed, later, soon, pressing], context, '2026-11-23');
     expect(board.today[0]?.items.map((i) => i.todo.title)).toEqual([
-      'pressing',
       'soon',
       'later',
       'no deadline',
     ]);
-    expect(board.upcoming).toEqual([]);
+    expect(board.upcoming.map((i) => i.todo.title)).toEqual(['pressing']);
+  });
+
+  it('keeps an overdue to-do to its routine days, yet it still blocks its place', () => {
+    // Competitive programming is on Mondays and Thursdays; 2026-11-17 is a Tuesday.
+    const late = todo('2026-11-16', { domainId: null, skillId: 'cp', deadline: '2026-11-16' });
+    const tuesday = buildTodoBoard([late], context, '2026-11-17');
+    expect(tuesday.todayItems).toEqual([]);
+    expect(tuesday.upcoming[0]?.due).toBe('2026-11-19');
+    expect([...overdueBlocks([...tuesday.todayItems, ...tuesday.upcoming]).keys()]).toEqual([
+      'skill:cp',
+    ]);
+    const thursday = buildTodoBoard([late], context, '2026-11-19');
+    expect(thursday.todayItems.map((i) => i.todo.id)).toEqual([late.id]);
   });
 });
 

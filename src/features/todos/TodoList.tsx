@@ -56,7 +56,7 @@ export function TodoList() {
   const day = today;
   const target = targets.find((t) => t.key === targetKey) ?? GENERAL;
   // A place with an overdue to-do takes no new one until that is cleared.
-  const blocks = overdueBlocks(board.todayItems);
+  const blocks = overdueBlocks([...board.todayItems, ...board.upcoming]);
   const blocker = blocks.get(target.key);
   const groups = groupTodoTargets(targets, day);
   // A quiet reminder of what today's routine holds with no to-do yet.

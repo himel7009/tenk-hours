@@ -259,8 +259,8 @@ export function unplannedToday(
  * Places that may not take a new to-do: a skill, habit, project or domain
  * with an open to-do whose deadline has passed. Each maps to that to-do
  * (the most overdue one); it unblocks once it is done or deleted. General
- * is never blocked. Overdue to-dos are always on today's list, so
- * `todayItems` is enough.
+ * is never blocked. Pass every open to-do (today's and the ones waiting for
+ * their next routine day), since an overdue one may be off today's routine.
  */
 export function overdueBlocks(items: readonly PlannedTodo[]): Map<string, PlannedTodo> {
   const blocks = new Map<string, PlannedTodo>();
@@ -280,11 +280,13 @@ export function buildTodoBoard(
   today: DayKey,
 ): TodoBoard {
   const planned = todos.map((todo) => planTodo(todo, context, today));
-  // Today's list: what is planned for today or earlier, and anything whose
-  // deadline has come even if it was planned later. Nearest deadline first;
-  // equal ones (and those without) stay in the order they were added.
+  // Today's list: only what its place's routine brings to today (`due`, which
+  // is already the next routine day for anything carried over). A deadline
+  // never pulls a to-do onto a day off its routine; the user wants today to
+  // match the routine exactly. Nearest deadline first; equal ones (and those
+  // without) stay in the order they were added.
   const dueNow = planned
-    .filter((p) => !p.todo.done && (p.due <= today || (p.daysLeft !== null && p.daysLeft <= 0)))
+    .filter((p) => !p.todo.done && p.due <= today)
     .sort(
       (a, b) =>
         (a.daysLeft ?? Infinity) - (b.daysLeft ?? Infinity) || a.todo.createdAt - b.todo.createdAt,
